@@ -275,6 +275,59 @@ class PartyMakerController extends ChangeNotifier {
     }
   }
 
+  Future<bool> addCardToParty({
+  required PartyId partyId,
+  required String ownerId,
+  required String cardTitle,
+  required String cardPrice,
+  required String externalId,
+  required PartyItemCategory category,
+  String? imagePath,
+}) async {
+  _setBusy(true);
+  _error = null;
+
+  try {
+    final party = await _repo.getById(partyId);
+    if (party == null) {
+      throw Exception('Party não encontrada.');
+    }
+
+    if (party.status == PartyStatus.locked) {
+      throw Exception('Essa festa já foi bloqueada.');
+    }
+
+    if (imagePath != null && imagePath.trim().isNotEmpty) {
+      _imageCache.put(externalRefId: externalId, imagePath: imagePath);
+    }
+
+    final unitPrice = Money.fromCents(_parsePriceToCents(cardPrice));
+    final itemId = PartyItemId(
+      DateTime.now().microsecondsSinceEpoch.toString(),
+    );
+
+    await _addItem(
+      partyId: party.id,
+      partyItemId: itemId,
+      externalRef: ExternalRef(source: 'vendor_catalog', id: externalId),
+      category: category,
+      nameSnapshot: cardTitle,
+      unitPriceSnapshot: unitPrice,
+      quantity: Quantity(1),
+    );
+
+    final updated = await _repo.getById(party.id);
+    if (updated != null) _upsert(updated);
+
+    return true;
+  } catch (e) {
+    _error = e.toString();
+    return false;
+  } finally {
+    _setBusy(false);
+  }
+}
+
   Future<bool> removeItemFromActiveParty(PartyItemId itemId) async {
     _setBusy(true);
     _error = null;
