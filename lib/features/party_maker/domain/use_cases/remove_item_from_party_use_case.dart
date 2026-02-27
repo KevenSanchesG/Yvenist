@@ -18,6 +18,13 @@ class RemoveItemFromPartyUseCase {
     }
 
     party.removeItem(itemId);
+
+    // ✅ Política do produto: Party vazia não deve existir
+    if (party.budget.items.isEmpty) {
+      await repository.deleteById(partyId);
+      return;
+    }
+
     await repository.save(party);
   }
 }
