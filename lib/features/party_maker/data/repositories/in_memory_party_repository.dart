@@ -6,13 +6,20 @@ class InMemoryPartyRepository implements PartyRepository {
   final Map<String, Party> _store = {};
 
   @override
-  Future<Party?> getById(PartyId id) async => _store[id.value];
+  Future<Party?> getById(PartyId id) async {
+    return _store[id.value];
+  }bvb
 
   @override
   Future<void> save(Party party) async {
     _store[party.id.value] = party;
   }
 
-  // util do MVP
+  @override
+  Future<void> deleteById(PartyId id) async {
+    _store.remove(id.value);
+  }
+
+  // util opcional pro MVP (não é contrato do domain)
   List<Party> dumpAll() => _store.values.toList(growable: false);
 }
