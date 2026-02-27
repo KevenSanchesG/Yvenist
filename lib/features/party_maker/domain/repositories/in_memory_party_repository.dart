@@ -15,6 +15,11 @@ class InMemoryPartyRepository implements PartyRepository {
     _store[party.id.value] = party;
   }
 
+  @override
+  Future<void> deleteById(PartyId id) async {
+    _store.remove(id.value);
+  }
+
   // util opcional pro MVP (não é contrato do domain)
   List<Party> dumpAll() => _store.values.toList(growable: false);
 }
