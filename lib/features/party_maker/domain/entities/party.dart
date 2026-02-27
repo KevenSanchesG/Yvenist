@@ -67,6 +67,9 @@ class Party {
     _touch();
   }
 
+    // Alias semântico pro produto (rename)
+  void rename(PartyTitle newTitle) => updateTitle(newTitle);
+
   void setEventDate(EventDate date) {
     _ensureMutable();
     eventDate = date;
