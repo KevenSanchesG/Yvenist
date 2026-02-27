@@ -329,28 +329,42 @@ class PartyMakerController extends ChangeNotifier {
 }
 
   Future<bool> removeItemFromActiveParty(PartyItemId itemId) async {
-    _setBusy(true);
-    _error = null;
+  _setBusy(true);
+  _error = null;
 
-    try {
-      final party = activeParty;
-      if (party == null) {
-        throw Exception('Não existe Party ativa.');
+  try {
+    final party = activeParty;
+    if (party == null) {
+      throw Exception('Não existe Party ativa.');
+    }
+
+    await _removeItem(partyId: party.id, itemId: itemId);
+
+    final updated = await _repo.getById(party.id);
+    if (updated == null) return false;
+
+    // 🔥 AUTO DELETE se não houver mais itens
+    if (updated.budget.items.isEmpty) {
+      await _repo.deleteById(updated.id);
+      _parties.removeWhere((p) => p.id == updated.id);
+
+      if (_activePartyId == updated.id) {
+        _activePartyId = null;
       }
 
-      await _removeItem(partyId: party.id, itemId: itemId);
-
-      final updated = await _repo.getById(party.id);
-      if (updated != null) _upsert(updated);
-
+      notifyListeners();
       return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    } finally {
-      _setBusy(false);
     }
+
+    _upsert(updated);
+    return true;
+  } catch (e) {
+    _error = e.toString();
+    return false;
+  } finally {
+    _setBusy(false);
   }
+}
 
   Future<bool> lockActivePartyForPayment() async {
     _setBusy(true);
