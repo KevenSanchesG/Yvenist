@@ -7,6 +7,7 @@ import '../../../../../core/theme/app_typography.dart';
 
 import '../../../../party_maker/domain/enums/party_item_category.dart';
 import '../../../../party_maker/presentation/controllers/party_maker_controller.dart';
+import '../../../../party_maker/presentation/widgets/select_party_bottom_sheet.dart';
 
 class ContentCard extends StatefulWidget {
   final String title;
@@ -32,10 +33,11 @@ class ContentCard extends StatefulWidget {
 
 class _ContentCardState extends State<ContentCard> {
   void _toggleFavorite() {
-    final currentList = List<Map<String, dynamic>>.from(
-      favoritesNotifier.value,
-    );
-    final exists = currentList.any((item) => item['title'] == widget.title);
+    final currentList =
+        List<Map<String, dynamic>>.from(favoritesNotifier.value);
+
+    final exists =
+        currentList.any((item) => item['title'] == widget.title);
 
     if (exists) {
       currentList.removeWhere((item) => item['title'] == widget.title);
@@ -51,64 +53,23 @@ class _ContentCardState extends State<ContentCard> {
     favoritesNotifier.value = currentList;
   }
 
+  /// 🔥 NOVA LÓGICA
+  /// Sempre abre o BottomSheet para escolher a festa
   Future<void> _toggleParty() async {
-    const ownerId = 'user_1';
-
-    final controller = context.read<PartyMakerController>();
-    final externalId = widget.title; // MVP: title como externalId
-
-    // Guard: se a party ativa estiver locked, não deixa mexer
-    if (controller.isActivePartyLocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Essa festa já foi bloqueada para orçamento."),
-        ),
-      );
-      return;
-    }
-
-    // Se já está na party -> remover
-    final partyItemId = controller.findPartyItemIdByExternalId(externalId);
-
-    if (partyItemId != null) {
-      final ok = await controller.removeItemFromActiveParty(partyItemId);
-
-      if (!mounted) return;
-
-      if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(controller.error ?? 'Erro ao remover item')),
-        );
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item removido da Festa atual')),
-      );
-      return;
-    }
-
-    // Se NÃO está na party -> adicionar
-    final ok = await controller.addCardToActiveParty(
-      ownerId: ownerId,
-      cardTitle: widget.title,
-      cardPrice: widget.price,
-      externalId: externalId,
-      category: PartyItemCategory.other,
-      imagePath: widget.imageUrl, // cache da imagem
-    );
-
-    if (!mounted) return;
-
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(controller.error ?? 'Erro ao adicionar item')),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Item adicionado na Festa atual')),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SelectPartyBottomSheet(
+        itemName: widget.title,
+        price: widget.price,
+        externalId: widget.title,
+        imageUrl: widget.imageUrl,
+        category: PartyItemCategory.other,
+      ),
     );
   }
 
@@ -142,11 +103,13 @@ class _ContentCardState extends State<ContentCard> {
                   width: 167,
                   height: 161,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(
                     width: 167,
                     height: 161,
                     color: Colors.grey[300],
-                    child: const Icon(Icons.image, color: Colors.grey),
+                    child: const Icon(Icons.image,
+                        color: Colors.grey),
                   ),
                 ),
               ),
@@ -154,14 +117,17 @@ class _ContentCardState extends State<ContentCard> {
                 bottom: 8,
                 left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius:
+                        BorderRadius.circular(10),
                   ),
                   child: Text(
                     'A partir de R\$ ${widget.price}',
-                    style: AppTypography.cardPrice.copyWith(fontSize: 8),
+                    style: AppTypography.cardPrice
+                        .copyWith(fontSize: 8),
                   ),
                 ),
               ),
@@ -170,15 +136,15 @@ class _ContentCardState extends State<ContentCard> {
                 right: 8,
                 child: Row(
                   children: [
-                    // ============================================================
-                    // Favoritos (mantém do jeito que já estava)
-                    // ============================================================
-                    ValueListenableBuilder<List<Map<String, dynamic>>>(
+                    ValueListenableBuilder<
+                        List<Map<String, dynamic>>>(
                       valueListenable: favoritesNotifier,
-                      builder: (context, favoriteList, child) {
-                        final isFavorite = favoriteList.any(
-                          (item) => item['title'] == widget.title,
-                        );
+                      builder:
+                          (context, favoriteList, child) {
+                        final isFavorite =
+                            favoriteList.any((item) =>
+                                item['title'] ==
+                                widget.title);
 
                         return GestureDetector(
                           onTap: _toggleFavorite,
@@ -189,16 +155,24 @@ class _ContentCardState extends State<ContentCard> {
                                 Icon(
                                   Icons.favorite,
                                   size: 26,
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black
+                                      .withOpacity(0.3),
                                 ),
                               Icon(
-                                isFavorite ? Icons.favorite : Icons.favorite_border,
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
                                 size: 26,
-                                color: isFavorite ? AppColors.primary : Colors.white,
+                                color: isFavorite
+                                    ? AppColors.primary
+                                    : Colors.white,
                                 shadows: isFavorite
                                     ? []
                                     : const [
-                                        Shadow(color: Colors.black26, blurRadius: 2),
+                                        Shadow(
+                                            color:
+                                                Colors.black26,
+                                            blurRadius: 2),
                                       ],
                               ),
                             ],
@@ -206,26 +180,26 @@ class _ContentCardState extends State<ContentCard> {
                         );
                       },
                     ),
-
                     const SizedBox(width: 8),
-
-                    // ============================================================
-                    // Party real (Domain)
-                    // ============================================================
                     Consumer<PartyMakerController>(
                       builder: (context, controller, _) {
-                        final isInParty = controller.isExternalItemInActiveParty(
+                        final isInParty =
+                            controller
+                                .isExternalItemInActiveParty(
                           widget.title,
                         );
 
                         return GestureDetector(
-                          onTap: () => _toggleParty(),
+                          onTap: _toggleParty,
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                            duration: const Duration(
+                                milliseconds: 200),
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: isInParty ? AppColors.primary : Colors.white,
+                              color: isInParty
+                                  ? AppColors.primary
+                                  : Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: const [
                                 BoxShadow(
@@ -236,9 +210,13 @@ class _ContentCardState extends State<ContentCard> {
                               ],
                             ),
                             child: Icon(
-                              isInParty ? Icons.check : Icons.add,
+                              isInParty
+                                  ? Icons.check
+                                  : Icons.add,
                               size: 18,
-                              color: isInParty ? Colors.white : AppColors.primary,
+                              color: isInParty
+                                  ? Colors.white
+                                  : AppColors.primary,
                             ),
                           ),
                         );
@@ -249,38 +227,48 @@ class _ContentCardState extends State<ContentCard> {
               ),
             ],
           ),
-
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding:
+                const EdgeInsets.all(8.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   widget.title,
-                  style: AppTypography.cardTitle,
+                  style:
+                      AppTypography.cardTitle,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow:
+                      TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     ...List.generate(
                       5,
-                      (index) => const Icon(
+                      (index) =>
+                          const Icon(
                         Icons.star,
                         size: 12,
-                        color: AppColors.primary,
+                        color:
+                            AppColors.primary,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      widget.rating.toStringAsFixed(1),
-                      style: AppTypography.cardRatingScore,
+                      widget.rating
+                          .toStringAsFixed(1),
+                      style:
+                          AppTypography
+                              .cardRatingScore,
                     ),
                     const SizedBox(width: 2),
                     Text(
                       '(${widget.reviews})',
-                      style: AppTypography.cardRatingCount,
+                      style:
+                          AppTypography
+                              .cardRatingCount,
                     ),
                   ],
                 ),
@@ -288,17 +276,23 @@ class _ContentCardState extends State<ContentCard> {
                 Row(
                   children: [
                     const Icon(
-                      Icons.location_on_outlined,
+                      Icons
+                          .location_on_outlined,
                       size: 12,
-                      color: AppColors.primary,
+                      color:
+                          AppColors.primary,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         widget.location,
-                        style: AppTypography.cardLocation,
+                        style:
+                            AppTypography
+                                .cardLocation,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow:
+                            TextOverflow
+                                .ellipsis,
                       ),
                     ),
                   ],

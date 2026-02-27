@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../domain/value_objects/party_id.dart';
+import '../../domain/enums/party_item_category.dart';
 import '../../presentation/controllers/party_maker_controller.dart';
 
 class SelectPartyBottomSheet extends StatelessWidget {
@@ -11,6 +11,7 @@ class SelectPartyBottomSheet extends StatelessWidget {
   final String price;
   final String externalId;
   final String imageUrl;
+  final PartyItemCategory category;
 
   const SelectPartyBottomSheet({
     super.key,
@@ -18,6 +19,7 @@ class SelectPartyBottomSheet extends StatelessWidget {
     required this.price,
     required this.externalId,
     required this.imageUrl,
+    required this.category,
   });
 
   @override
@@ -25,7 +27,7 @@ class SelectPartyBottomSheet extends StatelessWidget {
     final controller = context.watch<PartyMakerController>();
     final parties = controller.parties;
 
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -37,14 +39,10 @@ class SelectPartyBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          if (parties.isEmpty)
-            const Text("Nenhuma festa criada ainda."),
-
           ...parties.map((p) {
             return ListTile(
               title: Text(p.title.value),
               subtitle: Text(p.status.name),
-              trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 final ok = await controller.addCardToParty(
                   partyId: p.id,
@@ -52,13 +50,7 @@ class SelectPartyBottomSheet extends StatelessWidget {
                   cardTitle: itemName,
                   cardPrice: price,
                   externalId: externalId,
-                  category: p.budget.items.isEmpty
-                      ? p.budget.items.isEmpty
-                          ? p.budget.items.isEmpty
-                              ? p.budget.items.isEmpty
-                              : p.budget.items.first.category
-                          : p.budget.items.first.category
-                      : p.budget.items.first.category,
+                  category: category,
                   imagePath: imageUrl,
                 );
 
@@ -68,7 +60,9 @@ class SelectPartyBottomSheet extends StatelessWidget {
                   if (!ok) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(controller.error ?? 'Erro ao adicionar'),
+                        content: Text(
+                            controller.error ??
+                                'Erro ao adicionar'),
                       ),
                     );
                   }
@@ -85,8 +79,11 @@ class SelectPartyBottomSheet extends StatelessWidget {
             ),
             onPressed: () async {
               const ownerId = 'user_1';
+
               final newParty =
-                  await controller.startNewParty(ownerId: ownerId);
+                  await controller.startNewParty(
+                ownerId: ownerId,
+              );
 
               await controller.addCardToParty(
                 partyId: newParty.id,
@@ -94,11 +91,13 @@ class SelectPartyBottomSheet extends StatelessWidget {
                 cardTitle: itemName,
                 cardPrice: price,
                 externalId: externalId,
-                category: p.budget.items.first.category,
+                category: category,
                 imagePath: imageUrl,
               );
 
-              if (context.mounted) Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             },
             child: const Text("Criar nova festa"),
           ),
