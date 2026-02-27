@@ -47,10 +47,7 @@ class _PartyBuilderPageState extends State<PartyBuilderPage> {
 
             // ✅ Sempre mostra back arrow (IndexedStack não tem pop)
             leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: AppColors.primary,
-              ),
+              icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
               onPressed: () {
                 // ✅ encerra a sessão ativa
                 controller.clearActiveParty();
@@ -87,318 +84,328 @@ class _PartyBuilderPageState extends State<PartyBuilderPage> {
                   ),
                 )
               : items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cake, size: 80, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Sua festa está vazia",
+                        style: AppTypography.sectionTitle.copyWith(
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Adicione itens clicando no botão +",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
                         children: [
-                          Icon(Icons.cake, size: 80, color: Colors.grey[300]),
-                          const SizedBox(height: 16),
                           Text(
-                            "Sua festa está vazia",
-                            style: AppTypography.sectionTitle.copyWith(
-                              color: Colors.grey,
+                            "${items.length} itens selecionados",
+                            style: AppTypography.sectionSubtitle.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Adicione itens clicando no botão +",
-                            style: TextStyle(color: Colors.grey),
+                          const Spacer(),
+                          if (isLocked)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.10,
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                "Bloqueada",
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (_, index) {
+                          final item = items[index];
+
+                          return PartyBudgetItemTile(
+                            item: item,
+                            isBusy: isBusy,
+                            onRemove: () async {
+                              if (isLocked) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Essa festa já foi bloqueada para orçamento.",
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final ok = await controller
+                                  .removeItemFromActivePartyById(item.id);
+                              if (!context.mounted) return;
+
+                              if (!ok) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      controller.error ??
+                                          "Erro ao remover item",
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+
+                    // ============================================================
+                    // Footer
+                    // ============================================================
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -4),
                           ),
                         ],
                       ),
-                    )
-                  : Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
                             children: [
                               Text(
-                                "${items.length} itens selecionados",
+                                "Total",
                                 style: AppTypography.sectionSubtitle.copyWith(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const Spacer(),
-                              if (isLocked)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.10,
-                                    ),
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: const Text(
-                                    "Bloqueada",
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                              Text(
+                                "R\$ ${(totalCents / 100).toStringAsFixed(2)}",
+                                style: AppTypography.sectionSubtitle.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
                                 ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: items.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (_, index) {
-                              final item = items[index];
-
-                              return PartyBudgetItemTile(
-                                item: item,
-                                isBusy: isBusy,
-                                onRemove: () async {
-                                  if (isLocked) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Essa festa já foi bloqueada para orçamento.",
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  final ok = await controller
-                                      .removeItemFromActivePartyById(item.id);
-                                  if (!context.mounted) return;
-
-                                  if (!ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          controller.error ??
-                                              "Erro ao remover item",
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                        ),
-
-                        // ============================================================
-                        // Footer
-                        // ============================================================
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                offset: Offset(0, -4),
                               ),
                             ],
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "Total",
-                                    style: AppTypography.sectionSubtitle.copyWith(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Text(
-                                    "R\$ ${(totalCents / 100).toStringAsFixed(2)}",
-                                    style: AppTypography.sectionSubtitle.copyWith(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                              if (isLocked) ...[
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 50,
-                                        child: OutlinedButton(
-                                          style: OutlinedButton.styleFrom(
-                                            side: const BorderSide(
-                                              color: AppColors.primary,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(25),
-                                            ),
-                                          ),
-                                          onPressed: isBusy
-                                              ? null
-                                              : () async {
-                                                  const ownerId = 'user_1';
-
-                                                  try {
-                                                    await controller.startNewParty(
-                                                      ownerId: ownerId,
-                                                    );
-
-                                                    if (!context.mounted) return;
-
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          "Nova festa criada!",
-                                                        ),
-                                                      ),
-                                                    );
-                                                  } catch (_) {
-                                                    if (!context.mounted) return;
-
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          controller.error ??
-                                                              "Erro ao criar nova festa",
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                          child: const Text(
-                                            "Criar nova festa",
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                          if (isLocked) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 50,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(
+                                          color: AppColors.primary,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            25,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 50,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.primary,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(25),
-                                            ),
-                                          ),
-                                          onPressed: isBusy
-                                              ? null
-                                              : () async {
-                                                  final ok = await controller
-                                                      .unlockActiveParty();
+                                      onPressed: isBusy
+                                          ? null
+                                          : () async {
+                                              const ownerId = 'user_1';
 
-                                                  if (!context.mounted) return;
+                                              try {
+                                                await controller.startNewParty(
+                                                  ownerId: ownerId,
+                                                  title: "Nova Festa",
+                                                );
 
-                                                  if (!ok) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          controller.error ??
-                                                              "Erro ao desbloquear festa",
-                                                        ),
-                                                      ),
-                                                    );
-                                                    return;
-                                                  }
+                                                if (!context.mounted) return;
 
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        "Festa desbloqueada. Você pode editar novamente!",
-                                                      ),
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      "Nova festa criada!",
                                                     ),
-                                                  );
-                                                },
-                                          child: const Text(
-                                            "Editar festa",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                                  ),
+                                                );
+                                              } catch (_) {
+                                                if (!context.mounted) return;
+
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      controller.error ??
+                                                          "Erro ao criar nova festa",
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                      child: const Text(
+                                        "Criar nova festa",
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ] else ...[
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 50,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(25),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 50,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    onPressed: isBusy
-                                        ? null
-                                        : () async {
-                                            final ok = await controller
-                                                .lockActivePartyForPayment();
-                                            if (!context.mounted) return;
+                                      onPressed: isBusy
+                                          ? null
+                                          : () async {
+                                              final ok = await controller
+                                                  .unlockActiveParty();
 
-                                            if (!ok) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
+                                              if (!context.mounted) return;
+
+                                              if (!ok) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      controller.error ??
+                                                          "Erro ao desbloquear festa",
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
                                                   content: Text(
-                                                    controller.error ??
-                                                        "Erro ao solicitar orçamento",
+                                                    "Festa desbloqueada. Você pode editar novamente!",
                                                   ),
                                                 ),
                                               );
-                                              return;
-                                            }
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "Festa bloqueada. Orçamento solicitado!",
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                    child: const Text(
-                                      "Solicitar Orçamento",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                                            },
+                                      child: const Text(
+                                        "Editar festa",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ],
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                          ] else ...[
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                ),
+                                onPressed: isBusy
+                                    ? null
+                                    : () async {
+                                        final ok = await controller
+                                            .lockActivePartyForPayment();
+                                        if (!context.mounted) return;
+
+                                        if (!ok) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                controller.error ??
+                                                    "Erro ao solicitar orçamento",
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        controller.clearActiveParty();
+                                        HomeScreen.changeTab(context, 2);
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Festa bloqueada. Orçamento solicitado!",
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                child: const Text(
+                                  "Solicitar Orçamento",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
+                  ],
+                ),
         );
       },
     );

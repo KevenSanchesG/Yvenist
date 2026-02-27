@@ -43,6 +43,7 @@ class SelectPartyBottomSheet extends StatelessWidget {
             return ListTile(
               title: Text(p.title.value),
               subtitle: Text(p.status.name),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 final ok = await controller.addCardToParty(
                   partyId: p.id,
@@ -61,8 +62,8 @@ class SelectPartyBottomSheet extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                            controller.error ??
-                                'Erro ao adicionar'),
+                          controller.error ?? 'Erro ao adicionar',
+                        ),
                       ),
                     );
                   }
@@ -71,38 +72,85 @@ class SelectPartyBottomSheet extends StatelessWidget {
             );
           }),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
             ),
             onPressed: () async {
-              const ownerId = 'user_1';
-
-              final newParty =
-                  await controller.startNewParty(
-                ownerId: ownerId,
-              );
-
-              await controller.addCardToParty(
-                partyId: newParty.id,
-                ownerId: ownerId,
-                cardTitle: itemName,
-                cardPrice: price,
-                externalId: externalId,
-                category: category,
-                imagePath: imageUrl,
-              );
-
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
+              Navigator.pop(context);
+              await _openCreatePartyDialog(context);
             },
             child: const Text("Criar nova festa"),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _openCreatePartyDialog(BuildContext context) async {
+    final controller = context.read<PartyMakerController>();
+    final textController = TextEditingController();
+    bool isValid = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Nome da nova festa"),
+              content: TextField(
+                controller: textController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: "Ex: 15 anos da Maria",
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    isValid = value.trim().isNotEmpty;
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancelar"),
+                ),
+                ElevatedButton(
+                  onPressed: isValid
+                      ? () async {
+                          const ownerId = 'user_1';
+
+                          final newParty =
+                              await controller.startNewParty(
+                            ownerId: ownerId,
+                            title: textController.text,
+                          );
+
+                          await controller.addCardToParty(
+                            partyId: newParty.id,
+                            ownerId: ownerId,
+                            cardTitle: itemName,
+                            cardPrice: price,
+                            externalId: externalId,
+                            category: category,
+                            imagePath: imageUrl,
+                          );
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        }
+                      : null,
+                  child: const Text("Confirmar"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

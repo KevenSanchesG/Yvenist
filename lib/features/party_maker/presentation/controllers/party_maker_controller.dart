@@ -197,37 +197,44 @@ class PartyMakerController extends ChangeNotifier {
     return party;
   }
 
-  Future<Party> startNewParty({required String ownerId}) async {
-    _setBusy(true);
-    _error = null;
+ Future<Party> startNewParty({
+  required String ownerId,
+  required String title,
+}) async {
+  _setBusy(true);
+  _error = null;
 
-    try {
-      final partyId = PartyId(DateTime.now().microsecondsSinceEpoch.toString());
-
-      await _createParty(
-        partyId: partyId,
-        ownerId: ownerId,
-        title: PartyTitle('Minha Festa'),
-      );
-
-      await _startPlanning(partyId);
-
-      final created = await _repo.getById(partyId);
-      final party = created!;
-      _upsert(party);
-
-      // ✅ regra do produto:
-      // criar nova festa -> entra direto no modo construção
-      _activePartyId = party.id;
-
-      return party;
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally {
-      _setBusy(false);
+  try {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      throw Exception('O nome da festa é obrigatório.');
     }
+
+    final partyId =
+        PartyId(DateTime.now().microsecondsSinceEpoch.toString());
+
+    await _createParty(
+      partyId: partyId,
+      ownerId: ownerId,
+      title: PartyTitle(trimmed),
+    );
+
+    await _startPlanning(partyId);
+
+    final created = await _repo.getById(partyId);
+    final party = created!;
+    _upsert(party);
+
+    _activePartyId = party.id;
+
+    return party;
+  } catch (e) {
+    _error = e.toString();
+    rethrow;
+  } finally {
+    _setBusy(false);
   }
+}
 
   Future<bool> addCardToActiveParty({
     required String ownerId,
