@@ -44,7 +44,7 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 
 | Arquivo | Papel |
 |---|---|
-| `app/app_dependencies.dart` | escolhe as implementações: `AppDependencies.api` ou `.demo` |
+| `app/app_dependencies.dart` | escolhe as implementações: `AppDependencies.api` ou `.demo`. Só `fromConfig`, que é o que o `main.dart` usa, guarda a escolha de tema no aparelho; montado de outro jeito, o app a guarda em memória |
 | `app/app_state.dart` | cria os controllers do app inteiro e os liga à sessão |
 | `app/yvenist_app.dart` | publica tudo via `Provider`; os temas claro e escuro, qual deles vale, e o idioma (`pt_BR`) |
 | `app/app_shell.dart` | as cinco abas, a barra inferior, o bloqueio "esta aba exige conta" |

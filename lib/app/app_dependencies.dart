@@ -41,7 +41,9 @@ class AppDependencies {
   }) : themePreferences = themePreferences ?? InMemoryThemePreferenceStorage();
 
   /// As dependências do app de verdade: a escolha de tema fica guardada no
-  /// aparelho nos dois modos.
+  /// aparelho nos dois modos. É o único lugar que pede isso; montado de outro
+  /// jeito (em um teste), o app guarda a escolha só em memória e não toca no
+  /// aparelho.
   factory AppDependencies.fromConfig(AppConfig config) {
     final themePreferences = DeviceThemePreferenceStorage();
     return config.isDemoMode
@@ -75,7 +77,7 @@ class AppDependencies {
       parties: ApiPartyRepository(api),
       vendors: ApiVendorRepository(api),
       reviews: ApiReviewRepository(api),
-      themePreferences: themePreferences ?? DeviceThemePreferenceStorage(),
+      themePreferences: themePreferences,
     );
   }
 

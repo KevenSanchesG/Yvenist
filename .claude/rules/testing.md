@@ -21,6 +21,10 @@ Contexto completo: `docs/01-architecture/testing.md`.
 - Não use `find.byType` com tipo abstrato: ele só casa com o tipo exato (use
   `find.bySubtype`).
 - Texto lido de um asset em teste de tela: `loadString(..., cache: false)`.
+- `flutter test` pula `test/integration/`. Mudou `AppDependencies`, `AppState`
+  ou o `ApiClient` → rode a integração contra uma API local antes de enviar
+  (`docs/09-guides/development.md`). Esses testes montam o app sem tela: nada
+  ali pode tocar em um plugin do aparelho.
 - `test/integration/` roda também no navegador: sem `dart:io` direto
   (configuração por `test/support/test_environment.dart`) e sem `1 << 32`.
 - Na API: fixtures de `backend/tests/conftest.py`. Teste de concorrência só

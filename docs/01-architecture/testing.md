@@ -79,6 +79,11 @@ Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios
 - Defeito corrigido ganha um teste com o comentário `Regressão:`.
 - A suíte roda no tema claro. O que só aparece no tema escuro (uma borda que
   tira espaço, uma cor que some) precisa de um teste que chame `useDarkTheme`.
+- A suíte normal **pula** `test/integration/`. Quem muda como o app abre ou
+  fala com a API (`AppDependencies`, `AppState`, `ApiClient`) roda esses testes
+  contra uma API local antes de enviar (comandos em
+  [development](../09-guides/development.md)); senão, a primeira notícia vem
+  do CI.
 - Um teste de tela nunca usa rede: as imagens são substituídas
   (`withFakeNetworkImages`) e os dados vêm dos repositórios em memória.
 - Texto longo lido de um asset em teste de tela: carregar com `cache: false`.
