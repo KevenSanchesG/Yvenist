@@ -1,5 +1,7 @@
-# Verificações automáticas do Yvenist: rodam a cada push na main e em todo
-# pull request. Cada job é independente; se um falhar, os outros continuam.
+# Verificações automáticas do Yvenist: rodam a cada push, em qualquer branch
+# (um pull request mostra o resultado do último commit da branch dele), e
+# podem ser disparadas à mão na aba Actions. Cada job é independente; se um
+# falhar, os outros continuam.
 #
 # O que cada job garante (e onde isso já foi conferido à mão):
 #   app          formatação, análise estática e testes do Flutter
@@ -12,8 +14,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 # Um push novo cancela a execução que ainda estiver rodando na mesma branch.
 concurrency:
