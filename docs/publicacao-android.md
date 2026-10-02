@@ -1,25 +1,26 @@
 # Publicação no Android
 
 O que precisa acontecer para o app sair da máquina de desenvolvimento e ir para
-a Play Store. O projeto já está preparado para os passos 2 a 4; o passo 1 é uma
-decisão que ainda precisa ser tomada.
+a Play Store.
 
-## 1. Definir o identificador do app (pendente)
+## 1. Identificador do app: `com.yvenist.app`
 
-O app ainda usa o identificador de exemplo do Flutter, `com.example.yvenist`.
-**A Play Store não aceita `com.example`**, e o identificador não pode ser
-trocado depois da primeira publicação: é ele que identifica o app para sempre.
+Definido em 2 de outubro de 2026, no lugar do `com.example.yvenist` do modelo do
+Flutter (que a Play Store não aceita). **Ele não pode mais mudar depois da
+primeira publicação**: é o que identifica o app nas lojas para sempre.
 
-Escolha um identificador com um domínio que seja de vocês, ao contrário (por
-exemplo `br.com.yvenist.app`), e troque em três lugares:
+Onde ele está, caso um dia seja preciso conferir:
 
-| Arquivo | O que trocar |
+| Plataforma | Arquivo |
 |---|---|
-| `android/app/build.gradle.kts` | `namespace` e `applicationId` |
-| `android/app/src/main/kotlin/com/example/yvenist/MainActivity.kt` | a linha `package` e a pasta em que o arquivo fica |
-| iOS: `ios/Runner.xcodeproj` (Bundle Identifier) | o mesmo identificador, para as duas lojas ficarem iguais |
+| Android | `android/app/build.gradle.kts` (`namespace` e `applicationId`) e a pasta de `MainActivity.kt` |
+| iOS | `ios/Runner.xcodeproj/project.pbxproj` (`PRODUCT_BUNDLE_IDENTIFIER`) |
+| macOS | `macos/Runner/Configs/AppInfo.xcconfig` |
+| Linux | `linux/CMakeLists.txt` (`APPLICATION_ID`) |
 
-Depois de trocar: `flutter clean` e `flutter build apk --debug` para conferir.
+O ideal é que o domínio `yvenist.com` seja de vocês: a convenção é o
+identificador ser o domínio ao contrário, e as lojas podem pedir essa
+comprovação em alguns recursos (links que abrem o app, por exemplo).
 
 ## 2. Criar a chave de publicação
 
