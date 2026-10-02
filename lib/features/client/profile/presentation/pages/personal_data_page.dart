@@ -73,10 +73,10 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
 
     final messenger = ScaffoldMessenger.of(context);
     final saved = await context.read<SessionController>().updateProfile(
-          fullName: _name.text,
-          phone: _phone.text,
-          birthDate: _birthDate,
-        );
+      fullName: _name.text,
+      phone: _phone.text,
+      birthDate: _birthDate,
+    );
     if (!saved || !mounted) return;
 
     Navigator.pop(context);
@@ -140,7 +140,9 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.name],
                     validator: validateFullName,
-                    decoration: const InputDecoration(labelText: 'Nome completo'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nome completo',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -149,7 +151,8 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
                     enableInteractiveSelection: false,
                     decoration: const InputDecoration(
                       labelText: 'E-mail',
-                      helperText: 'O e-mail identifica a conta e não pode ser '
+                      helperText:
+                          'O e-mail identifica a conta e não pode ser '
                           'alterado.',
                       helperMaxLines: 2,
                       suffixIcon: Icon(Icons.lock_outline),

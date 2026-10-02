@@ -56,7 +56,8 @@ class InMemoryAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final normalized = _normalize(email);
-    final error = validateEmail(normalized) ??
+    final error =
+        validateEmail(normalized) ??
         validateNewPassword(password) ??
         validateFullName(fullName);
     if (error != null) throw ValidationFailure(error);

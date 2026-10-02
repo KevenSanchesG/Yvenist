@@ -59,8 +59,10 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sair da conta?'),
-        content: const Text('Você vai precisar entrar de novo para ver suas '
-            'festas e favoritos.'),
+        content: const Text(
+          'Você vai precisar entrar de novo para ver suas '
+          'festas e favoritos.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -209,7 +211,10 @@ class _ProfilePageState extends State<ProfilePage> {
     return [
       _DashboardCard(
         items: [
-          _StatItem(value: '${vendor.listings.length}', label: 'Anúncios\nenviados'),
+          _StatItem(
+            value: '${vendor.listings.length}',
+            label: 'Anúncios\nenviados',
+          ),
           _StatItem(
             value: '${vendor.countListings(VendorListingStatus.published)}',
             label: 'Anúncios\npublicados',
@@ -279,7 +284,10 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       const SizedBox(height: 8),
       const Center(
-        child: Text('Versão ${AppConfig.appVersion}', style: AppTypography.caption),
+        child: Text(
+          'Versão ${AppConfig.appVersion}',
+          style: AppTypography.caption,
+        ),
       ),
     ];
   }
@@ -482,38 +490,40 @@ class _VendorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (vendor.status) {
       VendorStatus.none => _PromoBanner(
-          title: 'Tem um salão ou serviço?',
-          subtitle: 'Anuncie no Yvenist sem pagar nada por isso.',
-          colors: const [AppColors.vendor, AppColors.vendorAccent],
-          icon: Icons.storefront,
-          onTap: onStart,
-        ),
+        title: 'Tem um salão ou serviço?',
+        subtitle: 'Anuncie no Yvenist sem pagar nada por isso.',
+        colors: const [AppColors.vendor, AppColors.vendorAccent],
+        icon: Icons.storefront,
+        onTap: onStart,
+      ),
       VendorStatus.pendingReview => _StatusNotice(
-          icon: Icons.hourglass_top,
-          color: AppColors.warning,
-          title: 'Análise em andamento',
-          message: 'Estamos verificando os dados do seu anúncio.',
-          // Só existe no modo demonstração, onde não há quem aprove.
-          actionLabel:
-              vendor.canSimulateApproval ? 'Simular aprovação (demo)' : null,
-          onAction: vendor.isBusy ? null : vendor.simulateApproval,
-        ),
+        icon: Icons.hourglass_top,
+        color: AppColors.warning,
+        title: 'Análise em andamento',
+        message: 'Estamos verificando os dados do seu anúncio.',
+        // Só existe no modo demonstração, onde não há quem aprove.
+        actionLabel: vendor.canSimulateApproval
+            ? 'Simular aprovação (demo)'
+            : null,
+        onAction: vendor.isBusy ? null : vendor.simulateApproval,
+      ),
       VendorStatus.rejected => _StatusNotice(
-          icon: Icons.error_outline,
-          color: AppColors.danger,
-          title: 'Cadastro não aprovado',
-          message: vendor.profile?.rejectionReason ??
-              'Revise os dados e envie de novo.',
-          actionLabel: 'Corrigir e reenviar',
-          onAction: onStart,
-        ),
+        icon: Icons.error_outline,
+        color: AppColors.danger,
+        title: 'Cadastro não aprovado',
+        message:
+            vendor.profile?.rejectionReason ??
+            'Revise os dados e envie de novo.',
+        actionLabel: 'Corrigir e reenviar',
+        onAction: onStart,
+      ),
       VendorStatus.approved => _PromoBanner(
-          title: 'Você é um fornecedor!',
-          subtitle: 'Abra o Modo Fornecedor para acompanhar seus anúncios.',
-          colors: const [AppColors.success, Color(0xFF16A34A)],
-          icon: Icons.check_circle,
-          onTap: onOpenVendorMode,
-        ),
+        title: 'Você é um fornecedor!',
+        subtitle: 'Abra o Modo Fornecedor para acompanhar seus anúncios.',
+        colors: const [AppColors.success, Color(0xFF16A34A)],
+        icon: Icons.check_circle,
+        onTap: onOpenVendorMode,
+      ),
     };
   }
 }
@@ -787,7 +797,11 @@ class _MenuItem extends StatelessWidget {
         ),
       ),
       trailing: isAvailable
-          ? const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary)
+          ? const Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: AppColors.textSecondary,
+            )
           : const Text('Em breve', style: AppTypography.caption),
     );
   }

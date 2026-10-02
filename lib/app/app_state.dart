@@ -16,14 +16,14 @@ import 'package:yvenist/features/vendor/presentation/controllers/vendor_controll
 /// notificar ouvintes durante a construção de uma tela.
 class AppState {
   AppState(AppDependencies dependencies, {IdGenerator? ids})
-      : session = SessionController(dependencies.auth),
-        tabs = AppTabController(),
-        favorites = FavoritesController(dependencies.favorites),
-        parties = PartyMakerController(
-          repository: dependencies.parties,
-          ids: ids ?? UuidGenerator(),
-        ),
-        vendor = VendorController(dependencies.vendors) {
+    : session = SessionController(dependencies.auth),
+      tabs = AppTabController(),
+      favorites = FavoritesController(dependencies.favorites),
+      parties = PartyMakerController(
+        repository: dependencies.parties,
+        ids: ids ?? UuidGenerator(),
+      ),
+      vendor = VendorController(dependencies.vendors) {
     dependencies.apiClient?.onSessionExpired = session.handleSessionExpired;
     session.addListener(_onSessionChanged);
   }

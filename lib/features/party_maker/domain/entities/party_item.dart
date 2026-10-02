@@ -29,22 +29,22 @@ class PartyItem {
   Money get subtotal => unitPriceSnapshot.multiplyInt(quantity.value);
 
   PartyItem withQuantity(Quantity q) => PartyItem(
-        id: id,
-        externalRef: externalRef,
-        category: category,
-        nameSnapshot: nameSnapshot,
-        unitPriceSnapshot: unitPriceSnapshot,
-        quantity: q,
-        imageUrlSnapshot: imageUrlSnapshot,
-      );
+    id: id,
+    externalRef: externalRef,
+    category: category,
+    nameSnapshot: nameSnapshot,
+    unitPriceSnapshot: unitPriceSnapshot,
+    quantity: q,
+    imageUrlSnapshot: imageUrlSnapshot,
+  );
 
   PartyItem withUnitPrice(Money newPrice) => PartyItem(
-        id: id,
-        externalRef: externalRef,
-        category: category,
-        nameSnapshot: nameSnapshot,
-        unitPriceSnapshot: newPrice,
-        quantity: quantity,
-        imageUrlSnapshot: imageUrlSnapshot,
-      );
+    id: id,
+    externalRef: externalRef,
+    category: category,
+    nameSnapshot: nameSnapshot,
+    unitPriceSnapshot: newPrice,
+    quantity: quantity,
+    imageUrlSnapshot: imageUrlSnapshot,
+  );
 }

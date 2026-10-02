@@ -103,8 +103,8 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final deleted = await context.read<SessionController>().deleteAccount(
-          password: _password.text,
-        );
+      password: _password.text,
+    );
     if (deleted && mounted) Navigator.pop(context, true);
   }
 
@@ -142,7 +142,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: session.isBusy ? null : () => Navigator.pop(context, false),
+          onPressed: session.isBusy
+              ? null
+              : () => Navigator.pop(context, false),
           child: const Text('Cancelar'),
         ),
         TextButton(
@@ -190,9 +192,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     final messenger = ScaffoldMessenger.of(context);
     final changed = await context.read<SessionController>().changePassword(
-          currentPassword: _current.text,
-          newPassword: _newPassword.text,
-        );
+      currentPassword: _current.text,
+      newPassword: _newPassword.text,
+    );
     if (!changed || !mounted) return;
 
     Navigator.pop(context);

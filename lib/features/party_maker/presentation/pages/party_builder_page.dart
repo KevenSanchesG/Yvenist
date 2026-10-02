@@ -35,7 +35,9 @@ class PartyBuilderPage extends StatelessWidget {
       body: party == null || items.isEmpty
           ? EmptyStateView(
               icon: Icons.cake_outlined,
-              title: party == null ? 'Nenhuma festa aberta' : 'Sua festa está vazia',
+              title: party == null
+                  ? 'Nenhuma festa aberta'
+                  : 'Sua festa está vazia',
               message: 'Toque no + de um anúncio para adicioná-lo à festa.',
               actionLabel: 'Ver anúncios',
               onAction: () =>
@@ -58,10 +60,10 @@ class PartyBuilderPage extends StatelessWidget {
                         onRemove: isLocked || controller.isBusy
                             ? null
                             : () => _removeItem(
-                                  context,
-                                  item,
-                                  isLastItem: items.length == 1,
-                                ),
+                                context,
+                                item,
+                                isLastItem: items.length == 1,
+                              ),
                       );
                     },
                   ),
@@ -176,7 +178,9 @@ class _Summary extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              itemCount == 1 ? '1 item selecionado' : '$itemCount itens selecionados',
+              itemCount == 1
+                  ? '1 item selecionado'
+                  : '$itemCount itens selecionados',
               style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
@@ -223,7 +227,11 @@ class _Footer extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -4),
+          ),
         ],
       ),
       child: Column(

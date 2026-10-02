@@ -39,9 +39,9 @@ EventType eventTypeFromJson(Json json) {
 extension ListingSortApi on ListingSort {
   /// Valor do parâmetro `sort` da API.
   String get apiValue => switch (this) {
-        ListingSort.popular => 'popular',
-        ListingSort.priceAsc => 'price_asc',
-        ListingSort.priceDesc => 'price_desc',
-        ListingSort.recent => 'recent',
-      };
+    ListingSort.popular => 'popular',
+    ListingSort.priceAsc => 'price_asc',
+    ListingSort.priceDesc => 'price_desc',
+    ListingSort.recent => 'recent',
+  };
 }

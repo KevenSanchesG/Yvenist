@@ -38,7 +38,10 @@ http.Response errorResponse(
 
 void main() {
   final baseUrl = Uri.parse('https://api.yvenist.test/api/v1');
-  const tokens = AuthTokens(accessToken: 'acesso-1', refreshToken: 'renovacao-1');
+  const tokens = AuthTokens(
+    accessToken: 'acesso-1',
+    refreshToken: 'renovacao-1',
+  );
 
   late InMemoryTokenStorage storage;
   late List<http.Request> requests;
@@ -159,29 +162,31 @@ void main() {
       expect((await storage.read())!.refreshToken, 'renovacao-2');
     });
 
-    test('várias requisições simultâneas compartilham uma única renovação',
-        () async {
-      var refreshCalls = 0;
-      final client = clientWith((request) async {
-        if (request.url.path.endsWith('/auth/refresh')) {
-          refreshCalls++;
-          await Future<void>.delayed(const Duration(milliseconds: 10));
-          return refreshed();
-        }
-        final isFresh = request.headers['Authorization'] == 'Bearer acesso-2';
-        return isFresh
-            ? jsonResponse({'ok': true})
-            : errorResponse(401, 'invalid_token', 'Sessão inválida.');
-      });
+    test(
+      'várias requisições simultâneas compartilham uma única renovação',
+      () async {
+        var refreshCalls = 0;
+        final client = clientWith((request) async {
+          if (request.url.path.endsWith('/auth/refresh')) {
+            refreshCalls++;
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+            return refreshed();
+          }
+          final isFresh = request.headers['Authorization'] == 'Bearer acesso-2';
+          return isFresh
+              ? jsonResponse({'ok': true})
+              : errorResponse(401, 'invalid_token', 'Sessão inválida.');
+        });
 
-      await Future.wait([
-        client.get('/users/me', authenticated: true),
-        client.get('/favorites', authenticated: true),
-        client.get('/parties', authenticated: true),
-      ]);
+        await Future.wait([
+          client.get('/users/me', authenticated: true),
+          client.get('/favorites', authenticated: true),
+          client.get('/parties', authenticated: true),
+        ]);
 
-      expect(refreshCalls, 1);
-    });
+        expect(refreshCalls, 1);
+      },
+    );
 
     test('sessão recusada pelo servidor é encerrada e avisa o app', () async {
       var expired = 0;
@@ -207,8 +212,7 @@ void main() {
           throw http.ClientException('sem conexão');
         }
         return errorResponse(401, 'invalid_token', 'Sessão inválida.');
-      })
-        ..onSessionExpired = () => expired++;
+      })..onSessionExpired = () => expired++;
 
       await expectLater(
         client.get('/users/me', authenticated: true),
@@ -219,21 +223,23 @@ void main() {
       expect((await storage.read())!.refreshToken, 'renovacao-1');
     });
 
-    test('servidor instável durante a renovação não encerra a sessão',
-        () async {
-      final client = clientWith(
-        (request) => request.url.path.endsWith('/auth/refresh')
-            ? http.Response('Bad Gateway', 502)
-            : errorResponse(401, 'invalid_token', 'Sessão inválida.'),
-      );
+    test(
+      'servidor instável durante a renovação não encerra a sessão',
+      () async {
+        final client = clientWith(
+          (request) => request.url.path.endsWith('/auth/refresh')
+              ? http.Response('Bad Gateway', 502)
+              : errorResponse(401, 'invalid_token', 'Sessão inválida.'),
+        );
 
-      await expectLater(
-        client.get('/users/me', authenticated: true),
-        throwsA(isA<ServerFailure>()),
-      );
+        await expectLater(
+          client.get('/users/me', authenticated: true),
+          throwsA(isA<ServerFailure>()),
+        );
 
-      expect(await storage.read(), isNotNull);
-    });
+        expect(await storage.read(), isNotNull);
+      },
+    );
 
     test('401 em rota pública não tenta renovar', () async {
       final client = clientWith(
@@ -249,7 +255,11 @@ void main() {
         throwsA(
           isA<UnauthorizedFailure>()
               .having((f) => f.code, 'code', 'invalid_credentials')
-              .having((f) => f.message, 'message', 'E-mail ou senha inválidos.'),
+              .having(
+                (f) => f.message,
+                'message',
+                'E-mail ou senha inválidos.',
+              ),
         ),
       );
       expect(requests, hasLength(1));
@@ -340,7 +350,8 @@ void main() {
     test('erro do servidor nunca mostra o corpo ao usuário', () async {
       await expectFailure<ServerFailure>(
         http.Response('<html>stack trace interno</html>', 500),
-        message: 'Tivemos um problema do nosso lado. Tente novamente em instantes.',
+        message:
+            'Tivemos um problema do nosso lado. Tente novamente em instantes.',
       );
     });
 

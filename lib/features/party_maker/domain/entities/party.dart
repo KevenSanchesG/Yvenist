@@ -1,18 +1,18 @@
-import '../enums/party_status.dart';
-import '../rules/party_domain_exceptions.dart';
-import '../value_objects/cancellation_result.dart';
-import '../value_objects/event_date.dart';
-import '../value_objects/guest_count.dart';
-import '../value_objects/money.dart';
-import '../value_objects/party_id.dart';
-import '../value_objects/party_item_id.dart';
-import '../value_objects/party_title.dart';
-import '../value_objects/quantity.dart';
-import '../value_objects/external_ref.dart';
-import '../enums/party_item_category.dart';
-import 'party_budget.dart';
-import 'party_item.dart';
-import 'party_payment_snapshot.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party_budget.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party_item.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party_payment_snapshot.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/cancellation_result.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/event_date.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/guest_count.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_title.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/quantity.dart';
 
 class Party {
   final PartyId id;
@@ -40,14 +40,22 @@ class Party {
     PartyStatus? status,
     PartyBudget? budget,
     this.paymentSnapshot,
-  })  : status = status ?? PartyStatus.draft,
-        budget = budget ?? PartyBudget.empty();
+  }) : status = status ?? PartyStatus.draft,
+       budget = budget ?? PartyBudget.empty();
 
   // ---------- Guards ----------
   void _ensureMutable() {
-    if (status == PartyStatus.locked) throw const PartyLockedMutationNotAllowed();
-    if (status == PartyStatus.paid) throw const InvalidPartyTransition('Party paid não pode ser alterada.');
-    if (status == PartyStatus.cancelled) throw const InvalidPartyTransition('Party cancelada não pode ser alterada.');
+    if (status == PartyStatus.locked) {
+      throw const PartyLockedMutationNotAllowed();
+    }
+    if (status == PartyStatus.paid) {
+      throw const InvalidPartyTransition('Party paid não pode ser alterada.');
+    }
+    if (status == PartyStatus.cancelled) {
+      throw const InvalidPartyTransition(
+        'Party cancelada não pode ser alterada.',
+      );
+    }
   }
 
   void _touch() => updatedAt = DateTime.now();
@@ -55,7 +63,9 @@ class Party {
   // ---------- Lifecycle ----------
   void startPlanning() {
     if (status != PartyStatus.draft) {
-      throw const InvalidPartyTransition('Só é possível iniciar planning a partir de draft.');
+      throw const InvalidPartyTransition(
+        'Só é possível iniciar planning a partir de draft.',
+      );
     }
     status = PartyStatus.planning;
     _touch();
@@ -67,7 +77,7 @@ class Party {
     _touch();
   }
 
-    // Alias semântico pro produto (rename)
+  // Alias semântico pro produto (rename)
   void rename(PartyTitle newTitle) => updateTitle(newTitle);
 
   void setEventDate(EventDate date) {
@@ -93,7 +103,9 @@ class Party {
     String? imageUrlSnapshot,
   }) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition('Só é possível adicionar itens em draft/planning.');
+      throw const InvalidPartyTransition(
+        'Só é possível adicionar itens em draft/planning.',
+      );
     }
 
     final item = PartyItem(
@@ -112,7 +124,9 @@ class Party {
 
   void removeItem(PartyItemId id) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition('Só é possível remover itens em draft/planning.');
+      throw const InvalidPartyTransition(
+        'Só é possível remover itens em draft/planning.',
+      );
     }
     budget = budget.removeItem(id);
     _touch();
@@ -120,7 +134,9 @@ class Party {
 
   void updateItemQuantity(PartyItemId id, Quantity q) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition('Só é possível atualizar quantidade em draft/planning.');
+      throw const InvalidPartyTransition(
+        'Só é possível atualizar quantidade em draft/planning.',
+      );
     }
     budget = budget.updateQuantity(id, q);
     _touch();
@@ -128,7 +144,9 @@ class Party {
 
   void updateItemPrice(PartyItemId id, Money newUnitPriceSnapshot) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition('Só é possível atualizar preço em draft/planning.');
+      throw const InvalidPartyTransition(
+        'Só é possível atualizar preço em draft/planning.',
+      );
     }
     budget = budget.updateUnitPrice(id, newUnitPriceSnapshot);
     _touch();
@@ -137,7 +155,9 @@ class Party {
   // ---------- Lock / Payment ----------
   void lockForPayment() {
     if (status != PartyStatus.planning) {
-      throw const InvalidPartyTransition('Só é possível lockForPayment a partir de planning.');
+      throw const InvalidPartyTransition(
+        'Só é possível lockForPayment a partir de planning.',
+      );
     }
     if (budget.items.isEmpty) throw const CannotLockWithoutItems();
 
@@ -170,7 +190,9 @@ class Party {
 
   void unlock() {
     if (status != PartyStatus.locked) {
-      throw const InvalidPartyTransition('Só é possível unlock a partir de locked.');
+      throw const InvalidPartyTransition(
+        'Só é possível unlock a partir de locked.',
+      );
     }
     paymentSnapshot = null;
     status = PartyStatus.planning;
@@ -179,10 +201,15 @@ class Party {
 
   void confirmPayment() {
     if (status != PartyStatus.locked) {
-      throw const InvalidPartyTransition('Só é possível confirmar pagamento a partir de locked.');
+      throw const InvalidPartyTransition(
+        'Só é possível confirmar pagamento a partir de locked.',
+      );
     }
     if (paymentSnapshot == null) {
-      throw const PartyDomainException('missing_payment_snapshot', 'Snapshot é obrigatório para confirmar pagamento.');
+      throw const PartyDomainException(
+        'missing_payment_snapshot',
+        'Snapshot é obrigatório para confirmar pagamento.',
+      );
     }
     status = PartyStatus.paid;
     _touch();

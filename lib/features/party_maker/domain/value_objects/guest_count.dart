@@ -1,11 +1,14 @@
-import '../rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
 
 class GuestCount {
   final int value;
 
   GuestCount(this.value) {
     if (value < 1) {
-      throw PartyDomainException('invalid_guest_count', 'GuestCount deve ser >= 1.');
+      throw PartyDomainException(
+        'invalid_guest_count',
+        'GuestCount deve ser >= 1.',
+      );
     }
   }
 

@@ -89,7 +89,9 @@ class _CategoryCard extends StatelessWidget {
           title: Text(
             title,
             style: AppTypography.cardTitle.copyWith(
-              color: isAvailable ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isAvailable
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
             ),
           ),
           subtitle: Text(subtitle, style: AppTypography.caption),

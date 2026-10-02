@@ -14,7 +14,8 @@ class PaymentMethodsPage extends StatelessWidget {
       body: const EmptyStateView(
         icon: Icons.credit_card,
         title: 'Pagamento pelo app em breve',
-        message: 'Por enquanto, você solicita o orçamento da festa e combina '
+        message:
+            'Por enquanto, você solicita o orçamento da festa e combina '
             'o pagamento direto com cada fornecedor.',
       ),
     );

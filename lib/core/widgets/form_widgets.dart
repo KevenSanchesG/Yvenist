@@ -60,7 +60,11 @@ class FormErrorBanner extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const ExcludeSemantics(
-              child: Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+              child: Icon(
+                Icons.error_outline,
+                color: AppColors.danger,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -117,7 +121,9 @@ class _PasswordFieldState extends State<PasswordField> {
       onFieldSubmitted: widget.onFieldSubmitted,
       validator: widget.validator,
       autofillHints: [
-        widget.isNewPassword ? AutofillHints.newPassword : AutofillHints.password,
+        widget.isNewPassword
+            ? AutofillHints.newPassword
+            : AutofillHints.password,
       ],
       decoration: InputDecoration(
         labelText: widget.label,

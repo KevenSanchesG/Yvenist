@@ -17,7 +17,10 @@ class FavoritesPage extends StatelessWidget {
     if (!favorites.hasLoaded) {
       body = const LoadingView(label: 'Carregando favoritos');
     } else if (favorites.loadError != null && items.isEmpty) {
-      body = ErrorStateView(message: favorites.loadError!, onRetry: favorites.load);
+      body = ErrorStateView(
+        message: favorites.loadError!,
+        onRetry: favorites.load,
+      );
     } else if (items.isEmpty) {
       body = EmptyStateView(
         icon: Icons.favorite_border,

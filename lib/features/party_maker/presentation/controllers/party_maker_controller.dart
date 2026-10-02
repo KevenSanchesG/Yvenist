@@ -26,14 +26,14 @@ class PartyMakerController extends ChangeNotifier {
     required PartyRepository repository,
     required IdGenerator ids,
     String? ownerId,
-  })  : _repository = repository,
-        _ids = ids,
-        _ownerId = ownerId,
-        _createParty = CreatePartyUseCase(repository),
-        _addItem = AddItemToPartyUseCase(repository),
-        _removeItem = RemoveItemFromPartyUseCase(repository),
-        _lockForPayment = LockPartyForPaymentUseCase(repository),
-        _unlockParty = UnlockPartyUseCase(repository);
+  }) : _repository = repository,
+       _ids = ids,
+       _ownerId = ownerId,
+       _createParty = CreatePartyUseCase(repository),
+       _addItem = AddItemToPartyUseCase(repository),
+       _removeItem = RemoveItemFromPartyUseCase(repository),
+       _lockForPayment = LockPartyForPaymentUseCase(repository),
+       _unlockParty = UnlockPartyUseCase(repository);
 
   final PartyRepository _repository;
   final IdGenerator _ids;

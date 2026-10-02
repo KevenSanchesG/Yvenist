@@ -42,17 +42,19 @@ class _HomeView extends StatelessWidget {
           ),
           Expanded(
             child: switch (state) {
-              LoadInProgress() => const LoadingView(label: 'Carregando anúncios'),
+              LoadInProgress() => const LoadingView(
+                label: 'Carregando anúncios',
+              ),
               LoadFailure(:final failure) => ErrorStateView(
-                  message: failure.message,
-                  onRetry: controller.load,
-                ),
+                message: failure.message,
+                onRetry: controller.load,
+              ),
               LoadSuccess(:final value) => RefreshIndicator(
-                  onRefresh: controller.load,
-                  child: value.sections.isEmpty
-                      ? const _NoListings()
-                      : _Sections(sections: value.sections),
-                ),
+                onRefresh: controller.load,
+                child: value.sections.isEmpty
+                    ? const _NoListings()
+                    : _Sections(sections: value.sections),
+              ),
             },
           ),
         ],
@@ -82,9 +84,9 @@ class _Sections extends StatelessWidget {
                 title: section.title,
                 subtitle: section.subtitle,
                 onSeeAll: () {
-                  context
-                      .read<ExploreController>()
-                      .showCategory(section.categorySlug);
+                  context.read<ExploreController>().showCategory(
+                    section.categorySlug,
+                  );
                   context.read<AppTabController>().goTo(AppTab.explore);
                 },
               ),
@@ -113,7 +115,8 @@ class _NoListings extends StatelessWidget {
             child: const EmptyStateView(
               icon: Icons.storefront_outlined,
               title: 'Ainda não há anúncios por aqui',
-              message: 'Assim que os primeiros fornecedores forem aprovados, '
+              message:
+                  'Assim que os primeiros fornecedores forem aprovados, '
                   'eles aparecem nesta tela.',
             ),
           ),

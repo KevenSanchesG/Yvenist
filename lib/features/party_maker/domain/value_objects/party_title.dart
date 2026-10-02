@@ -1,12 +1,14 @@
-import '../rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
 
 class PartyTitle {
   final String value;
 
-  PartyTitle(String value)
-      : value = value.trim() {
+  PartyTitle(String value) : value = value.trim() {
     if (this.value.isEmpty) {
-      throw PartyDomainException('invalid_party_title', 'Título não pode ser vazio.');
+      throw PartyDomainException(
+        'invalid_party_title',
+        'Título não pode ser vazio.',
+      );
     }
   }
 

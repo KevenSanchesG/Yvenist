@@ -44,7 +44,15 @@ void main() {
     });
 
     test('recusa o que não é um valor', () {
-      for (final invalid in ['', '   ', 'abc', '12,345', '1,2,3', '-5', '12a']) {
+      for (final invalid in [
+        '',
+        '   ',
+        'abc',
+        '12,345',
+        '1,2,3',
+        '-5',
+        '12a',
+      ]) {
         expect(parseBrlToCents(invalid), isNull, reason: 'entrada: "$invalid"');
       }
     });
@@ -130,7 +138,10 @@ void main() {
     });
 
     test('é determinístico com um gerador semeado', () {
-      expect(UuidGenerator(Random(7)).newId(), UuidGenerator(Random(7)).newId());
+      expect(
+        UuidGenerator(Random(7)).newId(),
+        UuidGenerator(Random(7)).newId(),
+      );
     });
   });
 
@@ -195,7 +206,10 @@ void main() {
     test('erros desconhecidos viram uma mensagem genérica', () {
       expect(toFailure(StateError('interno')), isA<UnexpectedFailure>());
       expect(toFailure(const NetworkFailure()), isA<NetworkFailure>());
-      expect(describeFailure(StateError('interno')), isNot(contains('interno')));
+      expect(
+        describeFailure(StateError('interno')),
+        isNot(contains('interno')),
+      );
       expect(
         describeFailure(const ConflictFailure('Já existe um salão.')),
         'Já existe um salão.',

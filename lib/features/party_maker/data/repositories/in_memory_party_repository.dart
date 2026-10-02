@@ -14,9 +14,7 @@ class InMemoryPartyRepository implements PartyRepository {
   @override
   Future<List<Party>> listByOwner(String ownerId) async {
     final parties = _store.values.where((p) => p.ownerId == ownerId).toList()
-      ..sort(
-        (a, b) => _savedAt[b.id.value]!.compareTo(_savedAt[a.id.value]!),
-      );
+      ..sort((a, b) => _savedAt[b.id.value]!.compareTo(_savedAt[a.id.value]!));
     return parties;
   }
 

@@ -16,10 +16,10 @@ sealed class AppFailure implements Exception {
 /// Sem internet, servidor fora do ar ou tempo esgotado.
 final class NetworkFailure extends AppFailure {
   const NetworkFailure()
-      : super(
-          'Sem conexão. Verifique sua internet e tente novamente.',
-          code: 'network',
-        );
+    : super(
+        'Sem conexão. Verifique sua internet e tente novamente.',
+        code: 'network',
+      );
 }
 
 /// Não autenticado: sessão expirada ou credenciais inválidas.
@@ -75,18 +75,20 @@ final class RateLimitedFailure extends AppFailure {
 
 final class ServerFailure extends AppFailure {
   const ServerFailure()
-      : super(
-          'Tivemos um problema do nosso lado. Tente novamente em instantes.',
-          code: 'internal_error',
-        );
+    : super(
+        'Tivemos um problema do nosso lado. Tente novamente em instantes.',
+        code: 'internal_error',
+      );
 }
 
 final class UnexpectedFailure extends AppFailure {
   const UnexpectedFailure()
-      : super('Algo deu errado. Tente novamente.', code: 'unexpected');
+    : super('Algo deu errado. Tente novamente.', code: 'unexpected');
 }
 
 /// Texto para mostrar ao usuário a partir de qualquer erro capturado.
 String describeFailure(Object error) {
-  return error is AppFailure ? error.message : const UnexpectedFailure().message;
+  return error is AppFailure
+      ? error.message
+      : const UnexpectedFailure().message;
 }

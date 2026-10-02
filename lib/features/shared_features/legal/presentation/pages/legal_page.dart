@@ -50,10 +50,7 @@ class LegalPage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 8),
-          const Text(
-            'Seus dados (LGPD)',
-            style: AppTypography.sectionTitle,
-          ),
+          const Text('Seus dados (LGPD)', style: AppTypography.sectionTitle),
           const SizedBox(height: 8),
           Text(
             'Você pode corrigir seus dados em Perfil > Dados Pessoais e apagar '

@@ -36,8 +36,9 @@ Party partyFromJson(Json json) {
     budget: PartyBudget.restore(
       (json['items'] as List).cast<Json>().map(_itemFromJson),
     ),
-    paymentSnapshot:
-        snapshot == null ? null : _snapshotFromJson(partyId, snapshot),
+    paymentSnapshot: snapshot == null
+        ? null
+        : _snapshotFromJson(partyId, snapshot),
     createdAt: DateTime.parse(json['created_at'] as String),
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );
@@ -91,7 +92,10 @@ PartyPaymentSnapshot _snapshotFromJson(PartyId partyId, Json json) {
     partyId: partyId,
     generatedAt: DateTime.parse(json['generated_at'] as String),
     expiresAt: expiresAt == null ? null : DateTime.parse(expiresAt),
-    totalAmount: Money.fromCents(json['total_cents'] as int, currency: currency),
+    totalAmount: Money.fromCents(
+      json['total_cents'] as int,
+      currency: currency,
+    ),
     breakdown: [
       for (final line in (json['breakdown'] as List).cast<Json>())
         SnapshotLineItem(

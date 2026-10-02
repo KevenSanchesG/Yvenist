@@ -41,7 +41,7 @@ class HomeController extends ChangeNotifier {
   static const int listingsPerSection = 8;
 
   static const List<({String title, String subtitle, String category})>
-      _sections = [
+  _sections = [
     (
       title: 'Salões muito procurados',
       subtitle: 'Descubra os melhores espaços para sua festa',
@@ -99,7 +99,9 @@ class HomeController extends ChangeNotifier {
       );
     } catch (error) {
       // Se já havia conteúdo (atualização que falhou), mantém o que estava.
-      if (_state is! LoadSuccess<HomeFeed>) _state = LoadFailure(toFailure(error));
+      if (_state is! LoadSuccess<HomeFeed>) {
+        _state = LoadFailure(toFailure(error));
+      }
     }
     _notify();
   }

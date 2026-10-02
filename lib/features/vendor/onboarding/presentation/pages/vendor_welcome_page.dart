@@ -69,7 +69,11 @@ class VendorWelcomePage extends StatelessWidget {
                       child: Row(
                         children: [
                           ExcludeSemantics(
-                            child: Icon(benefit.icon, color: AppColors.primary, size: 20),
+                            child: Icon(
+                              benefit.icon,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(

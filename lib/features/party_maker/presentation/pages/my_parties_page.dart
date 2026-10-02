@@ -74,7 +74,7 @@ class _PartyCard extends StatelessWidget {
     final summary = itemCount == 0
         ? 'Sem itens'
         : '$itemCount ${itemCount == 1 ? 'item' : 'itens'} • '
-            '${formatBrl(party.budget.total.cents)}';
+              '${formatBrl(party.budget.total.cents)}';
 
     return Material(
       color: Colors.white,

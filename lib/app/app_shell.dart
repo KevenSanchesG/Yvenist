@@ -8,10 +8,10 @@ import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/auth/presentation/auth_gate.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
-import 'package:yvenist/features/client/shared/listing_search_controller.dart';
 import 'package:yvenist/features/client/explore/presentation/pages/explore_page.dart';
 import 'package:yvenist/features/client/home/presentation/pages/home_page.dart';
 import 'package:yvenist/features/client/profile/presentation/pages/profile_page.dart';
+import 'package:yvenist/features/client/shared/listing_search_controller.dart';
 import 'package:yvenist/features/party_maker/presentation/pages/party_maker_entry_page.dart';
 import 'package:yvenist/features/shared_features/chat/presentation/pages/chat_page.dart';
 
@@ -63,7 +63,9 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
             index: current.index,
             children: [
               for (final tab in AppTab.values)
-                _visited.contains(tab) ? _tabRoot(tab) : const SizedBox.shrink(),
+                _visited.contains(tab)
+                    ? _tabRoot(tab)
+                    : const SizedBox.shrink(),
             ],
           ),
           bottomNavigationBar: AppBottomNavBar(
@@ -80,19 +82,20 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
       AppTab.home => const HomePage(),
       AppTab.explore => const ExplorePage(),
       AppTab.partyMaker => const _RequiresAccount(
-          title: 'Monte a sua festa',
-          message: 'Entre para reunir salão, atrações e serviços em um só '
-              'lugar e pedir o orçamento.',
-          reason: 'Entre para montar a sua festa.',
-          child: PartyMakerEntryPage(),
-        ),
+        title: 'Monte a sua festa',
+        message:
+            'Entre para reunir salão, atrações e serviços em um só '
+            'lugar e pedir o orçamento.',
+        reason: 'Entre para montar a sua festa.',
+        child: PartyMakerEntryPage(),
+      ),
       AppTab.chat => const ChatPage(),
       AppTab.profile => const _RequiresAccount(
-          title: 'Sua conta',
-          message: 'Entre para ver seus dados, festas e favoritos.',
-          reason: 'Entre para acessar a sua conta.',
-          child: ProfilePage(),
-        ),
+        title: 'Sua conta',
+        message: 'Entre para ver seus dados, festas e favoritos.',
+        reason: 'Entre para acessar a sua conta.',
+        child: ProfilePage(),
+      ),
     };
   }
 }
@@ -120,23 +123,24 @@ class _RequiresAccount extends StatelessWidget {
       SessionStatus.signedIn => child,
       SessionStatus.restoring => const Scaffold(body: LoadingView()),
       SessionStatus.restoreFailed => Scaffold(
-          body: ErrorStateView(
-            message: 'Não foi possível verificar a sua sessão. '
-                'Confira a conexão e tente de novo.',
-            onRetry: session.restore,
-          ),
+        body: ErrorStateView(
+          message:
+              'Não foi possível verificar a sua sessão. '
+              'Confira a conexão e tente de novo.',
+          onRetry: session.restore,
         ),
+      ),
       SessionStatus.signedOut => Scaffold(
-          body: SafeArea(
-            child: EmptyStateView(
-              icon: Icons.account_circle_outlined,
-              title: title,
-              message: message,
-              actionLabel: 'Entrar ou criar conta',
-              onAction: () => ensureSignedIn(context, reason: reason),
-            ),
+        body: SafeArea(
+          child: EmptyStateView(
+            icon: Icons.account_circle_outlined,
+            title: title,
+            message: message,
+            actionLabel: 'Entrar ou criar conta',
+            onAction: () => ensureSignedIn(context, reason: reason),
           ),
         ),
+      ),
     };
   }
 }

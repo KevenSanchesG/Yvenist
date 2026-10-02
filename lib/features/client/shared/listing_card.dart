@@ -15,7 +15,7 @@ String listingSemanticLabel(Listing listing) {
   final price = formatBrl(listing.priceFromCents, hideZeroCents: true);
   final rating = listing.hasRatings
       ? 'Nota ${formatRating(listing.ratingAverage)} de 5, '
-          '${listing.ratingCount} avaliações'
+            '${listing.ratingCount} avaliações'
       : 'Ainda sem avaliações';
   return '${listing.title}. A partir de $price. $rating. '
       '${listing.locationLabel}.';
@@ -164,7 +164,11 @@ class LocationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primary),
+        const Icon(
+          Icons.location_on_outlined,
+          size: 14,
+          color: AppColors.primary,
+        ),
         const SizedBox(width: 4),
         Expanded(
           child: Text(

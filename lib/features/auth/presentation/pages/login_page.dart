@@ -46,9 +46,9 @@ class _LoginPageState extends State<LoginPage> {
     FocusScope.of(context).unfocus();
 
     final signedIn = await context.read<SessionController>().signIn(
-          email: _email.text,
-          password: _password.text,
-        );
+      email: _email.text,
+      password: _password.text,
+    );
     if (signedIn && mounted) Navigator.pop(context, true);
   }
 

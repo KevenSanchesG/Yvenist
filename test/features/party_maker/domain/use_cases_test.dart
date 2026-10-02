@@ -26,9 +26,12 @@ void main() {
   late InMemoryPartyRepository repository;
 
   Matcher throwsPartyNotFound() => throwsA(
-        isA<PartyDomainException>()
-            .having((e) => e.code, 'code', 'party_not_found'),
-      );
+    isA<PartyDomainException>().having(
+      (e) => e.code,
+      'code',
+      'party_not_found',
+    ),
+  );
 
   Future<void> createPlanningParty() async {
     await CreatePartyUseCase(repository)(
@@ -92,7 +95,10 @@ void main() {
     });
 
     test('falha para festa inexistente', () {
-      expect(StartPlanningUseCase(repository)(missingId), throwsPartyNotFound());
+      expect(
+        StartPlanningUseCase(repository)(missingId),
+        throwsPartyNotFound(),
+      );
     });
   });
 
@@ -257,30 +263,32 @@ void main() {
   });
 
   group('InMemoryPartyRepository', () {
-    test('lista só as festas do dono, da mais recente para a mais antiga',
-        () async {
-      final create = CreatePartyUseCase(repository);
-      await create(
-        partyId: const PartyId('a'),
-        ownerId: 'user-1',
-        title: PartyTitle('Primeira'),
-      );
-      await create(
-        partyId: const PartyId('b'),
-        ownerId: 'user-2',
-        title: PartyTitle('De outra pessoa'),
-      );
-      await create(
-        partyId: const PartyId('c'),
-        ownerId: 'user-1',
-        title: PartyTitle('Segunda'),
-        startPlanning: true,
-      );
+    test(
+      'lista só as festas do dono, da mais recente para a mais antiga',
+      () async {
+        final create = CreatePartyUseCase(repository);
+        await create(
+          partyId: const PartyId('a'),
+          ownerId: 'user-1',
+          title: PartyTitle('Primeira'),
+        );
+        await create(
+          partyId: const PartyId('b'),
+          ownerId: 'user-2',
+          title: PartyTitle('De outra pessoa'),
+        );
+        await create(
+          partyId: const PartyId('c'),
+          ownerId: 'user-1',
+          title: PartyTitle('Segunda'),
+          startPlanning: true,
+        );
 
-      final parties = await repository.listByOwner('user-1');
+        final parties = await repository.listByOwner('user-1');
 
-      expect(parties.map((p) => p.id.value), ['c', 'a']);
-    });
+        expect(parties.map((p) => p.id.value), ['c', 'a']);
+      },
+    );
   });
 
   group('CancelPartyUseCase', () {

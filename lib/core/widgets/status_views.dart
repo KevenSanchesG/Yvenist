@@ -77,7 +77,11 @@ class EmptyStateView extends StatelessWidget {
 
 /// Estado de erro com caminho de recuperação: sempre oferece tentar de novo.
 class ErrorStateView extends StatelessWidget {
-  const ErrorStateView({super.key, required this.message, required this.onRetry});
+  const ErrorStateView({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
 
   final String message;
   final VoidCallback onRetry;

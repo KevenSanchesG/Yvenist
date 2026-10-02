@@ -9,9 +9,9 @@ sealed class LoadState<T> {
 
   /// O valor carregado, ou `null` enquanto carrega ou após falhar.
   T? get valueOrNull => switch (this) {
-        LoadSuccess<T>(:final value) => value,
-        _ => null,
-      };
+    LoadSuccess<T>(:final value) => value,
+    _ => null,
+  };
 
   bool get isLoading => this is LoadInProgress<T>;
 }

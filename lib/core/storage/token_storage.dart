@@ -26,7 +26,7 @@ abstract interface class TokenStorage {
 /// Nunca em `SharedPreferences`: lá ficariam em texto puro.
 class SecureTokenStorage implements TokenStorage {
   SecureTokenStorage([FlutterSecureStorage? storage])
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _accessKey = 'yvenist.access_token';
   static const _refreshKey = 'yvenist.refresh_token';

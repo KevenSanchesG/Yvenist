@@ -75,7 +75,11 @@ class ListingSearchController extends ChangeNotifier {
     _notify();
 
     try {
-      final page = await _catalog.search(_query, cursor: cursor, limit: pageSize);
+      final page = await _catalog.search(
+        _query,
+        cursor: cursor,
+        limit: pageSize,
+      );
       if (generation != _generation) return;
       _items.addAll(page.items);
       _nextCursor = page.nextCursor;

@@ -6,7 +6,7 @@ import 'package:yvenist/features/vendor/domain/vendor_repository.dart';
 /// Cadastros de fornecedor em memória, por conta: modo demonstração e testes.
 class InMemoryVendorRepository implements VendorRepository, DemoVendorApproval {
   InMemoryVendorRepository({required String? Function() currentUserId})
-      : _currentUserId = currentUserId;
+    : _currentUserId = currentUserId;
 
   final String? Function() _currentUserId;
   final Map<String, VendorProfile> _profiles = {};
@@ -47,7 +47,9 @@ class InMemoryVendorRepository implements VendorRepository, DemoVendorApproval {
             documentMasked: _mask(document),
           );
     _profiles[userId] = profile;
-    _listings.putIfAbsent(userId, () => []).insert(
+    _listings
+        .putIfAbsent(userId, () => [])
+        .insert(
           0,
           VendorListing(
             id: 'demo-listing-${++_sequence}',

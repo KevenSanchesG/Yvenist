@@ -24,7 +24,11 @@ class AppBottomNavBar extends StatelessWidget {
     return DecoratedBox(
       decoration: const BoxDecoration(
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
         ],
       ),
       // Material (e não um Container colorido) para o efeito de toque dos
@@ -33,10 +37,7 @@ class AppBottomNavBar extends StatelessWidget {
         color: AppColors.bottomNavBackground,
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: SizedBox(
-            height: _barHeight,
-            child: _buildItems(),
-          ),
+          child: SizedBox(height: _barHeight, child: _buildItems()),
         ),
       ),
     );
@@ -44,69 +45,69 @@ class AppBottomNavBar extends StatelessWidget {
 
   Widget _buildItems() {
     return Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _NavItem(
-                    icon: Icons.home,
-                    label: 'Início',
-                    isSelected: current == AppTab.home,
-                    onTap: () => onSelected(AppTab.home),
-                  ),
-                  _NavItem(
-                    icon: Icons.explore_outlined,
-                    label: 'Explorar',
-                    isSelected: current == AppTab.explore,
-                    onTap: () => onSelected(AppTab.explore),
-                  ),
-                  // Espaço do botão central.
-                  const SizedBox(width: 64),
-                  _NavItem(
-                    icon: Icons.chat_bubble_outline,
-                    label: 'Chat',
-                    isSelected: current == AppTab.chat,
-                    onTap: () => onSelected(AppTab.chat),
-                  ),
-                  _NavItem(
-                    icon: Icons.person_outline,
-                    label: 'Perfil',
-                    isSelected: current == AppTab.profile,
-                    onTap: () => onSelected(AppTab.profile),
-                  ),
-                ],
+      clipBehavior: Clip.none,
+      alignment: Alignment.bottomCenter,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _NavItem(
+                icon: Icons.home,
+                label: 'Início',
+                isSelected: current == AppTab.home,
+                onTap: () => onSelected(AppTab.home),
               ),
-            ),
-            Positioned(
-              bottom: 20,
-              child: Semantics(
-                button: true,
-                selected: current == AppTab.partyMaker,
-                label: 'Minhas festas',
-                child: Material(
-                  color: AppColors.primary,
-                  shape: const CircleBorder(
-                    side: BorderSide(color: Colors.white, width: 4),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => onSelected(AppTab.partyMaker),
-                    child: const SizedBox(
-                      width: 64,
-                      height: 64,
-                      child: ExcludeSemantics(
-                        child: Icon(Icons.cake, color: Colors.white, size: 30),
-                      ),
-                    ),
+              _NavItem(
+                icon: Icons.explore_outlined,
+                label: 'Explorar',
+                isSelected: current == AppTab.explore,
+                onTap: () => onSelected(AppTab.explore),
+              ),
+              // Espaço do botão central.
+              const SizedBox(width: 64),
+              _NavItem(
+                icon: Icons.chat_bubble_outline,
+                label: 'Chat',
+                isSelected: current == AppTab.chat,
+                onTap: () => onSelected(AppTab.chat),
+              ),
+              _NavItem(
+                icon: Icons.person_outline,
+                label: 'Perfil',
+                isSelected: current == AppTab.profile,
+                onTap: () => onSelected(AppTab.profile),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: 20,
+          child: Semantics(
+            button: true,
+            selected: current == AppTab.partyMaker,
+            label: 'Minhas festas',
+            child: Material(
+              color: AppColors.primary,
+              shape: const CircleBorder(
+                side: BorderSide(color: Colors.white, width: 4),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onSelected(AppTab.partyMaker),
+                child: const SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: ExcludeSemantics(
+                    child: Icon(Icons.cake, color: Colors.white, size: 30),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -128,9 +129,12 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // O ícone pode usar o laranja da marca (contraste de 3:1 basta para
     // elementos gráficos); o texto pequeno usa a versão escurecida.
-    final iconColor = isSelected ? AppColors.primary : AppColors.navIconInactive;
-    final labelColor =
-        isSelected ? AppColors.primaryStrong : AppColors.navIconInactive;
+    final iconColor = isSelected
+        ? AppColors.primary
+        : AppColors.navIconInactive;
+    final labelColor = isSelected
+        ? AppColors.primaryStrong
+        : AppColors.navIconInactive;
 
     return Semantics(
       button: true,
@@ -170,8 +174,9 @@ class _NavItem extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.navLabel.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: labelColor,
                       ),
                     ),

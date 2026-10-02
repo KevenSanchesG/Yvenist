@@ -25,10 +25,10 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser> signIn({required String email, required String password}) {
-    return _startSession(
-      '/auth/login',
-      {'email': email.trim(), 'password': password},
-    );
+    return _startSession('/auth/login', {
+      'email': email.trim(),
+      'password': password,
+    });
   }
 
   @override
@@ -52,7 +52,10 @@ class ApiAuthRepository implements AuthRepository {
     await _tokens.clear();
     if (tokens == null) return;
     try {
-      await _api.post('/auth/logout', body: {'refresh_token': tokens.refreshToken});
+      await _api.post(
+        '/auth/logout',
+        body: {'refresh_token': tokens.refreshToken},
+      );
     } on AppFailure {
       // Sem rede, a sessão local já foi encerrada; a do servidor expira sozinha.
     }
@@ -64,15 +67,17 @@ class ApiAuthRepository implements AuthRepository {
     required String? phone,
     required DateTime? birthDate,
   }) async {
-    final json = await _api.patch(
-      '/users/me',
-      authenticated: true,
-      body: {
-        'full_name': fullName.trim(),
-        'phone': (phone == null || phone.trim().isEmpty) ? null : phone,
-        'birth_date': birthDate == null ? null : _dateOnly(birthDate),
-      },
-    ) as Json;
+    final json =
+        await _api.patch(
+              '/users/me',
+              authenticated: true,
+              body: {
+                'full_name': fullName.trim(),
+                'phone': (phone == null || phone.trim().isEmpty) ? null : phone,
+                'birth_date': birthDate == null ? null : _dateOnly(birthDate),
+              },
+            )
+            as Json;
     return userFromJson(json);
   }
 
@@ -81,11 +86,16 @@ class ApiAuthRepository implements AuthRepository {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final json = await _api.post(
-      '/users/me/password',
-      authenticated: true,
-      body: {'current_password': currentPassword, 'new_password': newPassword},
-    ) as Json;
+    final json =
+        await _api.post(
+              '/users/me/password',
+              authenticated: true,
+              body: {
+                'current_password': currentPassword,
+                'new_password': newPassword,
+              },
+            )
+            as Json;
     // A troca invalida os tokens antigos; a resposta traz o novo par.
     await _tokens.write(AuthTokens.fromJson(json));
   }

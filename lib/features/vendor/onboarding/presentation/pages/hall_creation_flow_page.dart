@@ -103,8 +103,14 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
   bool get _hasInput =>
       _eventTypes.isNotEmpty ||
       _amenities.isNotEmpty ||
-      [_document, _legalName, _title, _description, _city, _price]
-          .any((controller) => controller.text.trim().isNotEmpty);
+      [
+        _document,
+        _legalName,
+        _title,
+        _description,
+        _city,
+        _price,
+      ].any((controller) => controller.text.trim().isNotEmpty);
 
   // ------------------------------------------------------------------
   // Navegação entre etapas
@@ -232,7 +238,9 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
   String? _validateDocument(String? value) {
     final document = normalizeDocument(value ?? '');
     final isCompany = _personType == PersonType.company;
-    if (document.isEmpty) return isCompany ? 'Informe o CNPJ.' : 'Informe o CPF.';
+    if (document.isEmpty) {
+      return isCompany ? 'Informe o CNPJ.' : 'Informe o CPF.';
+    }
     final isValid = isCompany ? isValidCnpj(document) : isValidCpf(document);
     if (!isValid) return isCompany ? 'CNPJ inválido.' : 'CPF inválido.';
     return null;
@@ -246,14 +254,18 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return null;
     final number = int.tryParse(text);
-    return (number == null || number <= 0) ? 'Informe um número maior que zero.' : null;
+    return (number == null || number <= 0)
+        ? 'Informe um número maior que zero.'
+        : null;
   }
 
   static String? _validatePrice(String? value) {
     final cents = parseBrlToCents(value ?? '');
     if (cents == null) return 'Informe o preço, por exemplo 1500 ou 1.500,00.';
     if (cents <= 0) return 'O preço precisa ser maior que zero.';
-    if (cents > _maxPriceCents) return 'O preço máximo é ${formatBrl(_maxPriceCents)}.';
+    if (cents > _maxPriceCents) {
+      return 'O preço máximo é ${formatBrl(_maxPriceCents)}.';
+    }
     return null;
   }
 
@@ -331,8 +343,14 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
       children: [
         SegmentedButton<PersonType>(
           segments: const [
-            ButtonSegment(value: PersonType.individual, label: Text('Pessoa Física')),
-            ButtonSegment(value: PersonType.company, label: Text('Pessoa Jurídica')),
+            ButtonSegment(
+              value: PersonType.individual,
+              label: Text('Pessoa Física'),
+            ),
+            ButtonSegment(
+              value: PersonType.company,
+              label: Text('Pessoa Jurídica'),
+            ),
           ],
           selected: {_personType},
           onSelectionChanged: (selection) =>
@@ -489,7 +507,8 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
             final types = snapshot.data ?? const <EventType>[];
             if (types.isEmpty) {
               return const FormErrorBanner(
-                message: 'Não foi possível carregar os tipos de evento. '
+                message:
+                    'Não foi possível carregar os tipos de evento. '
                     'Volte e tente de novo.',
               );
             }
@@ -514,7 +533,9 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         ),
         if (_showEventTypeError) ...[
           const SizedBox(height: 16),
-          const FormErrorBanner(message: 'Escolha pelo menos um tipo de evento.'),
+          const FormErrorBanner(
+            message: 'Escolha pelo menos um tipo de evento.',
+          ),
         ],
       ],
     );
@@ -636,7 +657,9 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
               _ReviewRow(label: 'Eventos', value: eventNames.join(', ')),
               _ReviewRow(
                 label: 'Estrutura',
-                value: amenityNames.isEmpty ? 'Não informada' : amenityNames.join(', '),
+                value: amenityNames.isEmpty
+                    ? 'Não informada'
+                    : amenityNames.join(', '),
               ),
               _ReviewRow(
                 label: 'Preço a partir de',
@@ -644,7 +667,9 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
               ),
               _ReviewRow(
                 label: 'Cancelamento',
-                value: _policy == CancellationPolicy.flexible ? 'Flexível' : 'Moderada',
+                value: _policy == CancellationPolicy.flexible
+                    ? 'Flexível'
+                    : 'Moderada',
               ),
             ],
           ),
@@ -686,7 +711,9 @@ class _Step extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle!,
-              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
           const SizedBox(height: 24),
@@ -719,7 +746,11 @@ class _BottomBar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5)),
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -5),
+          ),
         ],
       ),
       child: Row(
@@ -766,7 +797,11 @@ class _ReviewRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(value, style: AppTypography.body, textAlign: TextAlign.end),
+            child: Text(
+              value,
+              style: AppTypography.body,
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),

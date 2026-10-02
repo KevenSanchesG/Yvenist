@@ -61,10 +61,10 @@ class _RegisterPageState extends State<RegisterPage> {
     FocusScope.of(context).unfocus();
 
     final created = await context.read<SessionController>().signUp(
-          fullName: _name.text,
-          email: _email.text,
-          password: _password.text,
-        );
+      fullName: _name.text,
+      email: _email.text,
+      password: _password.text,
+    );
     if (created && mounted) Navigator.pop(context, true);
   }
 
@@ -73,8 +73,9 @@ class _RegisterPageState extends State<RegisterPage> {
     final session = context.watch<SessionController>();
     final failure = session.failure;
     // Erros que o servidor atribuiu a um campo aparecem no próprio campo.
-    final serverFields =
-        failure is ValidationFailure ? failure.fieldErrors : const <String, String>{};
+    final serverFields = failure is ValidationFailure
+        ? failure.fieldErrors
+        : const <String, String>{};
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar conta')),
@@ -97,9 +98,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.name],
                     validator: validateFullName,
-                    forceErrorText:
-                        serverFields.containsKey('full_name') ? 'Nome inválido.' : null,
-                    decoration: const InputDecoration(labelText: 'Nome completo'),
+                    forceErrorText: serverFields.containsKey('full_name')
+                        ? 'Nome inválido.'
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome completo',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -109,8 +113,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     autocorrect: false,
                     autofillHints: const [AutofillHints.email],
                     validator: validateEmail,
-                    forceErrorText:
-                        serverFields.containsKey('email') ? 'E-mail inválido.' : null,
+                    forceErrorText: serverFields.containsKey('email')
+                        ? 'E-mail inválido.'
+                        : null,
                     decoration: const InputDecoration(labelText: 'E-mail'),
                   ),
                   const SizedBox(height: 16),

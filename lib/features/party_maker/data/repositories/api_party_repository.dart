@@ -52,11 +52,13 @@ class ApiPartyRepository implements PartyRepository {
   Future<Party> save(Party party) async {
     final version = _confirmed[party.id.value]?['version'] as int?;
     try {
-      final json = await _api.put(
-        '/parties/${party.id.value}',
-        authenticated: true,
-        body: partyToJson(party, version: version),
-      ) as Json;
+      final json =
+          await _api.put(
+                '/parties/${party.id.value}',
+                authenticated: true,
+                body: partyToJson(party, version: version),
+              )
+              as Json;
       return _remember(json);
     } on ConflictFailure {
       // A cópia local ficou para trás: esquece, para a próxima leitura buscar

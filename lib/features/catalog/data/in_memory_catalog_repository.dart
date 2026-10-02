@@ -40,8 +40,7 @@ class InMemoryCatalogRepository implements CatalogRepository {
         return false;
       }
       return term.isEmpty || _searchText(listing).contains(term);
-    }).toList()
-      ..sort((a, b) => _compare(a, b, query.sort));
+    }).toList()..sort((a, b) => _compare(a, b, query.sort));
 
     // O cursor é simplesmente a posição do próximo item.
     final start = int.tryParse(cursor ?? '') ?? 0;
@@ -68,12 +67,15 @@ class InMemoryCatalogRepository implements CatalogRepository {
 
   static int _compare(DemoListing a, DemoListing b, ListingSort sort) {
     final byKey = switch (sort) {
-      ListingSort.popular =>
-        b.listing.ratingCount.compareTo(a.listing.ratingCount),
-      ListingSort.priceAsc =>
-        a.listing.priceFromCents.compareTo(b.listing.priceFromCents),
-      ListingSort.priceDesc =>
-        b.listing.priceFromCents.compareTo(a.listing.priceFromCents),
+      ListingSort.popular => b.listing.ratingCount.compareTo(
+        a.listing.ratingCount,
+      ),
+      ListingSort.priceAsc => a.listing.priceFromCents.compareTo(
+        b.listing.priceFromCents,
+      ),
+      ListingSort.priceDesc => b.listing.priceFromCents.compareTo(
+        a.listing.priceFromCents,
+      ),
       ListingSort.recent => b.publishedOrder.compareTo(a.publishedOrder),
     };
     // Desempate por id: a ordem é sempre a mesma entre uma página e outra.
@@ -82,12 +84,30 @@ class InMemoryCatalogRepository implements CatalogRepository {
 }
 
 const Map<String, String> _accents = {
-  'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a',
-  'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-  'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-  'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
-  'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-  'ç': 'c', 'ñ': 'n',
+  'á': 'a',
+  'à': 'a',
+  'â': 'a',
+  'ã': 'a',
+  'ä': 'a',
+  'é': 'e',
+  'è': 'e',
+  'ê': 'e',
+  'ë': 'e',
+  'í': 'i',
+  'ì': 'i',
+  'î': 'i',
+  'ï': 'i',
+  'ó': 'o',
+  'ò': 'o',
+  'ô': 'o',
+  'õ': 'o',
+  'ö': 'o',
+  'ú': 'u',
+  'ù': 'u',
+  'û': 'u',
+  'ü': 'u',
+  'ç': 'c',
+  'ñ': 'n',
 };
 
 /// Minúsculas, sem acentos e com espaços simples, como o backend faz.
@@ -97,5 +117,9 @@ String normalizeSearchText(String value) {
   for (final char in lower.split('')) {
     buffer.write(_accents[char] ?? char);
   }
-  return buffer.toString().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).join(' ');
+  return buffer
+      .toString()
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .join(' ');
 }

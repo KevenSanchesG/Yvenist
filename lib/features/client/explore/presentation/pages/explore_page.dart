@@ -31,7 +31,8 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget build(BuildContext context) {
     final controller = context.watch<ExploreController>();
     final query = controller.query;
-    final hasFilters = query.categorySlug != null || query.eventTypeSlug != null;
+    final hasFilters =
+        query.categorySlug != null || query.eventTypeSlug != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -81,7 +82,8 @@ class _ExplorePageState extends State<ExplorePage> {
                   FilterChip(
                     label: Text(eventType.name),
                     selected: query.eventTypeSlug == eventType.slug,
-                    onSelected: (_) => controller.toggleEventType(eventType.slug),
+                    onSelected: (_) =>
+                        controller.toggleEventType(eventType.slug),
                   ),
               ],
             ),

@@ -29,7 +29,8 @@ class HorizontalCardList extends StatelessWidget {
           16,
         ),
         itemCount: listings.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.cardSpacing),
+        separatorBuilder: (_, _) =>
+            const SizedBox(width: AppSpacing.cardSpacing),
         itemBuilder: (_, index) => ListingCard(listing: listings[index]),
       ),
     );

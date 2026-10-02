@@ -9,9 +9,8 @@ import 'package:yvenist/features/party_maker/domain/value_objects/party_item_id.
 import 'package:yvenist/features/party_maker/domain/value_objects/party_title.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/quantity.dart';
 
-Matcher throwsDomainCode(String code) => throwsA(
-      isA<PartyDomainException>().having((e) => e.code, 'code', code),
-    );
+Matcher throwsDomainCode(String code) =>
+    throwsA(isA<PartyDomainException>().having((e) => e.code, 'code', code));
 
 void main() {
   group('Money', () {
@@ -52,7 +51,10 @@ void main() {
     test('compara por valor e moeda', () {
       expect(Money.fromCents(100), Money.fromCents(100));
       expect(Money.fromCents(100).hashCode, Money.fromCents(100).hashCode);
-      expect(Money.fromCents(100), isNot(Money.fromCents(100, currency: 'USD')));
+      expect(
+        Money.fromCents(100),
+        isNot(Money.fromCents(100, currency: 'USD')),
+      );
       expect(Money.fromCents(100).compareTo(Money.fromCents(200)), lessThan(0));
     });
   });

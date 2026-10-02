@@ -1,10 +1,10 @@
-import '../enums/party_item_category.dart';
-import '../rules/party_domain_exceptions.dart';
-import '../value_objects/external_ref.dart';
-import '../value_objects/money.dart';
-import '../value_objects/party_item_id.dart';
-import '../value_objects/quantity.dart';
-import 'party_item.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party_item.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/quantity.dart';
 
 class PartyBudget {
   final List<PartyItem> _items;
@@ -51,9 +51,7 @@ class PartyBudget {
     return null;
   }
 
-  PartyBudget addOrMergeItem({
-    required PartyItem newItem,
-  }) {
+  PartyBudget addOrMergeItem({required PartyItem newItem}) {
     // Invariante: venue único
     if (newItem.category == PartyItemCategory.venue && hasVenue()) {
       // Se já existe venue (mesmo externalRef) ainda assim faz sentido bloquear,
@@ -68,8 +66,12 @@ class PartyBudget {
     }
 
     // Regra: mescla por externalRef (soma quantity)
-    final merged = existing.withQuantity(existing.quantity.add(newItem.quantity));
-    final updated = _items.map((i) => i.id == existing.id ? merged : i).toList();
+    final merged = existing.withQuantity(
+      existing.quantity.add(newItem.quantity),
+    );
+    final updated = _items
+        .map((i) => i.id == existing.id ? merged : i)
+        .toList();
     return PartyBudget._(updated);
   }
 
@@ -83,14 +85,18 @@ class PartyBudget {
   PartyBudget updateQuantity(PartyItemId id, Quantity q) {
     final item = findById(id);
     if (item == null) throw const PartyItemNotFound();
-    final updated = _items.map((i) => i.id == id ? i.withQuantity(q) : i).toList();
+    final updated = _items
+        .map((i) => i.id == id ? i.withQuantity(q) : i)
+        .toList();
     return PartyBudget._(updated);
   }
 
   PartyBudget updateUnitPrice(PartyItemId id, Money newPrice) {
     final item = findById(id);
     if (item == null) throw const PartyItemNotFound();
-    final updated = _items.map((i) => i.id == id ? i.withUnitPrice(newPrice) : i).toList();
+    final updated = _items
+        .map((i) => i.id == id ? i.withUnitPrice(newPrice) : i)
+        .toList();
     return PartyBudget._(updated);
   }
 }

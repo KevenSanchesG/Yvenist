@@ -5,7 +5,7 @@ import 'package:yvenist/features/client/favorites/domain/favorites_repository.da
 /// Favoritos em memória, separados por conta: modo demonstração e testes.
 class InMemoryFavoritesRepository implements FavoritesRepository {
   InMemoryFavoritesRepository({required String? Function() currentUserId})
-      : _currentUserId = currentUserId;
+    : _currentUserId = currentUserId;
 
   final String? Function() _currentUserId;
   final Map<String, List<Listing>> _byUser = {};

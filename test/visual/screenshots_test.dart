@@ -49,7 +49,9 @@ void main() {
   });
 
   screenshots('busca', (tester) async {
-    await tester.tap(find.bySemanticsLabel('Buscar salões, atrações e serviços'));
+    await tester.tap(
+      find.bySemanticsLabel('Buscar salões, atrações e serviços'),
+    );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'salão');
     await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -105,22 +107,18 @@ void main() {
     await capture(tester, 'dados-pessoais');
   });
 
-  screenshots(
-    'entrar',
-    signedIn: false,
-    (tester) async {
-      await openTab(tester, 'Perfil');
-      await capture(tester, 'perfil-visitante');
+  screenshots('entrar', signedIn: false, (tester) async {
+    await openTab(tester, 'Perfil');
+    await capture(tester, 'perfil-visitante');
 
-      await tester.tap(find.text('Entrar ou criar conta'));
-      await tester.pumpAndSettle();
-      await capture(tester, 'entrar');
+    await tester.tap(find.text('Entrar ou criar conta'));
+    await tester.pumpAndSettle();
+    await capture(tester, 'entrar');
 
-      await tester.tap(find.text('Não tem conta? Criar conta'));
-      await tester.pumpAndSettle();
-      await capture(tester, 'criar-conta');
-    },
-  );
+    await tester.tap(find.text('Não tem conta? Criar conta'));
+    await tester.pumpAndSettle();
+    await capture(tester, 'criar-conta');
+  });
 
   screenshots('anunciar um salão', (tester) async {
     await openTab(tester, 'Perfil');

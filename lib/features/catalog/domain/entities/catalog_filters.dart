@@ -59,8 +59,9 @@ class ListingQuery {
     return ListingQuery(
       text: text != null ? text() : this.text,
       categorySlug: categorySlug != null ? categorySlug() : this.categorySlug,
-      eventTypeSlug:
-          eventTypeSlug != null ? eventTypeSlug() : this.eventTypeSlug,
+      eventTypeSlug: eventTypeSlug != null
+          ? eventTypeSlug()
+          : this.eventTypeSlug,
       sort: sort ?? this.sort,
     );
   }

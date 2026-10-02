@@ -23,7 +23,10 @@ class ApiVendorRepository implements VendorRepository {
     try {
       final json =
           await _api.get('/vendors/me/listings', authenticated: true) as Json;
-      return (json['items'] as List).cast<Json>().map(_listingFromJson).toList();
+      return (json['items'] as List)
+          .cast<Json>()
+          .map(_listingFromJson)
+          .toList();
     } on NotFoundFailure {
       // Sem cadastro de fornecedor não há anúncios.
       return const [];
@@ -32,31 +35,33 @@ class ApiVendorRepository implements VendorRepository {
 
   @override
   Future<VendorProfile> submitHall(HallListingDraft draft) async {
-    final json = await _api.post(
-      '/vendors/onboarding',
-      authenticated: true,
-      body: {
-        'vendor': {
-          'person_type': _personTypes[draft.personType],
-          'document': draft.document,
-          'legal_name': draft.legalName,
-        },
-        'listing': {
-          'category': 'venue',
-          'title': draft.title,
-          'description': draft.description,
-          'neighborhood': draft.neighborhood,
-          'city': draft.city,
-          'state': draft.state,
-          'price_from_cents': draft.priceFromCents,
-          'capacity': draft.capacity,
-          'area_m2': draft.areaM2,
-          'amenities': draft.amenities.toList(),
-          'event_types': draft.eventTypes.toList(),
-          'cancellation_policy': draft.cancellationPolicy.name,
-        },
-      },
-    ) as Json;
+    final json =
+        await _api.post(
+              '/vendors/onboarding',
+              authenticated: true,
+              body: {
+                'vendor': {
+                  'person_type': _personTypes[draft.personType],
+                  'document': draft.document,
+                  'legal_name': draft.legalName,
+                },
+                'listing': {
+                  'category': 'venue',
+                  'title': draft.title,
+                  'description': draft.description,
+                  'neighborhood': draft.neighborhood,
+                  'city': draft.city,
+                  'state': draft.state,
+                  'price_from_cents': draft.priceFromCents,
+                  'capacity': draft.capacity,
+                  'area_m2': draft.areaM2,
+                  'amenities': draft.amenities.toList(),
+                  'event_types': draft.eventTypes.toList(),
+                  'cancellation_policy': draft.cancellationPolicy.name,
+                },
+              },
+            )
+            as Json;
     return _profileFromJson(json['vendor'] as Json);
   }
 
@@ -94,7 +99,8 @@ class ApiVendorRepository implements VendorRepository {
     return VendorListing(
       id: json['id'] as String,
       title: json['title'] as String,
-      status: _listingStatuses[json['status']] ?? VendorListingStatus.pendingReview,
+      status:
+          _listingStatuses[json['status']] ?? VendorListingStatus.pendingReview,
       rejectionReason: json['rejection_reason'] as String?,
     );
   }

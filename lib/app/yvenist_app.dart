@@ -11,7 +11,11 @@ import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.
 /// Raiz do app: disponibiliza as dependências para as telas e define tema,
 /// idioma e a tela inicial.
 class YvenistApp extends StatelessWidget {
-  const YvenistApp({super.key, required this.dependencies, required this.state});
+  const YvenistApp({
+    super.key,
+    required this.dependencies,
+    required this.state,
+  });
 
   final AppDependencies dependencies;
   final AppState state;

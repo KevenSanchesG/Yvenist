@@ -10,7 +10,11 @@ const List<CatalogCategory> demoCategories = [
   CatalogCategory(slug: 'attraction', name: 'Atrações', iconKey: 'attraction'),
   CatalogCategory(slug: 'kids', name: 'Brinquedos', iconKey: 'kids'),
   CatalogCategory(slug: 'buffet', name: 'Buffet e Bar', iconKey: 'buffet'),
-  CatalogCategory(slug: 'decoration', name: 'Decorações', iconKey: 'decoration'),
+  CatalogCategory(
+    slug: 'decoration',
+    name: 'Decorações',
+    iconKey: 'decoration',
+  ),
   CatalogCategory(slug: 'beauty', name: 'Beleza', iconKey: 'beauty'),
   CatalogCategory(slug: 'dj', name: 'DJ e Som', iconKey: 'dj'),
   CatalogCategory(slug: 'staff', name: 'Equipe', iconKey: 'staff'),
@@ -36,7 +40,11 @@ const String _attractionImage =
 
 /// Um anúncio de demonstração e os tipos de evento que ele atende.
 class DemoListing {
-  const DemoListing(this.listing, this.eventTypes, {required this.publishedOrder});
+  const DemoListing(
+    this.listing,
+    this.eventTypes, {
+    required this.publishedOrder,
+  });
 
   final Listing listing;
   final Set<String> eventTypes;

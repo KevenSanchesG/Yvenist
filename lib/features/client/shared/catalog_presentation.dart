@@ -36,11 +36,11 @@ IconData iconForEventType(String slug) {
 
 extension ListingSortPresentation on ListingSort {
   String get label => switch (this) {
-        ListingSort.popular => 'Mais procurados',
-        ListingSort.priceAsc => 'Menor preço',
-        ListingSort.priceDesc => 'Maior preço',
-        ListingSort.recent => 'Mais recentes',
-      };
+    ListingSort.popular => 'Mais procurados',
+    ListingSort.priceAsc => 'Menor preço',
+    ListingSort.priceDesc => 'Maior preço',
+    ListingSort.recent => 'Mais recentes',
+  };
 }
 
 /// Nota no formato brasileiro: `4.8` -> `4,8`.

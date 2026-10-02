@@ -1,8 +1,8 @@
-import '../enums/party_item_category.dart';
-import '../value_objects/external_ref.dart';
-import '../value_objects/money.dart';
-import '../value_objects/party_id.dart';
-import '../value_objects/quantity.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/quantity.dart';
 
 class SnapshotLineItem {
   final ExternalRef externalRef;

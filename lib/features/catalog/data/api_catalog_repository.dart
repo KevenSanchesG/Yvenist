@@ -21,8 +21,10 @@ class ApiCatalogRepository implements CatalogRepository {
     if (cached != null) return cached;
 
     final json = await _api.get('/catalog/categories') as List;
-    return _categories =
-        json.cast<Json>().map(categoryFromJson).toList(growable: false);
+    return _categories = json
+        .cast<Json>()
+        .map(categoryFromJson)
+        .toList(growable: false);
   }
 
   @override
@@ -31,8 +33,10 @@ class ApiCatalogRepository implements CatalogRepository {
     if (cached != null) return cached;
 
     final json = await _api.get('/catalog/event-types') as List;
-    return _eventTypes =
-        json.cast<Json>().map(eventTypeFromJson).toList(growable: false);
+    return _eventTypes = json
+        .cast<Json>()
+        .map(eventTypeFromJson)
+        .toList(growable: false);
   }
 
   @override
@@ -41,17 +45,19 @@ class ApiCatalogRepository implements CatalogRepository {
     String? cursor,
     int limit = 20,
   }) async {
-    final json = await _api.get(
-      '/catalog/listings',
-      query: {
-        'q': query.text?.trim(),
-        'category': query.categorySlug,
-        'event_type': query.eventTypeSlug,
-        'sort': query.sort.apiValue,
-        'limit': '$limit',
-        'cursor': cursor,
-      },
-    ) as Json;
+    final json =
+        await _api.get(
+              '/catalog/listings',
+              query: {
+                'q': query.text?.trim(),
+                'category': query.categorySlug,
+                'event_type': query.eventTypeSlug,
+                'sort': query.sort.apiValue,
+                'limit': '$limit',
+                'cursor': cursor,
+              },
+            )
+            as Json;
 
     return ListingPage(
       items: listingsFromJson(json['items']),

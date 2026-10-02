@@ -25,7 +25,10 @@ void main() {
 
       expect(empty.items, isEmpty);
       expect(withItem.items, hasLength(1));
-      expect(() => withItem.items.add(buildItem(id: 'x')), throwsUnsupportedError);
+      expect(
+        () => withItem.items.add(buildItem(id: 'x')),
+        throwsUnsupportedError,
+      );
     });
 
     test('soma os subtotais (preço unitário x quantidade)', () {

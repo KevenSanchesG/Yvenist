@@ -104,7 +104,11 @@ class _HomeHeaderState extends State<HomeHeader> {
         color: AppColors.headerBackground,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
         boxShadow: [
-          BoxShadow(color: AppColors.cardShadow, offset: Offset(0, 4), blurRadius: 4),
+          BoxShadow(
+            color: AppColors.cardShadow,
+            offset: Offset(0, 4),
+            blurRadius: 4,
+          ),
         ],
       ),
       child: Column(
@@ -260,7 +264,11 @@ class _HeaderIconButton extends StatelessWidget {
 
 /// Atalho de categoria ou tipo de evento.
 class _Shortcut extends StatelessWidget {
-  const _Shortcut({required this.label, required this.icon, required this.onTap});
+  const _Shortcut({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -288,7 +296,11 @@ class _Shortcut extends StatelessWidget {
                   children: [
                     Icon(icon, size: 30, color: AppColors.primary),
                     const SizedBox(height: 6),
-                    Text(label, style: AppTypography.categoryLabel, maxLines: 1),
+                    Text(
+                      label,
+                      style: AppTypography.categoryLabel,
+                      maxLines: 1,
+                    ),
                   ],
                 ),
               ),

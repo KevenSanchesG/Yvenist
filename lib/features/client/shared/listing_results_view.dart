@@ -29,16 +29,16 @@ class ListingResultsView extends StatelessWidget {
     return switch (controller.status) {
       null || LoadInProgress() => const LoadingView(label: 'Buscando anúncios'),
       LoadFailure(:final failure) => ErrorStateView(
-          message: failure.message,
-          onRetry: controller.refresh,
-        ),
+        message: failure.message,
+        onRetry: controller.refresh,
+      ),
       LoadSuccess() when controller.items.isEmpty => EmptyStateView(
-          icon: Icons.search_off,
-          title: emptyTitle,
-          message: emptyMessage,
-          actionLabel: emptyActionLabel,
-          onAction: onEmptyAction,
-        ),
+        icon: Icons.search_off,
+        title: emptyTitle,
+        message: emptyMessage,
+        actionLabel: emptyActionLabel,
+        onAction: onEmptyAction,
+      ),
       LoadSuccess() => _ResultsList(controller: controller),
     };
   }

@@ -43,7 +43,7 @@ class FlakyPartyRepository implements PartyRepository {
 
   @override
   Future<List<Party>> listByOwner(String ownerId) async {
-    if (failOnList != null) throw failOnList!;
+    _failWith(failOnList);
     return _inner.listByOwner(ownerId);
   }
 
@@ -53,8 +53,12 @@ class FlakyPartyRepository implements PartyRepository {
   @override
   Future<Party> save(Party party) async {
     saves++;
-    if (failOnSave != null && saves >= failFromSave) throw failOnSave!;
+    if (saves >= failFromSave) _failWith(failOnSave);
     return _inner.save(party);
+  }
+
+  static void _failWith(Object? failure) {
+    if (failure != null) Error.throwWithStackTrace(failure, StackTrace.current);
   }
 
   @override
@@ -65,7 +69,10 @@ void main() {
   late InMemoryPartyRepository repository;
   late PartyMakerController controller;
 
-  PartyMakerController build(PartyRepository repo, {String? ownerId = 'user-1'}) {
+  PartyMakerController build(
+    PartyRepository repo, {
+    String? ownerId = 'user-1',
+  }) {
     return PartyMakerController(
       repository: repo,
       ids: UuidGenerator(),
@@ -95,19 +102,26 @@ void main() {
       expect(fresh.error, isNull);
     });
 
-    test('traz só as festas do dono, da mais recente para a mais antiga',
-        () async {
-      await repository.save(buildParty(id: 'antiga', ownerId: 'user-1'));
-      await repository.save(
-        buildParty(id: 'recente', ownerId: 'user-1')..startPlanning(),
-      );
-      await repository.save(buildParty(id: 'alheia', ownerId: 'outra-pessoa'));
+    test(
+      'traz só as festas do dono, da mais recente para a mais antiga',
+      () async {
+        await repository.save(buildParty(id: 'antiga', ownerId: 'user-1'));
+        await repository.save(
+          buildParty(id: 'recente', ownerId: 'user-1')..startPlanning(),
+        );
+        await repository.save(
+          buildParty(id: 'alheia', ownerId: 'outra-pessoa'),
+        );
 
-      await controller.load();
+        await controller.load();
 
-      expect(controller.hasLoaded, isTrue);
-      expect(controller.parties.map((p) => p.id.value), ['recente', 'antiga']);
-    });
+        expect(controller.hasLoaded, isTrue);
+        expect(controller.parties.map((p) => p.id.value), [
+          'recente',
+          'antiga',
+        ]);
+      },
+    );
 
     test('falha na carga fica em loadError e pode ser repetida', () async {
       final flaky = FlakyPartyRepository()..failOnList = const NetworkFailure();
@@ -213,7 +227,10 @@ void main() {
       );
 
       expect(added, isFalse);
-      expect(controller.error, 'Só é possível adicionar itens em draft/planning.');
+      expect(
+        controller.error,
+        'Só é possível adicionar itens em draft/planning.',
+      );
       expect(controller.budgetItemViews, hasLength(1));
     });
 

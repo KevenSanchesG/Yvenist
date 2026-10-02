@@ -18,9 +18,9 @@ class ApiClient {
     required TokenStorage tokenStorage,
     http.Client? httpClient,
     this.timeout = const Duration(seconds: 15),
-  })  : _baseUrl = baseUrl,
-        _tokens = tokenStorage,
-        _http = httpClient ?? http.Client();
+  }) : _baseUrl = baseUrl,
+       _tokens = tokenStorage,
+       _http = httpClient ?? http.Client();
 
   final Uri _baseUrl;
   final TokenStorage _tokens;
@@ -40,7 +40,11 @@ class ApiClient {
     return _send('GET', path, query: query, authenticated: authenticated);
   }
 
-  Future<Object?> post(String path, {Object? body, bool authenticated = false}) {
+  Future<Object?> post(
+    String path, {
+    Object? body,
+    bool authenticated = false,
+  }) {
     return _send('POST', path, body: body, authenticated: authenticated);
   }
 
@@ -48,7 +52,11 @@ class ApiClient {
     return _send('PUT', path, body: body, authenticated: authenticated);
   }
 
-  Future<Object?> patch(String path, {Object? body, bool authenticated = false}) {
+  Future<Object?> patch(
+    String path, {
+    Object? body,
+    bool authenticated = false,
+  }) {
     return _send('PATCH', path, body: body, authenticated: authenticated);
   }
 
@@ -249,7 +257,9 @@ class ApiClient {
 
     final result = <String, String>{};
     for (final entry in details['fields'] as List) {
-      if (entry is Json && entry['field'] is String && entry['message'] is String) {
+      if (entry is Json &&
+          entry['field'] is String &&
+          entry['message'] is String) {
         result[entry['field'] as String] = entry['message'] as String;
       }
     }
