@@ -1,156 +1,213 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
+import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+import 'package:yvenist/features/party_maker/presentation/party_status_presentation.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../domain/enums/party_item_category.dart';
-import '../../presentation/controllers/party_maker_controller.dart';
+const int _partyTitleMaxLength = 80;
 
-class SelectPartyBottomSheet extends StatelessWidget {
-  final String itemName;
-  final String price;
-  final String externalId;
-  final String imageUrl;
-  final PartyItemCategory category;
+/// Abre a escolha da festa que vai receber [draft] e confirma com uma
+/// mensagem quando o item entra.
+Future<void> showAddToPartySheet(
+  BuildContext context,
+  PartyItemDraft draft,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
 
-  const SelectPartyBottomSheet({
-    super.key,
-    required this.itemName,
-    required this.price,
-    required this.externalId,
-    required this.imageUrl,
-    required this.category,
-  });
+  final partyTitle = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => SelectPartyBottomSheet(draft: draft),
+  );
+
+  if (partyTitle != null) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('${draft.name} adicionado a $partyTitle.')),
+      );
+  }
+}
+
+/// Lista as festas que ainda aceitam itens e permite criar uma nova.
+/// Fecha devolvendo o título da festa que recebeu o item.
+class SelectPartyBottomSheet extends StatefulWidget {
+  const SelectPartyBottomSheet({super.key, required this.draft});
+
+  final PartyItemDraft draft;
+
+  @override
+  State<SelectPartyBottomSheet> createState() => _SelectPartyBottomSheetState();
+}
+
+class _SelectPartyBottomSheetState extends State<SelectPartyBottomSheet> {
+  String? _errorMessage;
+
+  Future<void> _addTo(Party party) async {
+    final controller = context.read<PartyMakerController>();
+    setState(() => _errorMessage = null);
+
+    final added = await controller.addItemToParty(party.id, widget.draft);
+    if (!mounted) return;
+
+    if (added) {
+      Navigator.pop(context, party.title.value);
+    } else {
+      // Fica aberta: a pessoa pode escolher outra festa.
+      setState(() => _errorMessage = controller.error);
+    }
+  }
+
+  Future<void> _addToNewParty() async {
+    final controller = context.read<PartyMakerController>();
+    setState(() => _errorMessage = null);
+
+    final title = await showDialog<String>(
+      context: context,
+      builder: (_) => const _NewPartyDialog(),
+    );
+    if (title == null || !mounted) return;
+
+    final added = await controller.addItemToNewParty(title, widget.draft);
+    if (!mounted) return;
+
+    if (added) {
+      Navigator.pop(context, title);
+    } else {
+      setState(() => _errorMessage = controller.error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<PartyMakerController>();
-    final parties = controller.parties;
+    final parties = controller.editableParties;
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Em qual festa você deseja adicionar\n$itemName?",
-            style: AppTypography.sectionTitle,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-
-          ...parties.map((p) {
-            return ListTile(
-              title: Text(p.title.value),
-              subtitle: Text(p.status.name),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final ok = await controller.addCardToParty(
-                  partyId: p.id,
-                  ownerId: p.ownerId,
-                  cardTitle: itemName,
-                  cardPrice: price,
-                  externalId: externalId,
-                  category: category,
-                  imagePath: imageUrl,
-                );
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-
-                  if (!ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          controller.error ?? 'Erro ao adicionar',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-            );
-          }),
-
-          const SizedBox(height: 12),
-
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          16 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Em qual festa você quer adicionar\n${widget.draft.name}?',
+              style: AppTypography.sectionTitle,
+              textAlign: TextAlign.center,
             ),
-            onPressed: () async {
-              Navigator.pop(context);
-              await _openCreatePartyDialog(context);
-            },
-            child: const Text("Criar nova festa"),
-          ),
-        ],
+            const SizedBox(height: 16),
+            if (parties.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Você ainda não tem festas em planejamento.',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final party in parties)
+                      ListTile(
+                        title: Text(party.title.value),
+                        subtitle: Text(party.status.label),
+                        trailing: const Icon(Icons.chevron_right),
+                        enabled: !controller.isBusy,
+                        onTap: () => _addTo(party),
+                      ),
+                  ],
+                ),
+              ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _errorMessage!,
+                  style: AppTypography.body.copyWith(color: AppColors.danger),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: controller.isBusy ? null : _addToNewParty,
+              icon: const Icon(Icons.add),
+              label: const Text('Criar nova festa'),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Future<void> _openCreatePartyDialog(BuildContext context) async {
-    final controller = context.read<PartyMakerController>();
-    final textController = TextEditingController();
-    bool isValid = false;
+/// Pede o nome da nova festa. Fecha devolvendo o nome digitado.
+class _NewPartyDialog extends StatefulWidget {
+  const _NewPartyDialog();
 
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text("Nome da nova festa"),
-              content: TextField(
-                controller: textController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: "Ex: 15 anos da Maria",
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    isValid = value.trim().isNotEmpty;
-                  });
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancelar"),
-                ),
-                ElevatedButton(
-                  onPressed: isValid
-                      ? () async {
-                          const ownerId = 'user_1';
+  @override
+  State<_NewPartyDialog> createState() => _NewPartyDialogState();
+}
 
-                          final newParty =
-                              await controller.startNewParty(
-                            ownerId: ownerId,
-                            title: textController.text,
-                          );
+class _NewPartyDialogState extends State<_NewPartyDialog> {
+  final _controller = TextEditingController();
 
-                          await controller.addCardToParty(
-                            partyId: newParty.id,
-                            ownerId: ownerId,
-                            cardTitle: itemName,
-                            cardPrice: price,
-                            externalId: externalId,
-                            category: category,
-                            imagePath: imageUrl,
-                          );
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        }
-                      : null,
-                  child: const Text("Confirmar"),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  void _confirm() {
+    final title = _controller.text.trim();
+    if (title.isNotEmpty) Navigator.pop(context, title);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nome da nova festa'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: _partyTitleMaxLength,
+        textCapitalization: TextCapitalization.sentences,
+        textInputAction: TextInputAction.done,
+        decoration: const InputDecoration(
+          labelText: 'Nome da festa',
+          hintText: 'Ex.: 15 anos da Maria',
+        ),
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) => _confirm(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _controller.text.trim().isEmpty ? null : _confirm,
+          child: const Text('Criar festa'),
+        ),
+      ],
     );
   }
 }

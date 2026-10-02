@@ -10,86 +10,37 @@ import '../widgets/content_card.dart';
 import '../../../../../core/ui/navigation/custom_bottom_nav_bar.dart';
 
 // Import das outras telas
-import '../../../../party_maker/presentation/pages/my_parties_page.dart';
-import '../../../../party_maker/presentation/controllers/party_maker_controller.dart';
+import '../../../../../core/navigation/app_tab_controller.dart';
+import '../../../../../core/theme/app_theme.dart';
+import '../../../../party_maker/presentation/pages/party_maker_entry_page.dart';
 import '../../../explore/presentation/pages/explore_pages.dart';
-import '../../../../party_maker/presentation/pages/party_builder_page.dart';
 import '../../../../shared_features/chat/presentation/pages/chat_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  /// ✅ Forma correta de trocar aba de QUALQUER lugar:
-  /// HomeScreen.changeTab(context, 2);
-  static void changeTab(BuildContext context, int index) {
-    final state = context.findAncestorStateOfType<_HomeScreenState>();
-    state?._setTab(index);
-  }
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  void _setTab(int index) {
-    if (!mounted) return;
-    setState(() => _selectedIndex = index);
-  }
-
-  // ATENÇÃO: _pages como getter para ter acesso ao state/métodos
-  List<Widget> get _pages => [
-        const _HomeContent(), // 0: Home
-
-        // 1: Explore - volta para Home via troca de aba (sem Navigator)
-        ExploreScreen(onBack: () => _setTab(0)),
-
-        // 2: PartyMaker entrypoint (sem push/pop)
-        Builder(
-          builder: (context) {
-            final controller = context.watch<PartyMakerController>();
-
-            // ✅ REGRA CORRETA (entrypoint + sessão ativa)
-            // 1) Se existe festa ativa -> Builder
-            // 2) Se não existe nenhuma festa -> Builder (estado vazio / criação)
-            // 3) Caso contrário -> Dashboard (MyParties)
-            final hasActiveParty = controller.activePartyId != null;
-            final hasAnyParty = controller.parties.isNotEmpty;
-
-            if (hasActiveParty || !hasAnyParty) {
-              return const PartyBuilderPage();
-            }
-
-            return const MyPartiesPage();
-          },
-        ),
-
-        // 3: Chat - volta para Home via troca de aba (sem Navigator)
-        ChatScreen(onBack: () => _setTab(0)),
-
-        const ProfileScreen(), // 4: Perfil
-      ];
 
   @override
   Widget build(BuildContext context) {
+    final tabs = context.watch<AppTabController>();
+    void goHome() => tabs.goTo(AppTab.home);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
+      value: AppTheme.systemUi,
       child: Scaffold(
-        backgroundColor: Colors.white,
         body: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
+          index: tabs.current.index,
+          children: [
+            const _HomeContent(),
+            ExploreScreen(onBack: goHome),
+            const PartyMakerEntryPage(),
+            ChatScreen(onBack: goHome),
+            const ProfileScreen(),
+          ],
         ),
         bottomNavigationBar: CustomBottomNavBar(
-          selectedIndex: _selectedIndex,
-          onTabChange: _setTab, // ✅ único lugar que troca aba
+          selectedIndex: tabs.current.index,
+          onTabChange: (index) => tabs.goTo(AppTab.values[index]),
         ),
       ),
     );

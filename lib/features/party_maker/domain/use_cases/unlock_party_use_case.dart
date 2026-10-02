@@ -1,19 +1,19 @@
-import '../repositories/party_repository.dart';
-import '../value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
 
 class UnlockPartyUseCase {
   final PartyRepository _repo;
 
   UnlockPartyUseCase(this._repo);
 
-  Future<void> call(PartyId partyId) async {
+  Future<Party> call(PartyId partyId) async {
     final party = await _repo.getById(partyId);
-    if (party == null) {
-      throw Exception('Party não encontrada.');
-    }
+    if (party == null) throw const PartyNotFound();
 
     party.unlock();
 
-    await _repo.save(party);
+    return _repo.save(party);
   }
 }

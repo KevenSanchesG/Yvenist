@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'core/theme/app_colors.dart';
-import 'core/theme/app_typography.dart';
-import 'features/client/home/presentation/pages/home_client_page.dart';
-import 'features/party_maker/presentation/party_maker_scope.dart';
+import 'package:provider/provider.dart';
+import 'package:yvenist/core/navigation/app_tab_controller.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/core/utils/id_generator.dart';
+import 'package:yvenist/features/client/home/presentation/pages/home_client_page.dart';
+import 'package:yvenist/features/party_maker/data/repositories/in_memory_party_repository.dart';
+import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Configuração completa da UI do Sistema
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    // Barra de Status (Topo)
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-
-    // Barra de Navegação (Fundo - Android)
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarDividerColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(AppTheme.systemUi);
 
   runApp(
-    PartyMakerScope(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppTabController()),
+        ChangeNotifierProvider(
+          create: (_) => PartyMakerController(
+            repository: InMemoryPartyRepository(),
+            ids: UuidGenerator(),
+            ownerId: 'user_1',
+          )..load(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -36,12 +37,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Yvenist',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        fontFamily: AppTypography.fontFamily,
-        scaffoldBackgroundColor: Colors.white,
-      ),
+      theme: AppTheme.light(),
       home: const HomeScreen(),
     );
   }

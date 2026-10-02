@@ -8,6 +8,10 @@ class PartyDomainException implements Exception {
   String toString() => 'PartyDomainException($code): $message';
 }
 
+class PartyNotFound extends PartyDomainException {
+  const PartyNotFound() : super('party_not_found', 'Festa não encontrada.');
+}
+
 // Status / Transições
 class InvalidPartyTransition extends PartyDomainException {
   const InvalidPartyTransition(String message)

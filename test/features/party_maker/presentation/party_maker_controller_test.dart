@@ -1,221 +1,371 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/utils/id_generator.dart';
 import 'package:yvenist/features/party_maker/data/repositories/in_memory_party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/add_item_to_party_use_case.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/create_party_use_case.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/lock_party_for_payment_use_case.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/remove_item_from_party_use_case.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/start_planning_use_case.dart';
-import 'package:yvenist/features/party_maker/domain/use_cases/unlock_party_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
 import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+
+import '../party_fixtures.dart';
+
+PartyItemDraft draft({
+  String id = 'listing-1',
+  String name = 'Salão Glamour',
+  int priceCents = 100000,
+  PartyItemCategory category = PartyItemCategory.other,
+  String? imageUrl = 'https://example.com/foto.jpg',
+}) {
+  return PartyItemDraft(
+    externalRef: ExternalRef(source: 'vendor_catalog', id: id),
+    category: category,
+    name: name,
+    unitPrice: Money.fromCents(priceCents),
+    imageUrl: imageUrl,
+  );
+}
+
+/// Repositório que falha quando mandado, para exercitar os caminhos de erro.
+class FlakyPartyRepository implements PartyRepository {
+  final InMemoryPartyRepository _inner = InMemoryPartyRepository();
+
+  Object? failOnList;
+  Object? failOnSave;
+
+  /// Falha só a partir da enésima gravação (1 = a primeira).
+  int failFromSave = 1;
+  int saves = 0;
+
+  @override
+  Future<List<Party>> listByOwner(String ownerId) async {
+    if (failOnList != null) throw failOnList!;
+    return _inner.listByOwner(ownerId);
+  }
+
+  @override
+  Future<Party?> getById(PartyId id) => _inner.getById(id);
+
+  @override
+  Future<Party> save(Party party) async {
+    saves++;
+    if (failOnSave != null && saves >= failFromSave) throw failOnSave!;
+    return _inner.save(party);
+  }
+
+  @override
+  Future<void> deleteById(PartyId id) => _inner.deleteById(id);
+}
 
 void main() {
   late InMemoryPartyRepository repository;
   late PartyMakerController controller;
 
-  setUp(() {
-    repository = InMemoryPartyRepository();
-    controller = PartyMakerController(
-      repo: repository,
-      createParty: CreatePartyUseCase(repository),
-      startPlanning: StartPlanningUseCase(repository),
-      addItem: AddItemToPartyUseCase(repository),
-      removeItem: RemoveItemFromPartyUseCase(repository),
-      lockForPayment: LockPartyForPaymentUseCase(repository),
-      unlockParty: UnlockPartyUseCase(repository),
-    );
-  });
-
-  Future<bool> addCard({
-    String title = 'Salão Glamour 1',
-    String price = '1000',
-    String? externalId,
-  }) {
-    return controller.addCardToActiveParty(
-      ownerId: 'user-1',
-      cardTitle: title,
-      cardPrice: price,
-      externalId: externalId ?? title,
-      category: PartyItemCategory.other,
-      imagePath: 'https://example.com/foto.jpg',
+  PartyMakerController build(PartyRepository repo, {String? ownerId = 'user-1'}) {
+    return PartyMakerController(
+      repository: repo,
+      ids: UuidGenerator(),
+      ownerId: ownerId,
     );
   }
 
-  group('estado inicial', () {
-    test('não há festa ativa nem festas listadas', () {
-      expect(controller.parties, isEmpty);
-      expect(controller.activeParty, isNull);
+  setUp(() async {
+    repository = InMemoryPartyRepository();
+    controller = build(repository);
+    await controller.load();
+  });
+
+  tearDown(() => controller.dispose());
+
+  group('carga', () {
+    test('antes de carregar, o estado é vazio e não carregado', () {
+      final fresh = build(repository);
+      addTearDown(fresh.dispose);
+
+      expect(fresh.hasLoaded, isFalse);
+      expect(fresh.parties, isEmpty);
+      expect(fresh.activeParty, isNull);
+      expect(fresh.budgetItemViews, isEmpty);
+      expect(fresh.activePartyTotalCents, 0);
+      expect(fresh.isBusy, isFalse);
+      expect(fresh.error, isNull);
+    });
+
+    test('traz só as festas do dono, da mais recente para a mais antiga',
+        () async {
+      await repository.save(buildParty(id: 'antiga', ownerId: 'user-1'));
+      await repository.save(
+        buildParty(id: 'recente', ownerId: 'user-1')..startPlanning(),
+      );
+      await repository.save(buildParty(id: 'alheia', ownerId: 'outra-pessoa'));
+
+      await controller.load();
+
+      expect(controller.hasLoaded, isTrue);
+      expect(controller.parties.map((p) => p.id.value), ['recente', 'antiga']);
+    });
+
+    test('falha na carga fica em loadError e pode ser repetida', () async {
+      final flaky = FlakyPartyRepository()..failOnList = const NetworkFailure();
+      final failing = build(flaky);
+      addTearDown(failing.dispose);
+
+      await failing.load();
+      expect(failing.hasLoaded, isTrue);
+      expect(failing.loadError, const NetworkFailure().message);
+      expect(failing.error, isNull);
+
+      flaky.failOnList = null;
+      await failing.load();
+      expect(failing.loadError, isNull);
+    });
+
+    test('trocar de conta descarta as festas da conta anterior', () async {
+      await controller.startNewParty('Festa da Ana');
+      await repository.save(buildParty(id: 'do-bruno', ownerId: 'user-2'));
+
+      await controller.setOwner('user-2');
+
+      expect(controller.parties.map((p) => p.id.value), ['do-bruno']);
       expect(controller.activePartyId, isNull);
-      expect(controller.budgetItemViews, isEmpty);
-      expect(controller.activePartyTotalCents, 0);
-      expect(controller.isBusy, isFalse);
-      expect(controller.error, isNull);
+    });
+
+    test('sem dono (visitante) não há festas', () async {
+      await controller.startNewParty('Festa da Ana');
+
+      await controller.setOwner(null);
+
+      expect(controller.parties, isEmpty);
+      expect(controller.hasLoaded, isTrue);
     });
   });
 
   group('startNewParty', () {
     test('cria a festa em planejamento e a torna ativa', () async {
-      final party = await controller.startNewParty(
-        ownerId: 'user-1',
-        title: '  15 anos da Maria ',
-      );
+      final party = await controller.startNewParty('  15 anos da Maria ');
 
-      expect(party.title.value, '15 anos da Maria');
+      expect(party!.title.value, '15 anos da Maria');
       expect(party.status, PartyStatus.planning);
+      expect(party.ownerId, 'user-1');
       expect(controller.activeParty, same(party));
       expect(controller.parties, [party]);
+      expect(await repository.getById(party.id), same(party));
     });
 
-    test('rejeita título vazio e registra o erro', () async {
-      await expectLater(
-        controller.startNewParty(ownerId: 'user-1', title: '   '),
-        throwsException,
-      );
+    test('título vazio falha com mensagem e não cria nada', () async {
+      final party = await controller.startNewParty('   ');
 
-      expect(controller.error, isNotNull);
+      expect(party, isNull);
+      expect(controller.error, 'Título não pode ser vazio.');
       expect(controller.parties, isEmpty);
       expect(controller.isBusy, isFalse);
     });
+
+    test('visitante não cria festa', () async {
+      await controller.setOwner(null);
+
+      expect(await controller.startNewParty('Festa'), isNull);
+      expect(controller.error, 'Entre na sua conta para criar festas.');
+    });
   });
 
-  group('addCardToActiveParty', () {
-    test('sem festa ativa, cria "Minha Festa" e adiciona o item', () async {
-      final ok = await addCard();
+  group('addItemToParty', () {
+    test('adiciona o item com nome, preço, categoria e imagem', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
 
-      expect(ok, isTrue);
-      expect(controller.activeParty!.title.value, 'Minha Festa');
-      expect(controller.activeParty!.status, PartyStatus.planning);
-      expect(controller.budgetItemViews.single.name, 'Salão Glamour 1');
-      expect(
-        controller.budgetItemViews.single.imageUrl,
-        'https://example.com/foto.jpg',
+      final added = await controller.addItemToParty(
+        party.id,
+        draft(category: PartyItemCategory.venue),
       );
-      expect(controller.isExternalItemInActiveParty('Salão Glamour 1'), isTrue);
+
+      expect(added, isTrue);
+      final view = controller.budgetItemViews.single;
+      expect(view.name, 'Salão Glamour');
+      expect(view.unitPriceCents, 100000);
+      expect(view.quantity, 1);
+      expect(view.category, 'venue');
+      expect(view.imageUrl, 'https://example.com/foto.jpg');
+      expect(controller.activePartyTotalCents, 100000);
     });
 
-    test('converte o preço do card para centavos', () async {
-      await addCard(title: 'Inteiro', price: '1000');
-      await addCard(title: 'Com centavos', price: 'R\$ 1.234,56');
-      await addCard(title: 'Um decimal', price: '10,5');
+    test('adicionar o mesmo anúncio de novo soma a quantidade', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
 
-      final cents = {
-        for (final v in controller.budgetItemViews) v.name: v.unitPriceCents,
-      };
-      expect(cents, {
-        'Inteiro': 100000,
-        'Com centavos': 123456,
-        'Um decimal': 1050,
-      });
-      expect(controller.activePartyTotalCents, 100000 + 123456 + 1050);
-    });
-
-    test('adicionar o mesmo item duas vezes soma a quantidade', () async {
-      await addCard();
-      await addCard();
+      await controller.addItemToParty(party.id, draft());
+      await controller.addItemToParty(party.id, draft());
 
       expect(controller.budgetItemViews.single.quantity, 2);
+      expect(controller.activePartyTotalCents, 200000);
+    });
+
+    test('recusa festa travada com a mensagem da regra', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
+      await controller.addItemToParty(party.id, draft());
+      await controller.lockActivePartyForPayment();
+
+      final added = await controller.addItemToParty(
+        party.id,
+        draft(id: 'listing-2', name: 'Buffet'),
+      );
+
+      expect(added, isFalse);
+      expect(controller.error, 'Só é possível adicionar itens em draft/planning.');
+      expect(controller.budgetItemViews, hasLength(1));
+    });
+
+    test('segundo salão é recusado', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
+      await controller.addItemToParty(
+        party.id,
+        draft(category: PartyItemCategory.venue),
+      );
+
+      final added = await controller.addItemToParty(
+        party.id,
+        draft(id: 'listing-2', category: PartyItemCategory.venue),
+      );
+
+      expect(added, isFalse);
+      expect(controller.error, contains('Salão'));
+    });
+
+    test('festa inexistente falha com mensagem', () async {
+      final added = await controller.addItemToParty(
+        const PartyId('nao-existe'),
+        draft(),
+      );
+
+      expect(added, isFalse);
+      expect(controller.error, 'Festa não encontrada.');
     });
   });
 
-  group('addCardToParty', () {
-    test('adiciona à festa indicada', () async {
-      final party = await controller.startNewParty(
-        ownerId: 'user-1',
-        title: 'Casamento',
-      );
+  group('addItemToNewParty', () {
+    test('cria a festa já com o item e a torna ativa', () async {
+      final added = await controller.addItemToNewParty('Chá de bebê', draft());
 
-      final ok = await controller.addCardToParty(
-        partyId: party.id,
-        ownerId: 'user-1',
-        cardTitle: 'Buffet',
-        cardPrice: '500',
-        externalId: 'buffet-1',
-        category: PartyItemCategory.buffet,
-      );
-
-      expect(ok, isTrue);
-      expect(controller.budgetItemViews.single.category, 'buffet');
+      expect(added, isTrue);
+      expect(controller.activeParty!.title.value, 'Chá de bebê');
+      expect(controller.budgetItemViews.single.name, 'Salão Glamour');
     });
 
-    test('recusa festa travada e informa o erro', () async {
-      await addCard();
-      final partyId = controller.activePartyId!;
-      await controller.lockActivePartyForPayment();
+    test('se o item não entra, a festa recém-criada é descartada', () async {
+      final flaky = FlakyPartyRepository()
+        ..failOnSave = const NetworkFailure()
+        ..failFromSave = 2; // a criação grava; a inclusão do item falha
+      final failing = build(flaky);
+      addTearDown(failing.dispose);
+      await failing.load();
 
-      final ok = await controller.addCardToParty(
-        partyId: partyId,
-        ownerId: 'user-1',
-        cardTitle: 'Buffet',
-        cardPrice: '500',
-        externalId: 'buffet-1',
-        category: PartyItemCategory.buffet,
+      final added = await failing.addItemToNewParty('Chá de bebê', draft());
+
+      expect(added, isFalse);
+      expect(failing.error, const NetworkFailure().message);
+      expect(failing.parties, isEmpty);
+      expect(await flaky.listByOwner('user-1'), isEmpty);
+    });
+  });
+
+  group('remoção de itens', () {
+    test('remove um item e mantém a festa quando sobram outros', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
+      await controller.addItemToParty(party.id, draft(name: 'Salão'));
+      await controller.addItemToParty(
+        party.id,
+        draft(id: 'listing-2', name: 'DJ'),
+      );
+      final salao = controller.budgetItemViews.firstWhere(
+        (v) => v.name == 'Salão',
       );
 
-      expect(ok, isFalse);
-      expect(controller.error, contains('bloqueada'));
+      final removed = await controller.removeItemFromActiveParty(salao.id);
+
+      expect(removed, isTrue);
+      expect(controller.budgetItemViews.single.name, 'DJ');
+      expect(controller.activeParty, isNotNull);
+    });
+
+    test('itens criados em sequência imediata têm ids diferentes', () async {
+      // Regressão: os ids vinham do relógio e colidiam no mesmo instante;
+      // remover um item apagava os dois.
+      final party = (await controller.startNewParty('Casamento'))!;
+      await Future.wait([
+        for (var i = 0; i < 20; i++)
+          controller.addItemToParty(
+            party.id,
+            draft(id: 'listing-$i', name: 'Item $i'),
+          ),
+      ]);
+
+      final ids = controller.budgetItemViews.map((v) => v.id).toSet();
+
+      expect(ids, hasLength(20));
+    });
+
+    test('remover o último item apaga a festa e encerra a sessão', () async {
+      // Regressão: a remoção era reportada como falha e a festa apagada
+      // continuava na lista.
+      final party = (await controller.startNewParty('Casamento'))!;
+      await controller.addItemToParty(party.id, draft());
+      final itemId = controller.budgetItemViews.single.id;
+
+      final removed = await controller.removeItemFromActiveParty(itemId);
+
+      expect(removed, isTrue);
+      expect(controller.error, isNull);
+      expect(controller.activeParty, isNull);
+      expect(controller.parties, isEmpty);
+      expect(await repository.getById(party.id), isNull);
+    });
+
+    test('item desconhecido falha com mensagem', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
+      await controller.addItemToParty(party.id, draft());
+
+      expect(await controller.removeItemFromActiveParty('nao-existe'), isFalse);
+      expect(controller.error, 'Item não encontrado na Party.');
+    });
+
+    test('sem festa ativa, falha com mensagem', () async {
+      expect(await controller.removeItemFromActiveParty('x'), isFalse);
+      expect(controller.error, 'Nenhuma festa selecionada.');
     });
   });
 
   group('travar e destravar', () {
     test('trava a festa ativa e depois destrava', () async {
-      await addCard();
+      await controller.addItemToNewParty('Casamento', draft());
 
       expect(await controller.lockActivePartyForPayment(), isTrue);
       expect(controller.isActivePartyLocked, isTrue);
-      expect(controller.canMutateActiveParty, isFalse);
+      expect(controller.activeParty!.paymentSnapshot, isNotNull);
+      expect(controller.editableParties, isEmpty);
 
       expect(await controller.unlockActiveParty(), isTrue);
       expect(controller.isActivePartyLocked, isFalse);
-      expect(controller.canMutateActiveParty, isTrue);
+      expect(controller.editableParties, hasLength(1));
+    });
+
+    test('festa sem itens não pode ser travada', () async {
+      await controller.startNewParty('Casamento');
+
+      expect(await controller.lockActivePartyForPayment(), isFalse);
+      expect(controller.error, contains('sem itens'));
     });
 
     test('sem festa ativa, falha com mensagem', () async {
       expect(await controller.lockActivePartyForPayment(), isFalse);
-      expect(controller.error, isNotNull);
+      expect(controller.error, 'Nenhuma festa selecionada.');
     });
-  });
-
-  group('remoção de itens', () {
-    test(
-      'remove um item e mantém a festa quando sobram outros',
-      () async {
-        await addCard(title: 'Salão');
-        await addCard(title: 'DJ');
-        final itemId = controller.findPartyItemIdByExternalId('Salão')!;
-
-        final ok = await controller.removeItemFromActiveParty(itemId);
-
-        expect(ok, isTrue);
-        expect(controller.budgetItemViews.single.name, 'DJ');
-        expect(controller.activeParty, isNotNull);
-      },
-      skip: 'Bug conhecido: os ids dos itens vêm do relógio e colidem quando '
-          'dois itens são criados no mesmo instante, então remover um apaga '
-          'os dois. Corrigido no commit seguinte.',
-    );
-
-    test(
-      'remover o último item apaga a festa e encerra a sessão',
-      () async {
-        await addCard(title: 'Salão');
-        final itemId = controller.findPartyItemIdByExternalId('Salão')!;
-
-        final ok = await controller.removeItemFromActiveParty(itemId);
-
-        expect(ok, isTrue);
-        expect(controller.error, isNull);
-        expect(controller.activeParty, isNull);
-        expect(controller.parties, isEmpty);
-      },
-      skip: 'Bug conhecido: a remoção do último item é reportada como falha e '
-          'a festa apagada continua na lista. Corrigido no commit seguinte.',
-    );
   });
 
   group('sessão ativa', () {
     test('clearActiveParty volta ao hub sem apagar a festa', () async {
-      await addCard();
+      await controller.addItemToNewParty('Casamento', draft());
 
       controller.clearActiveParty();
 
@@ -224,33 +374,107 @@ void main() {
     });
 
     test('setActiveParty seleciona uma festa existente', () async {
-      await addCard();
-      final id = controller.activePartyId!;
+      final party = (await controller.startNewParty('Casamento'))!;
       controller.clearActiveParty();
 
-      controller.setActiveParty(id);
+      controller.setActiveParty(party.id);
 
-      expect(controller.activeParty!.id, id);
+      expect(controller.activeParty, same(party));
     });
 
-    test('refreshFromRepo encerra a sessão se a festa não existe mais',
-        () async {
-      await addCard();
-      await repository.deleteById(controller.activePartyId!);
+    test('recarregar encerra a sessão se a festa não existe mais', () async {
+      final party = (await controller.startNewParty('Casamento'))!;
+      await repository.deleteById(party.id);
 
-      controller.refreshFromRepo();
+      await controller.load();
 
       expect(controller.activePartyId, isNull);
       expect(controller.parties, isEmpty);
     });
   });
 
-  test('notifica os ouvintes a cada mudança de estado', () async {
-    var notifications = 0;
-    controller.addListener(() => notifications++);
+  group('isInAnyParty', () {
+    test('acusa itens que estão em qualquer festa em andamento', () async {
+      await controller.addItemToNewParty('Casamento', draft(id: 'salao-1'));
+      controller.clearActiveParty();
 
-    await addCard();
+      expect(controller.isInAnyParty('salao-1'), isTrue);
+      expect(controller.isInAnyParty('outro'), isFalse);
+    });
+  });
 
-    expect(notifications, greaterThan(0));
+  group('falhas do repositório', () {
+    test('erro de rede vira mensagem e não altera o estado', () async {
+      final flaky = FlakyPartyRepository();
+      final failing = build(flaky);
+      addTearDown(failing.dispose);
+      await failing.load();
+      final party = (await failing.startNewParty('Casamento'))!;
+      flaky.failOnSave = const NetworkFailure();
+
+      final added = await failing.addItemToParty(party.id, draft());
+
+      expect(added, isFalse);
+      expect(failing.error, const NetworkFailure().message);
+      expect(failing.isBusy, isFalse);
+    });
+
+    test('conflito de versão recarrega as festas do servidor', () async {
+      final flaky = FlakyPartyRepository();
+      final failing = build(flaky);
+      addTearDown(failing.dispose);
+      await failing.load();
+      final party = (await failing.startNewParty('Casamento'))!;
+      // Outro dispositivo criou mais uma festa e alterou esta.
+      await flaky.save(buildParty(id: 'do-tablet', ownerId: 'user-1'));
+      flaky
+        ..failOnSave = const ConflictFailure(
+          'A festa foi alterada em outro dispositivo.',
+          'party_version_conflict',
+        )
+        ..failFromSave = 1;
+
+      final added = await failing.addItemToParty(party.id, draft());
+
+      expect(added, isFalse);
+      expect(failing.error, 'A festa foi alterada em outro dispositivo.');
+      expect(
+        failing.parties.map((p) => p.id.value),
+        containsAll(['do-tablet', party.id.value]),
+      );
+    });
+
+    test('erro inesperado nunca mostra detalhe técnico', () async {
+      final flaky = FlakyPartyRepository()..failOnSave = StateError('npe');
+      final failing = build(flaky);
+      addTearDown(failing.dispose);
+      await failing.load();
+
+      await failing.startNewParty('Casamento');
+
+      expect(failing.error, const UnexpectedFailure().message);
+    });
+  });
+
+  group('notificações', () {
+    test('sinaliza ocupado durante a operação e avisa os ouvintes', () async {
+      final busyStates = <bool>[];
+      controller.addListener(() => busyStates.add(controller.isBusy));
+
+      await controller.startNewParty('Casamento');
+
+      expect(busyStates.first, isTrue);
+      expect(busyStates.last, isFalse);
+    });
+
+    test('operação que termina depois do dispose não quebra', () async {
+      final disposable = build(repository);
+      await disposable.load();
+
+      final pending = disposable.startNewParty('Casamento');
+      disposable.dispose();
+
+      await expectLater(pending, completes);
+    });
   });
 }

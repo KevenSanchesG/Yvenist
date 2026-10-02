@@ -13,6 +13,12 @@ class PartyBudget {
 
   factory PartyBudget.empty() => PartyBudget._([]);
 
+  /// Reconstrói um orçamento que já foi gravado (por um repositório). Não
+  /// mescla nem revalida: os itens já passaram pelas regras quando entraram.
+  factory PartyBudget.restore(Iterable<PartyItem> items) {
+    return PartyBudget._(items.toList());
+  }
+
   List<PartyItem> get items => _items;
 
   Money get total {

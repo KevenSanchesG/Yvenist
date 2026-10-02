@@ -90,6 +90,7 @@ class Party {
     required String nameSnapshot,
     required Money unitPriceSnapshot,
     required Quantity quantity,
+    String? imageUrlSnapshot,
   }) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
       throw const InvalidPartyTransition('Só é possível adicionar itens em draft/planning.');
@@ -102,6 +103,7 @@ class Party {
       nameSnapshot: nameSnapshot,
       unitPriceSnapshot: unitPriceSnapshot,
       quantity: quantity,
+      imageUrlSnapshot: imageUrlSnapshot,
     );
 
     budget = budget.addOrMergeItem(newItem: item);

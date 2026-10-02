@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/features/party_maker/data/repositories/in_memory_party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
 import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
@@ -38,7 +39,7 @@ void main() {
     await StartPlanningUseCase(repository)(partyId);
   }
 
-  Future<void> addItem({
+  Future<Party> addItem({
     String itemId = 'item-1',
     String externalId = 'listing-1',
     PartyItemCategory category = PartyItemCategory.other,
@@ -69,6 +70,18 @@ void main() {
       expect(stored!.status, PartyStatus.draft);
       expect(stored.ownerId, 'user-1');
     });
+
+    test('pode criar a festa já em planejamento, em uma gravação só', () async {
+      final party = await CreatePartyUseCase(repository)(
+        partyId: partyId,
+        ownerId: 'user-1',
+        title: PartyTitle('Aniversário da Ana'),
+        startPlanning: true,
+      );
+
+      expect(party.status, PartyStatus.planning);
+      expect((await repository.getById(partyId))!.status, PartyStatus.planning);
+    });
   });
 
   group('StartPlanningUseCase', () {
@@ -84,14 +97,41 @@ void main() {
   });
 
   group('AddItemToPartyUseCase', () {
-    test('adiciona o item e persiste', () async {
+    test('adiciona o item, persiste e devolve a festa gravada', () async {
       await createPlanningParty();
 
-      await addItem();
+      final saved = await addItem();
 
       final stored = (await repository.getById(partyId))!;
+      expect(saved, same(stored));
       expect(stored.budget.items, hasLength(1));
       expect(stored.budget.total, Money.fromCents(80000));
+    });
+
+    test('guarda a imagem do anúncio junto com o item', () async {
+      await createPlanningParty();
+
+      final saved = await AddItemToPartyUseCase(repository)(
+        partyId: partyId,
+        partyItemId: const PartyItemId('item-1'),
+        externalRef: const ExternalRef(source: 'vendor_catalog', id: 'l-1'),
+        category: PartyItemCategory.dj,
+        nameSnapshot: 'DJ Festa Boa',
+        unitPriceSnapshot: Money.fromCents(80000),
+        quantity: Quantity(1),
+        imageUrlSnapshot: 'https://example.com/dj.jpg',
+      );
+
+      expect(
+        saved.budget.items.single.imageUrlSnapshot,
+        'https://example.com/dj.jpg',
+      );
+      // A imagem acompanha o item quando a quantidade ou o preço mudam.
+      saved.updateItemQuantity(const PartyItemId('item-1'), Quantity(3));
+      expect(
+        saved.budget.items.single.imageUrlSnapshot,
+        'https://example.com/dj.jpg',
+      );
     });
 
     test('propaga as regras do domínio', () async {
@@ -205,6 +245,41 @@ void main() {
         LockPartyForPaymentUseCase(repository)(partyId),
         throwsA(isA<CannotLockWithoutItems>()),
       );
+    });
+
+    test('falham para festa inexistente', () {
+      expect(
+        LockPartyForPaymentUseCase(repository)(missingId),
+        throwsPartyNotFound(),
+      );
+      expect(UnlockPartyUseCase(repository)(missingId), throwsPartyNotFound());
+    });
+  });
+
+  group('InMemoryPartyRepository', () {
+    test('lista só as festas do dono, da mais recente para a mais antiga',
+        () async {
+      final create = CreatePartyUseCase(repository);
+      await create(
+        partyId: const PartyId('a'),
+        ownerId: 'user-1',
+        title: PartyTitle('Primeira'),
+      );
+      await create(
+        partyId: const PartyId('b'),
+        ownerId: 'user-2',
+        title: PartyTitle('De outra pessoa'),
+      );
+      await create(
+        partyId: const PartyId('c'),
+        ownerId: 'user-1',
+        title: PartyTitle('Segunda'),
+        startPlanning: true,
+      );
+
+      final parties = await repository.listByOwner('user-1');
+
+      expect(parties.map((p) => p.id.value), ['c', 'a']);
     });
   });
 

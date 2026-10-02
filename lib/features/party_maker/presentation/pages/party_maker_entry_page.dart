@@ -1,48 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+import 'package:yvenist/features/party_maker/presentation/pages/my_parties_page.dart';
+import 'package:yvenist/features/party_maker/presentation/pages/party_builder_page.dart';
 
-import '../controllers/party_maker_controller.dart';
-import 'my_parties_page.dart';
-import 'party_builder_page.dart';
-
-class PartyMakerEntryPage extends StatefulWidget {
+/// Raiz da aba Party Maker. Decide o que mostrar:
+///
+/// 1. há uma festa aberta -> a montagem dessa festa;
+/// 2. não há nenhuma festa -> a montagem vazia, que convida a começar;
+/// 3. há festas mas nenhuma aberta -> o hub "Minhas Festas".
+class PartyMakerEntryPage extends StatelessWidget {
   const PartyMakerEntryPage({super.key});
 
   @override
-  State<PartyMakerEntryPage> createState() => _PartyMakerEntryPageState();
-}
-
-class _PartyMakerEntryPageState extends State<PartyMakerEntryPage> {
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PartyMakerController>().refreshFromRepo();
-      setState(() => _loaded = true);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!_loaded) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+    final controller = context.watch<PartyMakerController>();
+
+    if (!controller.hasLoaded) {
+      return const Scaffold(body: LoadingView(label: 'Carregando suas festas'));
+    }
+    final loadError = controller.loadError;
+    if (loadError != null && controller.parties.isEmpty) {
+      return Scaffold(
+        body: ErrorStateView(message: loadError, onRetry: controller.load),
       );
     }
-
-    return Consumer<PartyMakerController>(
-      builder: (context, controller, _) {
-        final hasParties = controller.parties.isNotEmpty;
-
-        if (!hasParties) {
-          return const PartyBuilderPage();
-        }
-
-        return const MyPartiesPage();
-      },
-    );
+    if (controller.activePartyId != null || controller.parties.isEmpty) {
+      return const PartyBuilderPage();
+    }
+    return const MyPartiesPage();
   }
 }

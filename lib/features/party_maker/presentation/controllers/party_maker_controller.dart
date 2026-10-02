@@ -1,57 +1,66 @@
 import 'package:flutter/foundation.dart';
+import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/utils/id_generator.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
+import 'package:yvenist/features/party_maker/domain/use_cases/add_item_to_party_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/use_cases/create_party_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/use_cases/lock_party_for_payment_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/use_cases/remove_item_from_party_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/use_cases/unlock_party_use_case.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_item_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_title.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/quantity.dart';
+import 'package:yvenist/features/party_maker/presentation/models/party_budget_item_view.dart';
 
-import '../../domain/use_cases/unlock_party_use_case.dart';
-import '../../domain/use_cases/lock_party_for_payment_use_case.dart';
-import '../state/party_item_image_cache.dart';
-import '../../data/repositories/in_memory_party_repository.dart';
-import '../../domain/entities/party.dart';
-import '../../domain/enums/party_item_category.dart';
-import '../../domain/use_cases/add_item_to_party_use_case.dart';
-import '../../domain/use_cases/create_party_use_case.dart';
-import '../../domain/use_cases/remove_item_from_party_use_case.dart';
-import '../../domain/use_cases/start_planning_use_case.dart';
-import '../../domain/value_objects/external_ref.dart';
-import '../../domain/value_objects/money.dart';
-import '../../domain/value_objects/party_id.dart';
-import '../../domain/value_objects/party_item_id.dart';
-import '../../domain/value_objects/party_title.dart';
-import '../../domain/value_objects/quantity.dart';
-import '../../domain/enums/party_status.dart';
-import '../models/party_budget_item_view.dart';
-
+/// Estado do Party Maker para as telas.
+///
+/// Depende só do contrato [PartyRepository]: funciona igual com o repositório
+/// em memória (modo demonstração, testes) e com o da API.
 class PartyMakerController extends ChangeNotifier {
-  final InMemoryPartyRepository _repo;
+  PartyMakerController({
+    required PartyRepository repository,
+    required IdGenerator ids,
+    String? ownerId,
+  })  : _repository = repository,
+        _ids = ids,
+        _ownerId = ownerId,
+        _createParty = CreatePartyUseCase(repository),
+        _addItem = AddItemToPartyUseCase(repository),
+        _removeItem = RemoveItemFromPartyUseCase(repository),
+        _lockForPayment = LockPartyForPaymentUseCase(repository),
+        _unlockParty = UnlockPartyUseCase(repository);
+
+  final PartyRepository _repository;
+  final IdGenerator _ids;
   final CreatePartyUseCase _createParty;
-  final StartPlanningUseCase _startPlanning;
   final AddItemToPartyUseCase _addItem;
   final RemoveItemFromPartyUseCase _removeItem;
-  final PartyItemImageCache _imageCache = PartyItemImageCache();
   final LockPartyForPaymentUseCase _lockForPayment;
   final UnlockPartyUseCase _unlockParty;
 
-  PartyMakerController({
-    required InMemoryPartyRepository repo,
-    required CreatePartyUseCase createParty,
-    required StartPlanningUseCase startPlanning,
-    required AddItemToPartyUseCase addItem,
-    required RemoveItemFromPartyUseCase removeItem,
-    required LockPartyForPaymentUseCase lockForPayment,
-    required UnlockPartyUseCase unlockParty,
-  })  : _repo = repo,
-        _createParty = createParty,
-        _startPlanning = startPlanning,
-        _addItem = addItem,
-        _removeItem = removeItem,
-        _lockForPayment = lockForPayment,
-        _unlockParty = unlockParty;
-
+  String? _ownerId;
   final List<Party> _parties = [];
+  PartyId? _activePartyId;
+  bool _isBusy = false;
+  bool _hasLoaded = false;
+  String? _error;
+  String? _loadError;
+  bool _disposed = false;
+
+  // ============================================================
+  // Leitura
+  // ============================================================
+
   List<Party> get parties => List.unmodifiable(_parties);
 
   /// ✅ Session state (Presentation):
   /// - null => usuário está no HUB (MyParties)
   /// - != null => usuário está construindo/editando uma festa específica
-  PartyId? _activePartyId;
   PartyId? get activePartyId => _activePartyId;
 
   /// ✅ IMPORTANTE:
@@ -59,406 +68,288 @@ class PartyMakerController extends ChangeNotifier {
   /// Isso é o que permite entrar no hub.
   Party? get activeParty {
     if (_activePartyId == null) return null;
-
-    for (final p in _parties) {
-      if (p.id == _activePartyId) return p;
+    for (final party in _parties) {
+      if (party.id == _activePartyId) return party;
     }
-
-    // Se o ID ativo não existe mais no repo (futuro sync / inconsistência),
-    // encerramos sessão ao invés de cair em "primeira party".
     return null;
   }
 
   bool get isActivePartyLocked => activeParty?.status == PartyStatus.locked;
 
-  bool get canMutateActiveParty {
-    final status = activeParty?.status;
-    return status == PartyStatus.draft || status == PartyStatus.planning;
+  /// Verdadeiro enquanto uma operação está em andamento.
+  bool get isBusy => _isBusy;
+
+  /// Verdadeiro depois da primeira carga das festas (com ou sem sucesso).
+  bool get hasLoaded => _hasLoaded;
+
+  /// Mensagem da última operação que falhou, pronta para exibir.
+  String? get error => _error;
+
+  /// Mensagem de erro da última carga das festas, se ela falhou.
+  String? get loadError => _loadError;
+
+  /// Festas que ainda podem receber itens.
+  List<Party> get editableParties => _parties
+      .where(
+        (p) =>
+            p.status == PartyStatus.draft || p.status == PartyStatus.planning,
+      )
+      .toList(growable: false);
+
+  /// O item do catálogo já está em alguma festa em andamento?
+  bool isInAnyParty(String externalId) {
+    return _parties.any(
+      (party) =>
+          party.status != PartyStatus.cancelled &&
+          party.budget.items.any((item) => item.externalRef.id == externalId),
+    );
   }
-
-  // ============================================================
-  // Helpers para a Home (ContentCard)
-  // ============================================================
-
-  bool isExternalItemInActiveParty(String externalId) {
-    final party = activeParty;
-    if (party == null) return false;
-
-    return party.budget.items.any((i) => i.externalRef.id == externalId);
-  }
-
-  PartyItemId? findPartyItemIdByExternalId(String externalId) {
-    final party = activeParty;
-    if (party == null) return null;
-
-    for (final i in party.budget.items) {
-      if (i.externalRef.id == externalId) return i.id;
-    }
-    return null;
-  }
-
-  // ============================================================
-  // (B) ViewModel mapping: Domain -> Presentation (sem tocar Domain)
-  // ============================================================
 
   List<PartyBudgetItemView> get budgetItemViews {
     final party = activeParty;
     if (party == null) return const [];
 
     return party.budget.items
-        .map((item) {
-          return PartyBudgetItemView(
+        .map(
+          (item) => PartyBudgetItemView(
             id: item.id.value,
             name: item.nameSnapshot,
             unitPriceCents: item.unitPriceSnapshot.cents,
             quantity: item.quantity.value,
-            imageUrl: _imageCache.get(item.externalRef.id),
+            imageUrl: item.imageUrlSnapshot,
             category: item.category.name,
-          );
-        })
+          ),
+        )
         .toList(growable: false);
   }
 
-  int get activePartyTotalCents {
-    final party = activeParty;
-    if (party == null) return 0;
-    return party.budget.total.cents;
-  }
+  int get activePartyTotalCents => activeParty?.budget.total.cents ?? 0;
 
   // ============================================================
-  // Estado do controller
+  // Sessão
   // ============================================================
 
-  bool _isBusy = false;
-  bool get isBusy => _isBusy;
-
-  String? _error;
-  String? get error => _error;
-
-  /// ✅ Encerra sessão ativa -> próximo clique no PartyMaker abre HUB
-  void clearActiveParty() {
+  /// Troca o dono das festas (login, logout ou troca de conta): descarta o que
+  /// estava carregado e busca as festas da nova conta.
+  Future<void> setOwner(String? ownerId) async {
+    if (ownerId == _ownerId && _hasLoaded) return;
+    _ownerId = ownerId;
+    _parties.clear();
     _activePartyId = null;
-    notifyListeners();
+    _error = null;
+    _loadError = null;
+    _hasLoaded = false;
+    await load();
   }
 
-  /// ✅ Atualiza lista do repo, mas NÃO define sessão ativa automaticamente.
-  /// Se a sessão ativa apontar para um id que não existe mais, zera a sessão.
-  void refreshFromRepo() {
-    _parties
-      ..clear()
-      ..addAll(_repo.dumpAll());
-
-    if (_activePartyId != null) {
-      final stillExists = _parties.any((p) => p.id == _activePartyId);
-      if (!stillExists) {
-        _activePartyId = null;
-      }
+  /// Busca as festas do dono no repositório.
+  Future<void> load() async {
+    final ownerId = _ownerId;
+    if (ownerId == null) {
+      _parties.clear();
+      _activePartyId = null;
+      _hasLoaded = true;
+      _notify();
+      return;
     }
 
-    notifyListeners();
+    try {
+      final loaded = await _repository.listByOwner(ownerId);
+      // A conta pode ter mudado enquanto a busca estava em andamento.
+      if (ownerId != _ownerId) return;
+      _parties
+        ..clear()
+        ..addAll(loaded);
+      _loadError = null;
+      if (activeParty == null) _activePartyId = null;
+    } catch (error) {
+      if (ownerId != _ownerId) return;
+      _loadError = _describe(error);
+    } finally {
+      if (ownerId == _ownerId) {
+        _hasLoaded = true;
+        _notify();
+      }
+    }
   }
 
   /// ✅ Seleção explícita pelo HUB
   void setActiveParty(PartyId id) {
     _activePartyId = id;
-    notifyListeners();
+    _notify();
   }
 
-  Future<Party> _ensureActiveParty({required String ownerId}) async {
-    refreshFromRepo();
-
-    // Se já há sessão ativa, tenta carregar ela
-    if (_activePartyId != null) {
-      final existing = await _repo.getById(_activePartyId!);
-      if (existing != null) {
-        _upsert(existing);
-        return existing;
-      }
-    }
-
-    // Não há sessão ativa (ou não existe no repo): cria uma nova party
-    final partyId = PartyId(DateTime.now().microsecondsSinceEpoch.toString());
-
-    await _createParty(
-      partyId: partyId,
-      ownerId: ownerId,
-      title: PartyTitle('Minha Festa'),
-    );
-
-    await _startPlanning(partyId);
-
-    final created = await _repo.getById(partyId);
-    final party = created!;
-    _upsert(party);
-
-    // ✅ ao criar via ensure (ex: user adicionou item), abre sessão ativa
-    _activePartyId = party.id;
-
-    return party;
+  /// ✅ Encerra sessão ativa -> próximo clique no PartyMaker abre HUB
+  void clearActiveParty() {
+    if (_activePartyId == null) return;
+    _activePartyId = null;
+    _notify();
   }
 
- Future<Party> startNewParty({
-  required String ownerId,
-  required String title,
-}) async {
-  _setBusy(true);
-  _error = null;
+  // ============================================================
+  // Operações
+  // ============================================================
 
-  try {
-    final trimmed = title.trim();
-    if (trimmed.isEmpty) {
-      throw Exception('O nome da festa é obrigatório.');
-    }
-
-    final partyId =
-        PartyId(DateTime.now().microsecondsSinceEpoch.toString());
-
-    await _createParty(
-      partyId: partyId,
-      ownerId: ownerId,
-      title: PartyTitle(trimmed),
-    );
-
-    await _startPlanning(partyId);
-
-    final created = await _repo.getById(partyId);
-    final party = created!;
-    _upsert(party);
-
-    _activePartyId = party.id;
-
-    return party;
-  } catch (e) {
-    _error = e.toString();
-    rethrow;
-  } finally {
-    _setBusy(false);
-  }
-}
-
-  Future<bool> addCardToActiveParty({
-    required String ownerId,
-    required String cardTitle,
-    required String cardPrice,
-    required String externalId,
-    required PartyItemCategory category,
-    String? imagePath, // imagem é presentation
-  }) async {
-    _setBusy(true);
-    _error = null;
-
-    try {
-      final party = await _ensureActiveParty(ownerId: ownerId);
-
-      // Cache de imagem (presentation)
-      if (imagePath != null && imagePath.trim().isNotEmpty) {
-        _imageCache.put(externalRefId: externalId, imagePath: imagePath);
-      }
-
-      final unitPrice = Money.fromCents(_parsePriceToCents(cardPrice));
-      final itemId = PartyItemId(
-        DateTime.now().microsecondsSinceEpoch.toString(),
-      );
-
-      await _addItem(
-        partyId: party.id,
-        partyItemId: itemId,
-        externalRef: ExternalRef(source: 'vendor_catalog', id: externalId),
-        category: category,
-        nameSnapshot: cardTitle,
-        unitPriceSnapshot: unitPrice,
-        quantity: Quantity(1),
-      );
-
-      final updated = await _repo.getById(party.id);
-      if (updated != null) _upsert(updated);
-
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    } finally {
-      _setBusy(false);
-    }
+  /// Cria uma festa em planejamento e a torna ativa. `null` se falhar.
+  Future<Party?> startNewParty(String title) {
+    return _guard(() async {
+      final party = await _createNewParty(title);
+      _upsert(party);
+      _activePartyId = party.id;
+      return party;
+    });
   }
 
-  Future<bool> addCardToParty({
-  required PartyId partyId,
-  required String ownerId,
-  required String cardTitle,
-  required String cardPrice,
-  required String externalId,
-  required PartyItemCategory category,
-  String? imagePath,
-}) async {
-  _setBusy(true);
-  _error = null;
-
-  try {
-    final party = await _repo.getById(partyId);
-    if (party == null) {
-      throw Exception('Party não encontrada.');
-    }
-
-    if (party.status == PartyStatus.locked) {
-      throw Exception('Essa festa já foi bloqueada.');
-    }
-
-    if (imagePath != null && imagePath.trim().isNotEmpty) {
-      _imageCache.put(externalRefId: externalId, imagePath: imagePath);
-    }
-
-    final unitPrice = Money.fromCents(_parsePriceToCents(cardPrice));
-    final itemId = PartyItemId(
-      DateTime.now().microsecondsSinceEpoch.toString(),
-    );
-
-    await _addItem(
-      partyId: party.id,
-      partyItemId: itemId,
-      externalRef: ExternalRef(source: 'vendor_catalog', id: externalId),
-      category: category,
-      nameSnapshot: cardTitle,
-      unitPriceSnapshot: unitPrice,
-      quantity: Quantity(1),
-    );
-
-    final updated = await _repo.getById(party.id);
-    if (updated != null) _upsert(updated);
-
+  Future<bool> addItemToParty(PartyId partyId, PartyItemDraft draft) async {
+    final saved = await _guard(() => _addDraft(partyId, draft));
+    if (saved == null) return false;
+    _upsert(saved);
     return true;
-  } catch (e) {
-    _error = e.toString();
-    return false;
-  } finally {
-    _setBusy(false);
   }
-}
 
-  Future<bool> removeItemFromActiveParty(PartyItemId itemId) async {
-  _setBusy(true);
-  _error = null;
+  /// Cria uma festa já com o primeiro item. Se o item não puder entrar, a
+  /// festa recém-criada é descartada: festa vazia não deve existir.
+  Future<bool> addItemToNewParty(String title, PartyItemDraft draft) async {
+    final saved = await _guard(() async {
+      final party = await _createNewParty(title);
+      try {
+        return await _addDraft(party.id, draft);
+      } catch (_) {
+        await _repository.deleteById(party.id);
+        rethrow;
+      }
+    });
+    if (saved == null) return false;
+    _upsert(saved);
+    _activePartyId = saved.id;
+    _notify();
+    return true;
+  }
 
-  try {
+  Future<bool> removeItemFromActiveParty(String itemId) async {
     final party = activeParty;
-    if (party == null) {
-      throw Exception('Não existe Party ativa.');
-    }
+    if (party == null) return _fail('Nenhuma festa selecionada.');
 
-    await _removeItem(partyId: party.id, itemId: itemId);
-
-    final updated = await _repo.getById(party.id);
-    if (updated == null) return false;
-
-    // 🔥 AUTO DELETE se não houver mais itens
-    if (updated.budget.items.isEmpty) {
-      await _repo.deleteById(updated.id);
-      _parties.removeWhere((p) => p.id == updated.id);
-
-      if (_activePartyId == updated.id) {
+    var removed = false;
+    await _guard(() async {
+      final saved = await _removeItem(
+        partyId: party.id,
+        itemId: PartyItemId(itemId),
+      );
+      removed = true;
+      if (saved == null) {
+        // O último item saiu e a festa foi apagada junto.
+        _parties.removeWhere((p) => p.id == party.id);
         _activePartyId = null;
+      } else {
+        _upsert(saved);
       }
+    });
+    return removed;
+  }
 
-      notifyListeners();
-      return true;
-    }
+  Future<bool> lockActivePartyForPayment() {
+    return _changeActiveParty(_lockForPayment.call);
+  }
 
-    _upsert(updated);
+  Future<bool> unlockActiveParty() {
+    return _changeActiveParty(_unlockParty.call);
+  }
+
+  // ============================================================
+  // Internos
+  // ============================================================
+
+  Future<bool> _changeActiveParty(
+    Future<Party> Function(PartyId id) operation,
+  ) async {
+    final party = activeParty;
+    if (party == null) return _fail('Nenhuma festa selecionada.');
+
+    final saved = await _guard(() => operation(party.id));
+    if (saved == null) return false;
+    _upsert(saved);
     return true;
-  } catch (e) {
-    _error = e.toString();
+  }
+
+  Future<Party> _createNewParty(String title) {
+    final ownerId = _ownerId;
+    if (ownerId == null) {
+      throw const UnauthorizedFailure('Entre na sua conta para criar festas.');
+    }
+    return _createParty(
+      partyId: PartyId(_ids.newId()),
+      ownerId: ownerId,
+      title: PartyTitle(title),
+      startPlanning: true,
+    );
+  }
+
+  Future<Party> _addDraft(PartyId partyId, PartyItemDraft draft) {
+    return _addItem(
+      partyId: partyId,
+      partyItemId: PartyItemId(_ids.newId()),
+      externalRef: draft.externalRef,
+      category: draft.category,
+      nameSnapshot: draft.name,
+      unitPriceSnapshot: draft.unitPrice,
+      quantity: Quantity(1),
+      imageUrlSnapshot: draft.imageUrl,
+    );
+  }
+
+  /// Executa [action] marcando o controller como ocupado e traduzindo
+  /// qualquer falha em [error]. Devolve `null` quando falha.
+  Future<T?> _guard<T>(Future<T> Function() action) async {
+    _error = null;
+    _setBusy(true);
+    try {
+      return await action();
+    } catch (error) {
+      _error = _describe(error);
+      // Conflito ou "não encontrado" vindos do servidor significam que a
+      // cópia local está desatualizada: recarrega para a tela voltar a
+      // refletir o que está gravado.
+      if (error is ConflictFailure || error is NotFoundFailure) await load();
+      return null;
+    } finally {
+      _setBusy(false);
+    }
+  }
+
+  bool _fail(String message) {
+    _error = message;
+    _notify();
     return false;
-  } finally {
-    _setBusy(false);
-  }
-}
-
-  Future<bool> lockActivePartyForPayment() async {
-    _setBusy(true);
-    _error = null;
-
-    try {
-      final party = activeParty;
-      if (party == null) {
-        throw Exception('Não existe Party ativa.');
-      }
-
-      await _lockForPayment(party.id);
-
-      final updated = await _repo.getById(party.id);
-      if (updated != null) _upsert(updated);
-
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    } finally {
-      _setBusy(false);
-    }
   }
 
-  Future<bool> unlockActiveParty() async {
-    _setBusy(true);
-    _error = null;
-
-    try {
-      final party = activeParty;
-      if (party == null) throw Exception('Não existe Party ativa.');
-
-      await _unlockParty(party.id);
-
-      final updated = await _repo.getById(party.id);
-      if (updated != null) _upsert(updated);
-
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    } finally {
-      _setBusy(false);
-    }
+  String _describe(Object error) {
+    if (error is PartyDomainException) return error.message;
+    return describeFailure(error);
   }
-
-  // ============================================================
-  // (C) Helper: remover por String id (Page não conhece PartyItemId)
-  // ============================================================
-  Future<bool> removeItemFromActivePartyById(String itemId) async {
-    return removeItemFromActiveParty(PartyItemId(itemId));
-  }
-
-  // ============================================================
-  // Internals
-  // ============================================================
 
   void _upsert(Party party) {
-    final idx = _parties.indexWhere((p) => p.id == party.id);
-    if (idx == -1) {
+    final index = _parties.indexWhere((p) => p.id == party.id);
+    if (index == -1) {
       _parties.insert(0, party);
     } else {
-      _parties[idx] = party;
+      _parties[index] = party;
     }
-    notifyListeners();
+    _notify();
   }
 
-  void _setBusy(bool v) {
-    _isBusy = v;
-    notifyListeners();
+  void _setBusy(bool value) {
+    _isBusy = value;
+    _notify();
   }
 
-  int _parsePriceToCents(String input) {
-    final cleaned = input.replaceAll('R\$', '').replaceAll(' ', '').trim();
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
 
-    if (cleaned.contains(',')) {
-      final parts = cleaned.split(',');
-      final reaisPart = parts[0].replaceAll('.', '');
-      final centsPartRaw = parts.length > 1 ? parts[1] : '0';
-      final centsPart = (centsPartRaw + '00').substring(0, 2);
-      final reais = int.tryParse(reaisPart) ?? 0;
-      final cents = int.tryParse(centsPart) ?? 0;
-      return reais * 100 + cents;
-    }
-
-    final reais = int.tryParse(cleaned.replaceAll('.', '')) ?? 0;
-    return reais * 100;
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

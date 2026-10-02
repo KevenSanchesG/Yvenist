@@ -1,17 +1,20 @@
-import '../entities/party.dart';
-import '../repositories/party_repository.dart';
-import '../value_objects/party_id.dart';
-import '../value_objects/party_title.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_title.dart';
 
 class CreatePartyUseCase {
   final PartyRepository repository;
 
   CreatePartyUseCase(this.repository);
 
+  /// Cria a festa como rascunho ou, com [startPlanning], já em planejamento
+  /// (uma gravação só, em vez de criar e depois iniciar).
   Future<Party> call({
     required PartyId partyId,
     required String ownerId,
     required PartyTitle title,
+    bool startPlanning = false,
   }) async {
     final now = DateTime.now();
     final party = Party(
@@ -21,8 +24,8 @@ class CreatePartyUseCase {
       createdAt: now,
       updatedAt: now,
     );
+    if (startPlanning) party.startPlanning();
 
-    await repository.save(party);
-    return party;
+    return repository.save(party);
   }
 }

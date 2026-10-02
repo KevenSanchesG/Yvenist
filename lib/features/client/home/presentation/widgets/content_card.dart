@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 import '../../../../../core/state/global_app_state.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/utils/money_formatter.dart';
 
 import '../../../../party_maker/domain/enums/party_item_category.dart';
+import '../../../../party_maker/domain/value_objects/external_ref.dart';
+import '../../../../party_maker/domain/value_objects/money.dart';
+import '../../../../party_maker/domain/value_objects/party_item_draft.dart';
 import '../../../../party_maker/presentation/controllers/party_maker_controller.dart';
 import '../../../../party_maker/presentation/widgets/select_party_bottom_sheet.dart';
 
@@ -55,20 +59,15 @@ class _ContentCardState extends State<ContentCard> {
 
   /// 🔥 NOVA LÓGICA
   /// Sempre abre o BottomSheet para escolher a festa
-  Future<void> _toggleParty() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SelectPartyBottomSheet(
-        itemName: widget.title,
-        price: widget.price,
-        externalId: widget.title,
-        imageUrl: widget.imageUrl,
+  Future<void> _toggleParty() {
+    return showAddToPartySheet(
+      context,
+      PartyItemDraft(
+        externalRef: ExternalRef(source: 'vendor_catalog', id: widget.title),
         category: PartyItemCategory.other,
+        name: widget.title,
+        unitPrice: Money.fromCents(parseBrlToCents(widget.price) ?? 0),
+        imageUrl: widget.imageUrl,
       ),
     );
   }
@@ -184,10 +183,7 @@ class _ContentCardState extends State<ContentCard> {
                     Consumer<PartyMakerController>(
                       builder: (context, controller, _) {
                         final isInParty =
-                            controller
-                                .isExternalItemInActiveParty(
-                          widget.title,
-                        );
+                            controller.isInAnyParty(widget.title);
 
                         return GestureDetector(
                           onTap: _toggleParty,
