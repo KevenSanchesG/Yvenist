@@ -726,7 +726,7 @@ void main() {
             personType: PersonType.individual,
             document: document,
             legalName: 'Maria Oliveira',
-            title: title ?? 'Espaço Crystal ${random.nextInt(1 << 32)}',
+            title: title ?? 'Espaço Crystal ${random.nextInt(_randomRange)}',
             description: 'Salão amplo, climatizado, com cozinha equipada.',
             neighborhood: 'Pituba',
             city: 'Salvador',
@@ -1061,6 +1061,13 @@ void main() {
   );
 }
 
+/// Faixa dos sufixos aleatórios que tornam únicos os e-mails e os títulos.
+///
+/// Escrito por extenso de propósito: `1 << 32` vale 0 quando o teste roda no
+/// navegador (lá os deslocamentos de bits são de 32 bits), e `nextInt(0)`
+/// lança um erro.
+const int _randomRange = 0xFFFFFFFF;
+
 /// Dados de uma conta de teste.
 class Account {
   const Account({
@@ -1072,7 +1079,7 @@ class Account {
   /// Uma conta que ainda não existe no servidor.
   factory Account.unique(Random random) {
     final suffix =
-        '${DateTime.now().microsecondsSinceEpoch}-${random.nextInt(1 << 32)}';
+        '${DateTime.now().microsecondsSinceEpoch}-${random.nextInt(_randomRange)}';
     return Account(
       name: 'Teste de Integração',
       email: 'it-$suffix@example.com',
