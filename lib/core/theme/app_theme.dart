@@ -25,7 +25,23 @@ abstract final class AppTheme {
   );
 
   static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary);
+    final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
+      // A cor que o Material deriva do laranja para controles (caixas de
+      // seleção, dia escolhido no calendário, campo em foco) é um marrom que
+      // não aparece em mais nenhum lugar: usa o mesmo laranja dos botões.
+      primary: AppColors.primaryStrong,
+      onPrimary: Colors.white,
+      // Superfícies neutras. As do Material 3 são tingidas pela cor da marca
+      // e, com o laranja, saem rosadas: cartões, menus, listas suspensas e o
+      // calendário destoavam do branco do resto do app.
+      surface: Colors.white,
+      surfaceContainerLowest: Colors.white,
+      surfaceContainerLow: Colors.white,
+      surfaceContainer: Colors.white,
+      surfaceContainerHigh: AppColors.headerBackground,
+      surfaceContainerHighest: AppColors.divider,
+      surfaceTint: Colors.transparent,
+    );
     final fieldBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: AppColors.divider),
@@ -93,14 +109,17 @@ abstract final class AppTheme {
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),
-      // Diálogos, folhas e menus em branco, como os cards: o padrão do
-      // Material 3 tinge essas superfícies com a cor da marca e elas saíam
-      // rosadas, destoando do resto do app.
+      // Diálogos, calendário, folhas e menus em branco, como os cards (o
+      // padrão do Material 3 para diálogos é um tom acima da superfície).
       dialogTheme: const DialogThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: AppTypography.sectionTitle,
         contentTextStyle: AppTypography.body,
+      ),
+      datePickerTheme: const DatePickerThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.white,

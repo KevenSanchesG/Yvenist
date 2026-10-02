@@ -105,6 +105,40 @@ void main() {
     }
   });
 
+  group('componentes do Material', () {
+    final scheme = AppTheme.light().colorScheme;
+
+    test('superfícies neutras: nada de cartão, menu ou calendário rosado', () {
+      // Regressão: o Material 3 tinge as superfícies com a cor da marca. Com
+      // o laranja elas saíam rosadas e destoavam do branco do resto do app.
+      for (final surface in [
+        scheme.surface,
+        scheme.surfaceContainerLowest,
+        scheme.surfaceContainerLow,
+        scheme.surfaceContainer,
+      ]) {
+        expect(surface, white);
+      }
+      expect(scheme.surfaceTint.a, 0);
+    });
+
+    test('os controles usam o laranja dos botões', () {
+      expect(scheme.primary, AppColors.primaryStrong);
+      expectReadable(scheme.onPrimary, scheme.primary);
+    });
+
+    test('o texto que os componentes desenham sozinhos é legível', () {
+      for (final surface in [
+        scheme.surface,
+        scheme.surfaceContainerHigh,
+        scheme.surfaceContainerHighest,
+      ]) {
+        expectReadable(scheme.onSurface, surface);
+        expectReadable(scheme.onSurfaceVariant, surface);
+      }
+    });
+  });
+
   group('texto branco sobre cor', () {
     test('botões e selo de preço', () {
       expectReadable(white, AppColors.primaryStrong);
