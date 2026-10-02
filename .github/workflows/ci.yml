@@ -4,7 +4,8 @@
 # falhar, os outros continuam.
 #
 # O que cada job garante (e onde isso já foi conferido à mão):
-#   app          formatação, análise estática e testes do Flutter
+#   app          formatação, análise estática e testes do Flutter; e a
+#                integridade da Knowledge Base (docs/)
 #   backend      lint, tipos e testes da API em SQLite e em PostgreSQL
 #   integration  o app de verdade falando com a API de verdade, na máquina e
 #                dentro do navegador
@@ -57,6 +58,11 @@ jobs:
       # YVENIST_API_URL); eles têm um job próprio.
       - name: Testes
         run: flutter test
+
+      # Links, cabeçalhos, documentos fora do índice, caminhos citados que não
+      # existem mais e segredos escritos por engano em docs/.
+      - name: Knowledge Base
+        run: python3 tools/check_docs.py
 
   backend:
     name: Backend (Python + PostgreSQL)

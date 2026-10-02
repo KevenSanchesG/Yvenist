@@ -31,8 +31,9 @@ The app also runs **without the API**, in *demo mode*, with sample data kept in 
 | Favorites, synced per account | Working |
 | **Party Maker**: build a party from listings, running total, request a quote (locks the party), unlock to edit | Working |
 | Supplier onboarding: 6-step venue registration with CPF/CNPJ validation | Working |
-| Review pipeline: suppliers and listings are published only after approval | Working in the API (admin endpoints; no admin screen yet) |
+| Review pipeline: suppliers and listings are published only after approval | Working: administrators approve or reject from a review queue in the app |
 | Client / Supplier mode switch on the Profile tab | Working (supplier mode shows listing counters) |
+| Terms of Use and Privacy Policy | Preliminary texts shown in the app; legal review still pending |
 
 ### 🚧 Planned, not built yet
 
@@ -45,7 +46,7 @@ The app shows these as "Em breve" ("coming soon") instead of pretending they exi
 - Listing photos upload, availability calendar, listing details page
 - Two-factor authentication and the "connected devices" screen (the API already lists and revokes sessions)
 - Supplier registration for categories other than venues
-- Terms of Use and Privacy Policy texts
+- Sending the quote to suppliers (today it is an estimate for the organizer only)
 
 ---
 
@@ -116,10 +117,11 @@ flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1   # web / de
 
 ```bash
 flutter analyze
-flutter test                         # 442 tests: units, widget flows, accessibility
+flutter test                         # units, widget flows, accessibility
+python tools/check_docs.py           # links and structure of the knowledge base
 
 cd backend
-pytest                               # 339 tests on in-memory SQLite
+pytest                               # the API on in-memory SQLite
 ruff check . && mypy app tests
 ```
 
@@ -131,8 +133,9 @@ ruff check . && mypy app tests
 | Backend tests | Every endpoint, the party rules, migrations equal to the models |
 | Backend on PostgreSQL | Same suite plus truly simultaneous requests: `YVENIST_TEST_DATABASE_URL=postgresql+psycopg://... pytest` |
 | Integration tests | The real app code against a running API: `YVENIST_API_URL=http://127.0.0.1:8000/api/v1 flutter test --tags integration test/integration` |
+| Integration tests in the browser | The same scenarios inside Chrome, which is what exercises CORS and the web HTTP client (CI only) |
 
-CI (`.github/workflows/ci.yml`) runs all of the above, builds the Android APK and boots the Docker image on every push.
+CI (`.github/workflows/ci.yml`) runs all of the above on every push to any branch, builds the Android APK and boots the Docker image. Current numbers and what was verified where are in the [changelog](docs/08-changelog/README.md).
 
 ---
 
@@ -150,17 +153,27 @@ lib/
     client/        home, explore, search, favorites, profile screens
     party_maker/   the party aggregate, its rules and screens
     vendor/        supplier registration and status
-    shared_features/  chat, notifications, payments, legal, security
+    admin/         review queue for administrators
+    shared_features/  legal, security, and the "coming soon" screens
 backend/      the API (see backend/README.md)
-docs/         architecture notes, Android release guide, screenshots
+docs/         the project knowledge base (also an Obsidian vault)
 test/         unit, widget-flow, accessibility and integration tests
+tools/        check_docs.py, the knowledge base checker
 ```
 
-Developer documentation is written in Portuguese, like the code comments:
+## 📚 Documentation
 
-- [`docs/arquitetura.md`](docs/arquitetura.md) — how the app and the API are organized, and why
-- [`docs/publicacao-android.md`](docs/publicacao-android.md) — signing and publishing checklist
+Developer documentation is written in Portuguese, like the code comments. It lives in `docs/`, a knowledge base in plain Markdown that also opens as an [Obsidian](https://obsidian.md) vault:
+
+- [`docs/00-project/memory-system.md`](docs/00-project/memory-system.md) — **start here**: the index of everything, and how the project memory works
+- [`docs/01-architecture/overview.md`](docs/01-architecture/overview.md) — how the app and the API are organized
+- [`docs/03-features/party-maker/README.md`](docs/03-features/party-maker/README.md) — the Party Maker: domain, rules, flows
+- [`docs/05-decisions/README.md`](docs/05-decisions/README.md) — why each choice was made (ADRs)
+- [`docs/07-known-issues/README.md`](docs/07-known-issues/README.md) — what is missing, limited or not verified
+- [`docs/09-guides/android-release.md`](docs/09-guides/android-release.md) — signing and publishing checklist
 - [`backend/README.md`](backend/README.md) — running, configuring and testing the API
+
+`CLAUDE.md` and `.claude/` hold the instructions an AI coding assistant ([Claude Code](https://claude.com/claude-code)) loads when working on this repository.
 
 ---
 

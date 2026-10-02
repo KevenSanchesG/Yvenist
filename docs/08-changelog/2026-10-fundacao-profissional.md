@@ -1,4 +1,16 @@
+---
+title: Relatório da fundação profissional
+type: changelog
+updated: 2026-10-02
+---
+
 # YVENIST — RELATÓRIO DE EVOLUÇÃO
+
+> **Documento histórico.** É a fotografia do fim da primeira rodada de trabalho
+> e não é atualizado. Os caminhos de documentos citados aqui (`docs/arquitetura.md`,
+> `docs/publicacao-android.md`) são os daquele momento; hoje o conteúdo está
+> distribuído na Knowledge Base ([índice](../00-project/memory-system.md)). Várias
+> pendências listadas no fim foram fechadas depois: veja [2026-10](2026-10.md).
 
 Estado em 2 de outubro de 2026, branch `feat/professional-foundation` (20
 commits sobre a `main`, o último deles este relatório; nada enviado ao GitHub).

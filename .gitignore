@@ -63,3 +63,23 @@ backend/*.db
 .env
 .env.*
 !.env.example
+
+# Obsidian: a pasta docs/ é um cofre. O comportamento do cofre é versionado
+# (app.json, core-plugins.json, templates.json); o que é de cada pessoa ou de
+# cada máquina fica de fora.
+docs/.obsidian/workspace*.json
+docs/.obsidian/appearance.json
+docs/.obsidian/hotkeys.json
+docs/.obsidian/graph.json
+docs/.obsidian/community-plugins.json
+docs/.obsidian/core-plugins-migration.json
+docs/.obsidian/plugins/
+docs/.obsidian/themes/
+docs/.obsidian/snippets/
+docs/.obsidian/cache
+docs/.trash/
+
+# Claude Code: instruções e permissões pessoais. O CLAUDE.md e a pasta
+# .claude/ (regras e skills) são do projeto e são versionados.
+CLAUDE.local.md
+.claude/settings.local.json

@@ -23,10 +23,10 @@ A API fica em `http://127.0.0.1:8000` e a documentação interativa em
 `http://127.0.0.1:8000/docs` (desligada em produção).
 
 Com Docker, a partir da raiz do repositório: `docker compose up --build` sobe
-PostgreSQL, aplica as migrações e inicia a API na porta 8000. Atenção: a imagem
-e o compose **nunca foram executados** na máquina em que o projeto foi escrito
-(não havia Docker nela). Quem os constrói e testa é o job `docker` do CI; se
-ele falhar na primeira execução, é ali que está o ajuste a fazer.
+PostgreSQL, aplica as migrações e inicia a API na porta 8000. A máquina em que
+o projeto é escrito não tem Docker: quem constrói a imagem e sobe o compose a
+cada envio é o job `docker` do CI, que também confere que a API responde e que
+o processo não roda como root.
 
 ### Windows com Controle Inteligente de Aplicativos
 
@@ -71,7 +71,7 @@ de senha for o de testes.
 ## Comandos
 
 ```bash
-pytest                     # 339 testes (SQLite em memória)
+pytest                     # a suíte em SQLite em memória
 ruff check . && ruff format --check .
 mypy app tests             # app em modo estrito
 
@@ -122,6 +122,12 @@ O limite de requisições fica desligado porque os testes criam dezenas de conta
 em sequência; nunca use essas duas variáveis em produção (a segunda nem é
 aceita com `YVENIST_ENV=production`).
 
+Os cenários da fila de análise precisam de um administrador
+(`python -m app.cli create-admin --email admin@example.com`) e das variáveis
+`YVENIST_ADMIN_EMAIL` e `YVENIST_ADMIN_PASSWORD` do lado do teste. Para rodar
+os mesmos testes dentro do navegador a API também precisa autorizar a origem
+(`YVENIST_CORS_ORIGINS`): veja `docs/09-guides/web.md`.
+
 As dependências ficam travadas em `requirements.txt` e `requirements-dev.txt`.
 Depois de mudar o `pyproject.toml`, regenere os dois:
 
@@ -153,27 +159,16 @@ uso e transação) → `models.py` (tabelas). `schemas.py` são os contratos de
 entrada e saída. Onde há regra de negócio de verdade (festas), ela fica em um
 `domain.py` puro, testado sem banco.
 
-## Decisões que vale conhecer
+## Para saber mais
 
-- **Erros** têm sempre o formato `{"error": {"code", "message", "request_id"}}`.
-  `code` é estável para o app decidir o que fazer; `message` é o texto em
-  português para o usuário. Erros de validação trazem também
-  `details.fields`, com a mensagem de cada campo, também em português (a
-  tradução dos erros do Pydantic fica em `app/core/errors.py`).
-- **Senhas**: Argon2id, mínimo de 8 caracteres e recusa das senhas mais comuns
-  (`app/modules/accounts/passwords.py`), sem regras de composição, como
-  recomenda o NIST SP 800-63B.
-- **Concorrência**: onde "verificar e depois gravar" não basta, quem decide é o
-  banco (índices únicos, trava de linha, versão da festa). A violação vira 409,
-  nunca 500.
-- **Dinheiro** é sempre inteiro em centavos.
-- **Autenticação**: token de acesso JWT curto + token de renovação opaco com
-  rotação. Reutilizar um token de renovação já trocado derruba a sessão inteira.
-  Trocar a senha invalida todos os tokens na hora.
-- **Festas** são gravadas por estado (`PUT /parties/{id}` com o estado desejado).
-  O servidor valida as transições, copia nome e preço do catálogo (nunca confia
-  no preço enviado pelo cliente) e usa versão para detectar edições concorrentes.
-- **Paginação** do catálogo é por cursor, não por `OFFSET`.
-- **Busca** ignora acentos e maiúsculas usando uma coluna de texto normalizado.
-- **Dados pessoais**: CPF/CNPJ só saem mascarados; a conta pode ser apagada pelo
-  próprio usuário (`POST /users/me/delete`).
+A documentação do projeto fica na Knowledge Base, em `docs/` na raiz do
+repositório. O que diz respeito à API:
+
+| Assunto | Documento |
+|---|---|
+| Organização, rotas, contratos, limites | [`docs/01-architecture/backend.md`](../docs/01-architecture/backend.md) |
+| Tabelas e relações | [`docs/01-architecture/data-model.md`](../docs/01-architecture/data-model.md) |
+| Segurança e dados pessoais | [`docs/01-architecture/security.md`](../docs/01-architecture/security.md) |
+| O que cada teste prova | [`docs/01-architecture/testing.md`](../docs/01-architecture/testing.md) |
+| Por que cada escolha (formato de erro, autenticação, festas por estado, concorrência pelo banco, dinheiro em centavos) | [`docs/05-decisions/README.md`](../docs/05-decisions/README.md) |
+| Regras das festas | [`docs/03-features/party-maker/business-rules.md`](../docs/03-features/party-maker/business-rules.md) |

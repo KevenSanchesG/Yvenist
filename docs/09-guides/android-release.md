@@ -1,26 +1,19 @@
+---
+title: Publicação no Android
+type: guide
+updated: 2026-10-02
+---
+
 # Publicação no Android
 
 O que precisa acontecer para o app sair da máquina de desenvolvimento e ir para
 a Play Store.
 
-## 1. Identificador do app: `com.yvenist.app`
+## 1. Identificador do app
 
-Definido em 2 de outubro de 2026, no lugar do `com.example.yvenist` do modelo do
-Flutter (que a Play Store não aceita). **Ele não pode mais mudar depois da
-primeira publicação**: é o que identifica o app nas lojas para sempre.
-
-Onde ele está, caso um dia seja preciso conferir:
-
-| Plataforma | Arquivo |
-|---|---|
-| Android | `android/app/build.gradle.kts` (`namespace` e `applicationId`) e a pasta de `MainActivity.kt` |
-| iOS | `ios/Runner.xcodeproj/project.pbxproj` (`PRODUCT_BUNDLE_IDENTIFIER`) |
-| macOS | `macos/Runner/Configs/AppInfo.xcconfig` |
-| Linux | `linux/CMakeLists.txt` (`APPLICATION_ID`) |
-
-O ideal é que o domínio `yvenist.com` seja de vocês: a convenção é o
-identificador ser o domínio ao contrário, e as lojas podem pedir essa
-comprovação em alguns recursos (links que abrem o app, por exemplo).
+`com.yvenist.app`. **Não pode mais mudar depois da primeira publicação.** Onde
+ele está em cada plataforma e a pergunta em aberto sobre o domínio:
+[ADR-013](../05-decisions/ADR-013-identificador-do-app.md).
 
 ## 2. Criar a chave de publicação
 
@@ -94,22 +87,20 @@ diferentes.
 | Release recusa API sem `https` | `lib/core/config/app_config.dart` |
 | Chave e senhas fora do Git | `.gitignore` (`*.jks`, `*.keystore`, `android/key.properties`) |
 
-Conferido em um emulador (Android 13): build de release assinado pela chave
-configurada em `key.properties`, instalado e aberto, com o backup desligado.
+Conferido em um emulador (Android 13) em 2 de outubro de 2026: build de release
+assinado pela chave configurada em `key.properties` (uma chave descartável,
+apagada depois), instalado e aberto, com o backup desligado.
 
 ## Antes de publicar de verdade
 
-- A API precisa estar no ar em `https`, com `YVENIST_ENV=production` e um
-  `YVENIST_JWT_SECRET` próprio (veja `backend/README.md`).
-- Os Termos de Uso e a Política de Privacidade existem como **versão
-  preliminar** (`assets/legal/`, mostrados na tela "Termos e Política" com um
-  aviso). Foram escritos a partir do que o app realmente coleta e faz, mas
-  falta: revisão por advogado, e preencher os trechos entre colchetes (razão
-  social e CNPJ, e-mail de contato e do encarregado, idade mínima, hospedagem,
-  foro). A loja exige a política de privacidade publicada em uma URL pública.
-- Ao mudar o texto, mude a versão nos dois lugares: a linha "Versão" de cada
-  documento e `terms_version` em `backend/app/core/config.py`, que é o que fica
-  registrado no aceite de cada conta (um teste confere se são iguais).
+- A API no ar em `https`, com `YVENIST_ENV=production` e um
+  `YVENIST_JWT_SECRET` próprio ([`backend/README.md`](../../backend/README.md)).
+- Os textos legais fechados e a política de privacidade em uma URL pública
+  ([legal](../03-features/legal.md)).
 - A ficha da loja pede a declaração de quais dados são coletados: nome, e-mail,
-  telefone e data de nascimento (opcionais), e CPF/CNPJ de quem anuncia.
+  telefone e data de nascimento (opcionais), e CPF/CNPJ de quem anuncia. A
+  lista completa está na política de privacidade.
 - iOS não foi compilado neste projeto (exige um Mac).
+
+Tudo o que ainda bloqueia a publicação:
+[problemas conhecidos](../07-known-issues/README.md).

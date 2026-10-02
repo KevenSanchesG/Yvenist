@@ -9,7 +9,7 @@ plugins {
 }
 
 // Chave de publicação: descrita em android/key.properties, que não é versionado
-// (veja docs/publicacao-android.md). Sem esse arquivo o build de release ainda
+// (veja docs/09-guides/android-release.md). Sem esse arquivo o build de release ainda
 // funciona, assinado com a chave de debug.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
