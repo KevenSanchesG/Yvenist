@@ -1,13 +1,17 @@
 ---
 title: "ADR-013: Identificador do app — com.yvenist.app"
 type: adr
-status: aceita
+status: substituída por ADR-016
 date: 2026-10-02
 ---
 
 # ADR-013: Identificador do app — `com.yvenist.app`
 
-**Status:** aceita · **Data:** 2026-10-02 · **Decidida por:** os donos do
+**Status:** **substituída pelo
+[ADR-016](ADR-016-identificador-br-com-yvenist-app.md)** no mesmo dia: o
+domínio dos donos é `yvenist.com.br`, e o identificador passou a ser
+`br.com.yvenist.app`. O texto abaixo fica como registro do que tinha sido
+decidido · **Data:** 2026-10-02 · **Decidida por:** os donos do
 projeto (resposta direta à pergunta sobre o identificador; commit `a74d68c`)
 
 ## Contexto

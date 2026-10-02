@@ -24,9 +24,10 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [010](ADR-010-fila-de-analise.md) | Recusar um cadastro recusa os anúncios dele; a tela só publica o que mostrou | aceita (confirmada pelos donos) |
 | [011](ADR-011-knowledge-base-em-docs.md) | Knowledge Base em `docs/`, aberta pelo Obsidian, sem MCP | aceita |
 | [012](ADR-012-ci-a-cada-envio.md) | CI a cada envio, em cinco jobs | aceita |
-| [013](ADR-013-identificador-do-app.md) | Identificador `com.yvenist.app` | aceita (decisão dos donos) |
+| [013](ADR-013-identificador-do-app.md) | Identificador `com.yvenist.app` | substituída por ADR-016 |
 | [014](ADR-014-textos-legais-como-assets.md) | Textos legais como arquivos do app, com versão casada à da API | aceita |
 | [015](ADR-015-paginas-legais-publicas.md) | Páginas legais públicas geradas dos mesmos arquivos do app | aceita |
+| [016](ADR-016-identificador-br-com-yvenist-app.md) | Identificador `br.com.yvenist.app`, seguindo o domínio dos donos | aceita (decisão dos donos) |
 
 ## Quando criar um ADR
 

@@ -89,7 +89,7 @@ flutter pub get
 flutter run
 ```
 
-The app opens signed in with a demo account. After signing out, use `demo@yvenist.app` / `demonstracao`. Everything lives in memory and is reset when the app restarts.
+The app opens signed in with a demo account. After signing out, use `demo@yvenist.com.br` / `demonstracao`. Everything lives in memory and is reset when the app restarts.
 
 ### With the API
 

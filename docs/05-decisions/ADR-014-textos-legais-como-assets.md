@@ -59,3 +59,9 @@ verdadeira?
   dificulta a revisão por quem não programa.
 - **Continuar com "em elaboração"**: o app seguiria registrando o aceite de um
   texto inexistente.
+
+## Depois
+
+A URL pública que este ADR deixou em aberto foi tratada no
+[ADR-015](ADR-015-paginas-legais-publicas.md): páginas estáticas geradas
+destes mesmos arquivos.

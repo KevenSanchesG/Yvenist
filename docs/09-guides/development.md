@@ -24,7 +24,7 @@ flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1   # web ou d
 ```
 
 `10.0.2.2` é como o emulador Android enxerga o computador. No modo
-demonstração a conta é `demo@yvenist.app` / `demonstracao`.
+demonstração a conta é `demo@yvenist.com.br` / `demonstracao`.
 
 ## Rodar a API
 

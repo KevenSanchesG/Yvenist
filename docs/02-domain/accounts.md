@@ -46,8 +46,9 @@ App: `lib/features/auth`. API: `backend/app/modules/accounts`. Telas:
 ## Modo demonstração
 
 `InMemoryAuthRepository`: o app já abre autenticado na conta
-`demo@yvenist.app` (senha `demonstracao`, anunciada na tela de entrada). Apagar
-essa conta a recria zerada, com outro id.
+`demo@yvenist.com.br` (senha `demonstracao`, anunciada na tela de entrada). O
+endereço usa o domínio dos donos e não é uma caixa de correio: nada é enviado
+no modo demonstração. Apagar essa conta a recria zerada, com outro id.
 
 ## O que não existe
 

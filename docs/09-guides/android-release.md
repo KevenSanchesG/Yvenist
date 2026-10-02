@@ -11,9 +11,9 @@ a Play Store. **O app nunca foi enviado à loja.**
 
 ## 1. Identificador do app
 
-`com.yvenist.app`. **Não pode mais mudar depois da primeira publicação.** Onde
-ele está em cada plataforma e a pergunta em aberto sobre o domínio:
-[ADR-013](../05-decisions/ADR-013-identificador-do-app.md).
+`br.com.yvenist.app`, o domínio dos donos (`yvenist.com.br`) ao contrário.
+**Não pode mais mudar depois da primeira publicação.** Onde ele está em cada
+plataforma: [ADR-016](../05-decisions/ADR-016-identificador-br-com-yvenist-app.md).
 
 ## 2. As duas chaves
 
@@ -142,7 +142,8 @@ Tudo o que ainda bloqueia a publicação:
 |---|---|---|
 | Build de release assinado pela chave de `key.properties`, instalado e aberto em um emulador (Android 13), com o backup desligado | chave descartável, apagada depois | 2026-10-02 |
 | Pacote para a loja (`.aab`): recusa sem a chave; com uma chave de teste, compila e sai assinado por ela | na máquina de desenvolvimento; chave descartável, apagada depois | 2026-10-02 |
-| O manifesto final de release: pacote `com.yvenist.app`, mínimo Android 7 (API 24), alvo API 36, só a permissão de internet | lido do build | 2026-10-02 |
+| O manifesto final de release: mínimo Android 7 (API 24), alvo API 36, só a permissão de internet | lido do build | 2026-10-02 |
+| O identificador `br.com.yvenist.app` no pacote e na atividade inicial | lido do manifesto final de um APK de debug | 2026-10-02 |
 
 **Não conferido:** o envio ao Play Console, a assinatura pelo Google, o teste
 fechado.

@@ -7,7 +7,7 @@ void main() {
     // O que o main() faz quando a API_BASE_URL do build não serve.
     late final String message;
     try {
-      AppConfig.fromRaw('api.yvenist.com/api/v1', isRelease: true);
+      AppConfig.fromRaw('api.yvenist.com.br/api/v1', isRelease: true);
     } on FormatException catch (error) {
       message = error.message;
     }
@@ -16,6 +16,6 @@ void main() {
 
     expect(find.text('App configurado incorretamente'), findsOneWidget);
     expect(find.textContaining('API_BASE_URL inválida'), findsOneWidget);
-    expect(find.textContaining('api.yvenist.com/api/v1'), findsOneWidget);
+    expect(find.textContaining('api.yvenist.com.br/api/v1'), findsOneWidget);
   });
 }

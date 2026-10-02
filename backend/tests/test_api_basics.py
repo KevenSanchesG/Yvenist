@@ -239,25 +239,25 @@ class TestCors:
         assert "access-control-allow-origin" not in response.headers
 
     def test_allows_only_the_configured_origins(self) -> None:
-        application = build_app(cors_origins=["https://app.yvenist.com"])
+        application = build_app(cors_origins=["https://app.yvenist.com.br"])
 
         with TestClient(application) as client:
-            allowed = client.get("/health/live", headers={"Origin": "https://app.yvenist.com"})
+            allowed = client.get("/health/live", headers={"Origin": "https://app.yvenist.com.br"})
             denied = client.get("/health/live", headers={"Origin": "https://malicioso.site"})
 
-        assert allowed.headers["access-control-allow-origin"] == "https://app.yvenist.com"
+        assert allowed.headers["access-control-allow-origin"] == "https://app.yvenist.com.br"
         assert "access-control-allow-origin" not in denied.headers
         assert "access-control-allow-credentials" not in allowed.headers
 
     def test_preflight_allows_what_the_web_app_sends(self) -> None:
-        application = build_app(cors_origins=["https://app.yvenist.com"])
+        application = build_app(cors_origins=["https://app.yvenist.com.br"])
 
         with TestClient(application) as client:
             # O navegador pergunta antes de mandar JSON com o token de acesso.
             preflight = client.options(
                 "/api/v1/parties/qualquer",
                 headers={
-                    "Origin": "https://app.yvenist.com",
+                    "Origin": "https://app.yvenist.com.br",
                     "Access-Control-Request-Method": "PUT",
                     "Access-Control-Request-Headers": "authorization,content-type",
                 },
@@ -272,10 +272,10 @@ class TestCors:
     def test_exposes_the_headers_the_web_app_needs_to_read(self) -> None:
         # Sem isto o navegador esconde do app o tempo de espera de um 429 e o
         # id da requisição, que fora do navegador sempre estiveram visíveis.
-        application = build_app(cors_origins=["https://app.yvenist.com"])
+        application = build_app(cors_origins=["https://app.yvenist.com.br"])
 
         with TestClient(application) as client:
-            response = client.get("/health/live", headers={"Origin": "https://app.yvenist.com"})
+            response = client.get("/health/live", headers={"Origin": "https://app.yvenist.com.br"})
 
         exposed = response.headers["access-control-expose-headers"].lower()
         assert "retry-after" in exposed

@@ -38,7 +38,7 @@ O que a API responde ao navegador (`backend/app/main.py`): métodos `GET`,
 
 ## Como é testada
 
-No CI, o job `integration` roda os mesmos 28 cenários de integração dentro do
+No CI, o job `integration` roda os mesmos cenários de integração dentro do
 Chrome (`flutter test --platform chrome`). É isso que exercita o CORS e o
 cliente HTTP do navegador a cada envio.
 

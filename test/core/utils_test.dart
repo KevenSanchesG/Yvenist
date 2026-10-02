@@ -171,8 +171,8 @@ void main() {
 
     test('aceita URLs http(s) e remove a barra final', () {
       expect(
-        AppConfig.parseBaseUrl('https://api.yvenist.com/api/v1/'),
-        Uri.parse('https://api.yvenist.com/api/v1'),
+        AppConfig.parseBaseUrl('https://api.yvenist.com.br/api/v1/'),
+        Uri.parse('https://api.yvenist.com.br/api/v1'),
       );
       expect(
         AppConfig.parseBaseUrl(' http://10.0.2.2:8000/api/v1 '),
@@ -183,7 +183,7 @@ void main() {
     test('recusa o que não é uma URL de API', () {
       for (final invalid in [
         'api/v1',
-        'api.yvenist.com/api/v1',
+        'api.yvenist.com.br/api/v1',
         'ftp://x.com',
         'javascript:alert(1)',
         'http://',
@@ -200,17 +200,20 @@ void main() {
 
       test('URL válida liga o app à API', () {
         final config = AppConfig.fromRaw(
-          'https://api.yvenist.com/api/v1/',
+          'https://api.yvenist.com.br/api/v1/',
           isRelease: true,
         );
 
         expect(config.isDemoMode, isFalse);
-        expect(config.apiBaseUrl, Uri.parse('https://api.yvenist.com/api/v1'));
+        expect(
+          config.apiBaseUrl,
+          Uri.parse('https://api.yvenist.com.br/api/v1'),
+        );
       });
 
       test('valor errado é erro, e não modo demonstração em silêncio', () {
         // Esquecer o "https://" publicaria um app com dados de mentira.
-        for (final invalid in ['api.yvenist.com/api/v1', 'ftp://x.com']) {
+        for (final invalid in ['api.yvenist.com.br/api/v1', 'ftp://x.com']) {
           expect(
             () => AppConfig.fromRaw(invalid, isRelease: false),
             throwsA(

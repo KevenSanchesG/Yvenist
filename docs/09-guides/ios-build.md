@@ -15,7 +15,7 @@ separa o que já está pronto, conferido lendo os arquivos em 2 de outubro de
 
 | Item | Como está | Onde |
 |---|---|---|
-| Identificador | `com.yvenist.app` nas três configurações; os testes usam `com.yvenist.app.RunnerTests` | `ios/Runner.xcodeproj/project.pbxproj` |
+| Identificador | `br.com.yvenist.app` nas três configurações; os testes usam `br.com.yvenist.app.RunnerTests` ([ADR-016](../05-decisions/ADR-016-identificador-br-com-yvenist-app.md)) | `ios/Runner.xcodeproj/project.pbxproj` |
 | Nome na tela inicial | `Yvenist` | `CFBundleDisplayName` em `ios/Runner/Info.plist` |
 | Versão | vem do `pubspec.yaml` (`FLUTTER_BUILD_NAME` e `FLUTTER_BUILD_NUMBER`) | `ios/Runner/Info.plist` |
 | iOS mínimo | 13.0, igual ao mínimo do único plugin nativo (`flutter_secure_storage_darwin` 0.4.3) | `IPHONEOS_DEPLOYMENT_TARGET` |
@@ -60,7 +60,7 @@ Em ordem. Cada item é uma pendência até ser feito e conferido.
    ([KI-41](../07-known-issues/README.md)).
 8. **Assinatura**: conta no Apple Developer Program (dos donos), a equipe
    escolhida no Xcode (hoje não há `DEVELOPMENT_TEAM` no projeto) e o
-   identificador `com.yvenist.app` registrado na conta.
+   identificador `br.com.yvenist.app` registrado na conta.
 9. **App Store Connect**: a URL da política de privacidade
    ([legal](../03-features/legal.md)), as respostas de privacidade (o
    levantamento está em [personal-data](../01-architecture/personal-data.md)),

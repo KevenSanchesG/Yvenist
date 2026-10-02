@@ -30,7 +30,7 @@ void main() {
   group('entrar', () {
     test('aceita as credenciais da conta de demonstração', () async {
       final user = await repository.signIn(
-        email: ' DEMO@yvenist.app ',
+        email: ' DEMO@yvenist.com.br ',
         password: InMemoryAuthRepository.demoPassword,
       );
 

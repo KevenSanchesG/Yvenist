@@ -33,7 +33,7 @@ gradle.taskGraph.whenReady {
 }
 
 android {
-    namespace = "com.yvenist.app"
+    namespace = "br.com.yvenist.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -49,7 +49,7 @@ android {
     defaultConfig {
         // Identifica o app nas lojas para sempre: não pode mudar depois da
         // primeira publicação. O mesmo valor é o Bundle Identifier no iOS.
-        applicationId = "com.yvenist.app"
+        applicationId = "br.com.yvenist.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

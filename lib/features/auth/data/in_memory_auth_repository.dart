@@ -14,7 +14,7 @@ class InMemoryAuthRepository implements AuthRepository {
     if (startSignedIn) _currentEmail = demoEmail;
   }
 
-  static const String demoEmail = 'demo@yvenist.app';
+  static const String demoEmail = 'demo@yvenist.com.br';
   static const String demoPassword = 'demonstracao';
   static const AppUser demoUser = AppUser(
     id: 'demo-user',
