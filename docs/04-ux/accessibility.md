@@ -14,6 +14,7 @@ O que é garantido e por qual teste. Motivos:
 | Critério | Mínimo | Teste |
 |---|---|---|
 | Contraste de texto | 4,5:1 (WCAG AA) em cada par de cor usado | `test/core/theme_contrast_test.dart` |
+| Contraste do que não é texto | 3:1 no contorno de um controle e na borda do campo em foco | mesmo arquivo, grupo "componentes do Material" |
 | Área de toque | 48×48 | `androidTapTargetGuideline` em `test/app/accessibility_test.dart` |
 | Rótulo em todo controle tocável | sempre | `labeledTapTargetGuideline`, mesmo arquivo |
 | Fonte do sistema em 200% | nenhuma tela estoura | grupo "letras grandes", mesmo arquivo |
@@ -53,9 +54,11 @@ fundo tingido, por exemplo), acrescente-o à lista do teste.
 
 ## Limites conhecidos
 
-- `primary` (`#FF6600`) em ícones e na borda de foco dos campos tem 2,94:1,
-  logo abaixo dos 3:1 pedidos para elementos não textuais. Depende da decisão
-  sobre o tom da marca.
+- `primary` (`#FF6600`) em ícones, na barra de progresso e nos indicadores de
+  carregamento tem 2,94:1, logo abaixo dos 3:1 pedidos para elementos não
+  textuais. Depende da decisão sobre o tom da marca.
+- A borda de um campo **sem foco** é `divider` (1,2:1 com o branco): o campo é
+  reconhecido pelo rótulo, não pelo contorno.
 - Não foi testado com TalkBack ou VoiceOver em um aparelho de verdade: o que há
   são as verificações de semântica dos testes.
 - Sem modo escuro.

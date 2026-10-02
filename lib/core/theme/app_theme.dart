@@ -25,15 +25,29 @@ abstract final class AppTheme {
   );
 
   static ThemeData light() {
+    // O destaque de um item selecionado, igual ao do seletor de modo do
+    // perfil. Opaco, porque o Material pinta os componentes com ele direto.
+    final selectedHighlight = Color.alphaBlend(
+      AppColors.tint(AppColors.primaryStrong),
+      Colors.white,
+    );
+    // O Material 3 deriva do laranja da marca todas as cores que os
+    // componentes usam sozinhos, e o resultado destoa do resto do app. Cada
+    // papel abaixo troca a cor derivada por um token do app.
     final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
-      // A cor que o Material deriva do laranja para controles (caixas de
-      // seleção, dia escolhido no calendário, campo em foco) é um marrom que
-      // não aparece em mais nenhum lugar: usa o mesmo laranja dos botões.
+      // A cor derivada para controles (caixas de seleção, dia escolhido no
+      // calendário, campo em foco) é um marrom que não aparece em mais nenhum
+      // lugar: usa o mesmo laranja dos botões.
       primary: AppColors.primaryStrong,
       onPrimary: Colors.white,
-      // Superfícies neutras. As do Material 3 são tingidas pela cor da marca
-      // e, com o laranja, saem rosadas: cartões, menus, listas suspensas e o
-      // calendário destoavam do branco do resto do app.
+      // Item selecionado (segmento de um botão segmentado, filtro marcado):
+      // o derivado é um rosado.
+      primaryContainer: selectedHighlight,
+      onPrimaryContainer: AppColors.primaryStrong,
+      secondaryContainer: selectedHighlight,
+      onSecondaryContainer: AppColors.primaryStrong,
+      // Superfícies neutras. As derivadas saem rosadas: cartões, menus, listas
+      // suspensas e o calendário destoavam do branco do resto do app.
       surface: Colors.white,
       surfaceContainerLowest: Colors.white,
       surfaceContainerLow: Colors.white,
@@ -41,6 +55,17 @@ abstract final class AppTheme {
       surfaceContainerHigh: AppColors.headerBackground,
       surfaceContainerHighest: AppColors.divider,
       surfaceTint: Colors.transparent,
+      // Texto que os componentes escrevem (rótulo de campo e de filtro, itens
+      // de menu, calendário): os derivados são marrons.
+      onSurface: AppColors.textPrimary,
+      onSurfaceVariant: AppColors.textSecondary,
+      // Contornos: o de um controle precisa de 3:1 com o fundo; o decorativo é
+      // o mesmo dos cartões e dos campos.
+      outline: AppColors.textTertiary,
+      outlineVariant: AppColors.divider,
+      // Aviso (SnackBar).
+      inverseSurface: AppColors.textPrimary,
+      onInverseSurface: Colors.white,
     );
     final fieldBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -68,8 +93,13 @@ abstract final class AppTheme {
         fillColor: Colors.white,
         border: fieldBorder,
         enabledBorder: fieldBorder,
+        // O mesmo laranja do rótulo e do cursor do campo em foco, que vêm de
+        // `scheme.primary`.
         focusedBorder: fieldBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.primaryStrong,
+            width: 2,
+          ),
         ),
         errorBorder: fieldBorder.copyWith(
           borderSide: const BorderSide(color: AppColors.danger),

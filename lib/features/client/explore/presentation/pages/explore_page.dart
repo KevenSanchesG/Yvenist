@@ -64,11 +64,15 @@ class _ExplorePageState extends State<ExplorePage> {
                 for (final category in controller.categories)
                   FilterChip(
                     label: Text(category.name),
-                    avatar: Icon(
-                      iconForCategory(category.iconKey),
-                      size: 18,
-                      color: AppColors.primaryStrong,
-                    ),
+                    // Marcado, o visto ocupa o lugar do ícone. Com os dois, o
+                    // Material desenha o visto por cima do ícone escurecido.
+                    avatar: query.categorySlug == category.slug
+                        ? null
+                        : Icon(
+                            iconForCategory(category.iconKey),
+                            size: 18,
+                            color: AppColors.primaryStrong,
+                          ),
                     selected: query.categorySlug == category.slug,
                     onSelected: (_) => controller.toggleCategory(category.slug),
                   ),

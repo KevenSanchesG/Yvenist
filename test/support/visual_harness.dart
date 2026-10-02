@@ -86,6 +86,21 @@ Future<void> withFakeNetworkImages(Future<void> Function() body) async {
   }
 }
 
+/// Roda [body] desenhando as sombras de verdade.
+///
+/// Nos testes o Flutter troca cada sombra por um contorno escuro e sólido,
+/// para a imagem não depender da máquina. Em uma captura para a documentação
+/// esse contorno vira uma moldura que o app não tem (em volta do aviso, do
+/// seletor de modo, dos botões dos cards).
+Future<void> withRealShadows(Future<void> Function() body) async {
+  debugDisableShadows = false;
+  try {
+    await body();
+  } finally {
+    debugDisableShadows = true;
+  }
+}
+
 /// Define a tela do teste como a de um celular.
 void usePhoneScreen(WidgetTester tester) {
   tester.view.physicalSize = phoneSize * phonePixelRatio;

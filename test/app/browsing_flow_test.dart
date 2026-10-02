@@ -133,6 +133,24 @@ void main() {
       expect(find.text('Salão Glamour 8'), findsOneWidget);
     });
 
+    appTest('o filtro de categoria marcado troca o ícone pelo visto', (
+      tester,
+      app,
+    ) async {
+      // Regressão: o filtro marcado mantinha o ícone da categoria e o Material
+      // desenhava o visto por cima dele, com um disco cinza no meio.
+      await openTab(tester, 'Explorar');
+      FilterChip chip(String label) =>
+          tester.widget(find.widgetWithText(FilterChip, label));
+      expect(chip('Atrações').avatar, isNotNull);
+
+      await tapAndSettle(tester, find.widgetWithText(FilterChip, 'Atrações'));
+
+      expect(chip('Atrações').selected, isTrue);
+      expect(chip('Atrações').avatar, isNull);
+      expect(chip('Salões').avatar, isNotNull);
+    });
+
     appTest('tocar de novo no filtro ativo desliga o filtro', (
       tester,
       app,

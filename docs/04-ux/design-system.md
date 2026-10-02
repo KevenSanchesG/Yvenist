@@ -15,7 +15,7 @@ não escreve cor nem tamanho de fonte à mão. Motivos:
 | Token | Valor | Uso |
 |---|---|---|
 | `primary` | `#FF6600` | **só ícones e áreas grandes**: contraste 2,94:1 sobre branco, insuficiente para texto |
-| `primaryStrong` | `#C2410C` | texto laranja, links, botões, rótulo da aba ativa, controles do Material |
+| `primaryStrong` | `#C2410C` | texto laranja, links, botões, rótulo da aba ativa, controles do Material, borda do campo em foco |
 | `vendor`, `vendorAccent` | `#2C3E50`, `#3A7D88` | modo fornecedor |
 | `clientGradient`, `vendorGradient`, `successGradient` | pares escuros | cabeçalhos e banners com texto branco |
 | `textPrimary` | `#333333` | texto |
@@ -31,13 +31,26 @@ ele não pode ser cor de texto.
 
 ## Tema (`app_theme.dart`)
 
-- Material 3, com o esquema derivado do laranja e **dois ajustes**: `primary` é
-  `primaryStrong` (senão caixas de seleção e calendário saem em um marrom que
-  não existe no resto do app) e as superfícies são neutras (senão cartões,
-  menus e listas suspensas saem rosados).
+- Material 3. O esquema nasce do laranja (`ColorScheme.fromSeed`), mas **toda
+  cor que um componente usa sozinho é trocada por um token do app**: as
+  derivadas saem marrons e rosadas, e destoam do resto.
+
+  | Papel do Material | Token | Onde aparece |
+  |---|---|---|
+  | `primary` | `primaryStrong` | caixa de seleção, opção marcada, dia escolhido no calendário, rótulo e cursor do campo em foco |
+  | `primaryContainer`, `secondaryContainer` | `tint(primaryStrong)` sobre branco | segmento escolhido de um botão segmentado, filtro marcado: o mesmo destaque do seletor de modo do perfil |
+  | `onPrimaryContainer`, `onSecondaryContainer` | `primaryStrong` | texto e visto do item selecionado |
+  | `surface` e `surfaceContainer*` | branco, `headerBackground`, `divider` | cartões, menus, listas suspensas, calendário |
+  | `onSurface`, `onSurfaceVariant` | `textPrimary`, `textSecondary` | rótulo de campo e de filtro, itens de menu, calendário |
+  | `outline` | `textTertiary` | contorno de um controle (botão segmentado, botão com contorno): 4,8:1 |
+  | `outlineVariant` | `divider` | contorno decorativo (filtros) |
+  | `inverseSurface`, `onInverseSurface` | `textPrimary`, branco | aviso (SnackBar) |
+
+  Papel novo em uso → entra nessa lista e em `test/core/theme_contrast_test.dart`.
 - Botão preenchido: `primaryStrong` com texto branco, 52 de altura, cantos
   totalmente arredondados.
-- Campos: fundo branco, borda `divider`, raio 12; erro em `danger`.
+- Campos: fundo branco, borda `divider`, raio 12; em foco, borda de 2 em
+  `primaryStrong`; erro em `danger`.
 - Diálogos, folhas, menus e calendário: brancos.
 - Barra de status clara por padrão; sobre o cabeçalho escuro do perfil,
   `AppTheme.systemUiOnDarkHeader`.
@@ -87,5 +100,8 @@ Do app inteiro: `AppBottomNavBar` e `PartyTabButton` (`lib/app/widgets/`).
 - Função prevista e não construída: item visível, com "Em breve" no lugar da
   seta, sem responder ao toque.
 - Botão que não pode agir fica desabilitado.
+- Item selecionado: fundo `tint(primaryStrong)`, texto em `primaryStrong` e um
+  visto. Em um filtro com ícone, o visto ocupa o lugar do ícone
+  (`explore_page.dart`).
 - Ação destrutiva: texto em `danger` e confirmação.
 - Toda lista longa tem carregando, vazio e erro.

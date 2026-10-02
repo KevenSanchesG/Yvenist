@@ -18,6 +18,10 @@ Color over(Color tint, Color background) => Color.alphaBlend(tint, background);
 /// Mínimo da WCAG AA para texto de tamanho normal.
 const double aa = 4.5;
 
+/// Mínimo da WCAG AA para o que não é texto e delimita ou indica o estado de
+/// um controle: bordas, indicador de foco (critério 1.4.11).
+const double nonText = 3;
+
 /// Confere o contraste de cada combinação de texto e fundo que o app usa.
 ///
 /// É um teste sobre as cores, e não sobre telas renderizadas, de propósito: a
@@ -136,6 +140,58 @@ void main() {
         expectReadable(scheme.onSurface, surface);
         expectReadable(scheme.onSurfaceVariant, surface);
       }
+    });
+
+    test('o texto dos componentes usa as cores de texto do app', () {
+      // Regressão: rótulo de campo, de filtro e os números do calendário
+      // saíam em um marrom derivado do laranja, ao lado do cinza do texto que
+      // as telas escrevem.
+      expect(scheme.onSurface, AppColors.textPrimary);
+      expect(scheme.onSurfaceVariant, AppColors.textSecondary);
+    });
+
+    test('item selecionado: o destaque do app, e não um rosado', () {
+      // Regressão: o segmento escolhido de um botão segmentado e o filtro
+      // marcado saíam com o rosado que o Material deriva do laranja, diferente
+      // do item selecionado do resto do app (o seletor de modo do perfil).
+      final highlight = over(AppColors.tint(AppColors.primaryStrong), white);
+
+      for (final (container, content) in [
+        (scheme.secondaryContainer, scheme.onSecondaryContainer),
+        (scheme.primaryContainer, scheme.onPrimaryContainer),
+      ]) {
+        expect(container, highlight);
+        expect(content, AppColors.primaryStrong);
+        expectReadable(content, container);
+      }
+    });
+
+    test('contornos neutros, e visíveis onde delimitam um controle', () {
+      // Regressão: a borda dos filtros saía rosada e a do botão segmentado,
+      // marrom, ao lado das bordas cinza dos cartões e dos campos.
+      expect(scheme.outlineVariant, AppColors.divider);
+      expect(scheme.outline, AppColors.textTertiary);
+      expect(contrast(scheme.outline, white), greaterThanOrEqualTo(nonText));
+    });
+
+    test('campo em foco: a borda no mesmo laranja do rótulo e do cursor', () {
+      // Regressão: a borda do campo em foco ficava no laranja da marca e o
+      // rótulo e o cursor, no dos controles: dois laranjas no mesmo campo, e o
+      // indicador de foco abaixo de 3:1.
+      final focused = AppTheme.light().inputDecorationTheme.focusedBorder!;
+
+      expect(focused.borderSide.color, scheme.primary);
+      expect(
+        contrast(focused.borderSide.color, white),
+        greaterThanOrEqualTo(nonText),
+      );
+    });
+
+    test('aviso (SnackBar): fundo neutro, texto e ação legíveis', () {
+      // Regressão: o aviso saía em um marrom escuro com texto rosado.
+      expect(scheme.inverseSurface, AppColors.textPrimary);
+      expectReadable(scheme.onInverseSurface, scheme.inverseSurface);
+      expectReadable(scheme.inversePrimary, scheme.inverseSurface);
     });
   });
 

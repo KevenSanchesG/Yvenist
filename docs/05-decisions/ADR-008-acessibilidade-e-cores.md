@@ -57,3 +57,23 @@ Como tornar o app legível sem trocar a cor da marca, que é decisão dos donos?
   primeiro para diálogos e menus; cartões e listas suspensas ficaram de fora e
   apareceram rosados na versão web. Corrigir o esquema de cores resolve a
   causa.
+
+## Atualização de 2026-10-02: a mesma decisão, aplicada até o fim
+
+A decisão não mudou. A revisão visual mostrou que ela tinha sido aplicada só a
+uma parte do esquema de cores, e o resto continuava derivado do laranja:
+
+- o segmento escolhido do botão segmentado e o filtro marcado saíam rosados;
+- o contorno dos filtros saía rosado e o do botão segmentado, marrom;
+- rótulo de campo, de filtro e os números do calendário saíam marrons, ao lado
+  do cinza do texto das telas;
+- o aviso (SnackBar) saía em marrom escuro com texto rosado;
+- a borda do campo em foco ficava em `primary` enquanto o rótulo e o cursor
+  usavam `primaryStrong`: dois laranjas no mesmo campo.
+
+Todos passaram a usar tokens do app; a tabela de papéis está em
+[design-system](../04-ux/design-system.md). Com isso a consequência "ícones e a
+borda de foco em `primary` ficam em 2,94:1" vale agora **só para ícones e
+áreas grandes**: a borda de foco tem 5,2:1. O item selecionado segue o destaque
+que o app já usava no seletor de modo do perfil, então nenhuma cor nova foi
+criada. A pendência dos donos (o tom da marca) continua a mesma.

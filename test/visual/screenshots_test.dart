@@ -33,14 +33,16 @@ void main() {
     AppDependencies Function()? dependencies,
   }) {
     testWidgets(description, (tester) {
-      return withFakeNetworkImages(() async {
-        usePhoneScreen(tester);
-        await pumpYvenistApp(
-          tester,
-          signedIn: signedIn,
-          dependencies: dependencies?.call(),
-        );
-        await body(tester);
+      return withFakeNetworkImages(() {
+        return withRealShadows(() async {
+          usePhoneScreen(tester);
+          await pumpYvenistApp(
+            tester,
+            signedIn: signedIn,
+            dependencies: dependencies?.call(),
+          );
+          await body(tester);
+        });
       });
     });
   }

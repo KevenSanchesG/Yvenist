@@ -35,7 +35,10 @@ Onde uma conta é exigida:     Entrar ⇄ Criar conta
 ## Capturas
 
 Geradas das telas reais por `test/visual/screenshots_test.dart`, em modo
-demonstração, com a fonte Inter embutida. Para regenerar:
+demonstração, com a fonte Inter embutida e as sombras de verdade (nos testes
+o Flutter troca cada sombra por um contorno escuro; `withRealShadows`, em
+`test/support/visual_harness.dart`, desliga isso só para as capturas). Para
+regenerar:
 
 ```
 flutter test --update-goldens --run-skipped --tags screenshots test/visual/screenshots_test.dart
