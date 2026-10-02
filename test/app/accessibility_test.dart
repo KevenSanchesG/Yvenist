@@ -337,28 +337,31 @@ void main() {
       await openHallForm(tester);
       Future<void> next() => tapAndSettle(tester, filledButton('Avançar'));
 
-      await enterField(tester, 'CPF do responsável', '529.982.247-25');
-      await enterField(tester, 'Nome completo', 'Maria Oliveira');
+      // Com letras grandes uma etapa pode não caber na tela, e os campos de
+      // baixo só existem depois de rolar a lista dela.
+      Future<void> fill(String label, String text) async {
+        await tester.scrollUntilVisible(
+          find.widgetWithText(TextFormField, label),
+          120,
+          scrollable: find
+              .descendant(
+                of: find.byType(Form),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await enterField(tester, label, text);
+      }
+
+      await fill('CPF do responsável', '529.982.247-25');
+      await fill('Nome completo', 'Maria Oliveira');
       await next();
-      await enterField(tester, 'Nome do salão', 'Espaço Crystal');
-      await enterField(
-        tester,
+      await fill('Nome do salão', 'Espaço Crystal');
+      await fill(
         'Descrição',
         'Salão amplo, climatizado, com cozinha equipada.',
       );
-      // Com letras grandes a etapa não cabe na tela: os campos de baixo só
-      // existem depois de rolar a lista da etapa.
-      await tester.scrollUntilVisible(
-        find.widgetWithText(TextFormField, 'Cidade'),
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byType(Form),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await enterField(tester, 'Cidade', 'Salvador');
+      await fill('Cidade', 'Salvador');
       await scrollToAndTap(
         tester,
         find.byType(DropdownButtonFormField<String>),
@@ -368,7 +371,7 @@ void main() {
       await tapAndSettle(tester, find.widgetWithText(FilterChip, 'Casamentos'));
       await next();
       await next();
-      await enterField(tester, 'Preço a partir de', '2500');
+      await fill('Preço a partir de', '2500');
       await next();
 
       expect(find.text('Confira antes de enviar'), findsOneWidget);

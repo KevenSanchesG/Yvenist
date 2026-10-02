@@ -16,29 +16,35 @@ const double phonePixelRatio = 3;
 
 Uint8List? _placeholderPng;
 
-/// Carrega Roboto (registrada também como "Inter", a família que o app pede e
-/// que cai em Roboto no Android) e a fonte de ícones do Material.
+/// Carrega as fontes de verdade: a Inter embutida no app (os mesmos arquivos
+/// de `assets/fonts` que vão no pacote) e, do SDK do Flutter, a Roboto e os
+/// ícones do Material.
 Future<void> loadRealFonts() async {
   final flutterRoot = Platform.environment['FLUTTER_ROOT'];
   if (flutterRoot == null) {
     throw StateError('FLUTTER_ROOT não definido: rode com "flutter test".');
   }
-  final fontsDir = '$flutterRoot/bin/cache/artifacts/material_fonts';
+  final materialFonts = '$flutterRoot/bin/cache/artifacts/material_fonts';
 
-  Future<ByteData> font(String name) async {
-    final bytes = await File('$fontsDir/$name').readAsBytes();
+  Future<ByteData> font(String path) async {
+    final bytes = await File(path).readAsBytes();
     return ByteData.sublistView(bytes);
   }
 
-  for (final family in ['Inter', 'Roboto']) {
-    final loader = FontLoader(family)
-      ..addFont(font('Roboto-Regular.ttf'))
-      ..addFont(font('Roboto-Medium.ttf'))
-      ..addFont(font('Roboto-Bold.ttf'));
-    await loader.load();
+  final inter = FontLoader('Inter');
+  for (final weight in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    inter.addFont(font('assets/fonts/Inter-$weight.ttf'));
   }
+  await inter.load();
+
+  final roboto = FontLoader('Roboto')
+    ..addFont(font('$materialFonts/Roboto-Regular.ttf'))
+    ..addFont(font('$materialFonts/Roboto-Medium.ttf'))
+    ..addFont(font('$materialFonts/Roboto-Bold.ttf'));
+  await roboto.load();
+
   final icons = FontLoader('MaterialIcons')
-    ..addFont(font('MaterialIcons-Regular.otf'));
+    ..addFont(font('$materialFonts/MaterialIcons-Regular.otf'));
   await icons.load();
 }
 
