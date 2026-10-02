@@ -48,7 +48,8 @@ O que mudou e quando: [changelog](../08-changelog/README.md). O que falta:
 | como o app é organizado | [clean-architecture](../01-architecture/clean-architecture.md) |
 | como a API é organizada | [backend](../01-architecture/backend.md) |
 | tabelas e relações | [data-model](../01-architecture/data-model.md) |
-| segurança e dados pessoais | [security](../01-architecture/security.md) |
+| segurança | [security](../01-architecture/security.md) |
+| que dados pessoais são coletados, e para quem vão | [personal-data](../01-architecture/personal-data.md) |
 | onde ficam e o que provam os testes | [testing](../01-architecture/testing.md) |
 | regras de negócio por assunto | [02-domain](../02-domain/README.md) |
 | uma funcionalidade específica | [03-features](../03-features/README.md) |

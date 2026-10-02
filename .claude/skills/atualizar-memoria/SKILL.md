@@ -41,7 +41,9 @@ pelo termo): se já existe, corrija lá.
 | estrutura do app | `docs/01-architecture/clean-architecture.md` |
 | rota, contrato ou limite da API | `docs/01-architecture/backend.md` |
 | tabela, coluna, índice | `docs/01-architecture/data-model.md` |
-| segurança ou dado pessoal | `docs/01-architecture/security.md` e, se mudou o que é coletado, `assets/legal/politica-de-privacidade.md` |
+| segurança | `docs/01-architecture/security.md` |
+| o que é coletado, guardado ou enviado a terceiros | `docs/01-architecture/personal-data.md` e `assets/legal/politica-de-privacidade.md` |
+| produção, hospedagem, HTTPS | `docs/09-guides/deployment.md` |
 | testes: onde ficam, o que provam | `docs/01-architecture/testing.md` |
 | cor, componente, tela | `docs/04-ux/` |
 | termo novo | `docs/00-project/glossary.md` |

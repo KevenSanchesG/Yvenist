@@ -91,7 +91,8 @@ Integração, PostgreSQL, capturas de tela, web e publicação:
    mesmo código de erro.
 8. **Mudou um modelo** → migração nova. Nunca edite uma migração já enviada.
 9. **Mudou o que o app coleta ou guarda** → atualize
-   `assets/legal/politica-de-privacidade.md`.
+   `assets/legal/politica-de-privacidade.md` e
+   `docs/01-architecture/personal-data.md`.
 10. **Defeito**: primeiro o teste que o reproduz (comentário `Regressão:`),
     depois a correção.
 11. **Só diga "verificado" com evidência**: um comando que rodou ou um job do

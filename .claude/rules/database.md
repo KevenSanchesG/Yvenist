@@ -20,7 +20,8 @@ Contexto completo: `docs/01-architecture/data-model.md`.
 - Chave estrangeira diz o que acontece ao apagar: `CASCADE` a partir da conta;
   `SET NULL` onde o registro deve sobreviver (item de festa, quem analisou).
 - Coluna com dado pessoal novo → atualize
-  `assets/legal/politica-de-privacidade.md` e `docs/01-architecture/security.md`.
+  `assets/legal/politica-de-privacidade.md` e o inventário em
+  `docs/01-architecture/personal-data.md`.
 - Migração que apaga coluna, tabela ou dados, ou qualquer comando contra um
   banco com dados reais: **pare e explique o risco antes**.
 - Atualize `docs/01-architecture/data-model.md` na mesma tarefa.

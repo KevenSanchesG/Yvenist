@@ -10,7 +10,7 @@ O Yvenist não presta os serviços anunciados. A contratação de um espaço ou 
 
 ## 2. Quem pode usar
 
-- Para criar uma conta você precisa ter 18 anos ou mais. [A confirmar antes do lançamento.]
+- Para criar uma conta você precisa ter 18 anos ou mais. [A confirmar antes do lançamento. Hoje o aplicativo não pergunta nem confere a idade.]
 - As informações do cadastro precisam ser verdadeiras e estar atualizadas.
 - A conta é pessoal. Você é responsável por manter a sua senha em segredo e pelo que for feito com a sua conta.
 
@@ -51,7 +51,7 @@ Trabalhamos para que a plataforma esteja disponível e para que os cadastros sej
 
 ## 9. Mudanças nestes termos
 
-Estes termos podem mudar com a evolução do Yvenist. Quando isso acontecer, a nova versão será publicada aqui com a data, e mudanças relevantes serão avisadas pelo aplicativo.
+Estes termos podem mudar com a evolução do Yvenist. Quando isso acontecer, a nova versão será publicada aqui com a data, e mudanças relevantes serão avisadas pelo aplicativo. [O aviso pelo aplicativo ainda não existe: criar antes do lançamento ou ajustar este trecho.]
 
 ## 10. Lei aplicável e contato
 

@@ -48,6 +48,7 @@ dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 python tools/check_docs.py
+python -m unittest discover -s tools -p "test_*.py"
 ```
 
 De `backend/`:

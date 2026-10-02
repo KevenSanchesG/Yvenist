@@ -23,9 +23,11 @@ updated: 2026-10-02
 
 ## Dados pessoais (LGPD)
 
-- O que é guardado está descrito, tabela por tabela, na Política de Privacidade
-  preliminar (`assets/legal/politica-de-privacidade.md`), escrita a partir dos
-  modelos. Mudou o que é coletado → mude o texto ([legal](../03-features/legal.md)).
+- O que é coletado, guardado e enviado para fora está no
+  [inventário de dados pessoais](personal-data.md). A Política de Privacidade
+  preliminar (`assets/legal/politica-de-privacidade.md`) diz o mesmo para quem
+  usa o app. Mudou o que é coletado → mude os dois
+  ([legal](../03-features/legal.md)).
 - CPF/CNPJ: a conta dona vê mascarado (`document_masked`); só a fila de análise
   recebe o número completo (`AdminVendorResponse`).
 - A pessoa corrige os próprios dados (`PATCH /users/me`) e apaga a conta

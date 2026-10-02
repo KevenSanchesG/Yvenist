@@ -48,6 +48,15 @@ Etiquetas (`dart_test.yaml`): `integration` e `screenshots`.
 Por padrão a suíte usa SQLite em memória; com `YVENIST_TEST_DATABASE_URL` roda
 em PostgreSQL, que é onde os testes de concorrência entram.
 
+## Ferramentas (`tools/`)
+
+| Arquivo | O que prova |
+|---|---|
+| `tools/test_build_legal_site.py` | o gerador das páginas legais lê o Markdown como o app lê, não deixa o texto virar marcação, não chama endereço de fora, avisa que é versão preliminar enquanto houver lacuna, e gera sempre o mesmo resultado |
+
+Roda com `python -m unittest discover -s tools -p "test_*.py"`, sem instalar
+nada.
+
 ## O que foi conferido fora dos testes automáticos
 
 | O quê | Como | Quando |

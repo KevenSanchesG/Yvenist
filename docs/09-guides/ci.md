@@ -19,7 +19,7 @@ branch.
 
 | Job | Passos | Garante |
 |---|---|---|
-| `app` | `dart format`, `flutter analyze`, `flutter test`, `python tools/check_docs.py` | código formatado, sem apontamentos, testes verdes, Knowledge Base íntegra |
+| `app` | `dart format`, `flutter analyze`, `flutter test`, `python tools/check_docs.py`, os testes de `tools/` e a geração das páginas legais | código formatado, sem apontamentos, testes verdes, Knowledge Base íntegra, páginas legais geradas dos textos do app |
 | `backend` | `ruff`, `mypy`, `pytest` em SQLite e depois em PostgreSQL 17 | a API, com os testes de concorrência e as migrações no banco de produção |
 | `integration` | migra, semeia, cria um administrador, sobe a API; `flutter test --tags integration` na máquina e com `--platform chrome` | o app real conversa com a API real, também de dentro do navegador |
 | `android` | `flutter build apk --debug` | o app compila para Android |

@@ -65,6 +65,13 @@ jobs:
       - name: Knowledge Base
         run: python3 tools/check_docs.py
 
+      # As páginas públicas (política, termos, exclusão de conta) são geradas
+      # dos mesmos arquivos que o app mostra.
+      - name: Páginas legais
+        run: |
+          python3 -m unittest discover -s tools -p "test_*.py"
+          python3 tools/build_legal_site.py
+
   backend:
     name: Backend (Python + PostgreSQL)
     runs-on: ubuntu-latest

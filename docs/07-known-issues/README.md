@@ -18,7 +18,7 @@ gatilho, não é para agora.
 | # | O quê | O que falta | De quem |
 |---|---|---|---|
 | KI-01 | Textos legais são preliminares, com lacunas entre colchetes | revisão jurídica e os dados da empresa ([legal](../03-features/legal.md)) | donos |
-| KI-02 | A política de privacidade não tem URL pública | hospedar o texto; a Play Store exige | donos |
+| KI-02 | A política de privacidade e a página de exclusão de conta não têm endereço público | escolher onde hospedar as páginas, que já são geradas por `tools/build_legal_site.py` ([legal](../03-features/legal.md)); a Play Store exige as duas | donos |
 | KI-03 | A API não está hospedada | escolher e contratar a hospedagem e apontar o endereço da API para ela; a receita com HTTPS está pronta em `deploy/` ([deployment](../09-guides/deployment.md)) | donos |
 | KI-04 | Não há chave de publicação do Android | criar e guardar fora do repositório ([android-release](../09-guides/android-release.md)) | donos |
 | KI-05 | iOS nunca foi compilado | um Mac com Xcode | donos |
@@ -36,6 +36,7 @@ gatilho, não é para agora.
 | KI-15 | Notas dos anúncios não têm quem as alimente | os cards mostram nota só nos dados de demonstração |
 | KI-16 | Sem recuperar senha nem confirmar e-mail | a primeira pessoa que esquecer a senha |
 | KI-17 | O laranja da marca (`#FF6600`) não tem contraste para texto | decisão do tom ([ADR-008](../05-decisions/ADR-008-acessibilidade-e-cores.md)) |
+| KI-19 | Telefone e data de nascimento são pedidos em Dados Pessoais e nenhuma função os usa | a revisão jurídica: a LGPD pede finalidade para cada dado ([personal-data](../01-architecture/personal-data.md)) |
 
 ## Técnicos
 
@@ -47,7 +48,7 @@ gatilho, não é para agora.
 | KI-23 | Renovação estrita: resposta perdida derruba a sessão | redes muito instáveis | janela curta de tolerância para o token anterior |
 | KI-24 | Fila de análise limitada a 50, sem paginação | mais de 50 itens pendentes | paginar por cursor |
 | KI-25 | A data mostrada na fila é a do primeiro envio do cadastro | cadastros reenviados | expor a data do reenvio |
-| KI-26 | Aceite dos termos sem reaceite quando o texto muda | textos finais e uma mudança relevante | fluxo de reaceite |
+| KI-26 | Aceite dos termos sem reaceite quando o texto muda; os textos prometem um aviso "pelo aplicativo" que não existe | textos finais e uma mudança relevante | fluxo de reaceite, ou tirar a promessa dos textos |
 | KI-27 | Regras das festas duplicadas no app e na API | toda mudança de regra | [PM-9](../03-features/party-maker/known-issues.md) |
 | KI-28 | Mensagens de erro espalhadas, sem catálogo; um idioma só | internacionalização | [ADR-009](../05-decisions/ADR-009-erros-uniformes.md) |
 

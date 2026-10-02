@@ -16,6 +16,9 @@ combinada.
 | Mesclar `feat/professional-foundation` na `main`? | todo o trabalho desde o protótipo está na branch |
 | Qual o tom do laranja da marca? | `#FF6600` tem contraste 2,94:1 sobre branco; hoje fica só em ícones ([ADR-008](../05-decisions/ADR-008-acessibilidade-e-cores.md)) |
 | Quem revisa os textos legais e quais são os dados da empresa? | termos e política têm trechos entre colchetes ([legal](../03-features/legal.md)) |
+| Em que endereço ficam a política e a página de exclusão de conta? | a Play Store exige as duas em endereços públicos; as páginas já são geradas ([legal](../03-features/legal.md)) |
+| Idade mínima: basta a declaração ao aceitar os termos, ou o app pergunta a data de nascimento? | os textos dizem 18 anos e o app não confere |
+| Para que servem o telefone e a data de nascimento? | são pedidos e nenhuma função os usa ([personal-data](../01-architecture/personal-data.md)) |
 | O domínio `yvenist.com` é de vocês? | o identificador `com.yvenist.app` pressupõe isso ([ADR-013](../05-decisions/ADR-013-identificador-do-app.md)) |
 | Como o Yvenist cobra? | o app promete anúncio gratuito; não há cobrança no código |
 | Onde a API vai ser hospedada? | sem API em `https` não há build de release utilizável. Os dois caminhos (servidor próprio com a receita de `deploy/`, ou uma plataforma de contêineres) estão em [deployment](../09-guides/deployment.md) |

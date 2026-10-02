@@ -95,11 +95,13 @@ apagada depois), instalado e aberto, com o backup desligado.
 
 - A API no ar em `https`, com `YVENIST_ENV=production` e um
   `YVENIST_JWT_SECRET` próprio ([deployment](deployment.md)).
-- Os textos legais fechados e a política de privacidade em uma URL pública
-  ([legal](../03-features/legal.md)).
-- A ficha da loja pede a declaração de quais dados são coletados: nome, e-mail,
-  telefone e data de nascimento (opcionais), e CPF/CNPJ de quem anuncia. A
-  lista completa está na política de privacidade.
+- Os textos legais fechados, e a política de privacidade **e a página de
+  exclusão de conta** em endereços públicos ([legal](../03-features/legal.md)).
+  A loja exige as duas: quem cria conta pelo app tem de poder pedir a exclusão
+  também sem ele.
+- A ficha "Segurança dos dados" pede a declaração do que é coletado. O
+  levantamento pelo código, já no formato da ficha, está em
+  [personal-data](../01-architecture/personal-data.md).
 - iOS não foi compilado neste projeto (exige um Mac).
 
 Tudo o que ainda bloqueia a publicação:

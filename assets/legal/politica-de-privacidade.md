@@ -14,9 +14,10 @@ Coletamos apenas o que o aplicativo precisa para funcionar.
 - Dados opcionais: telefone e data de nascimento, se você decidir informar.
 - Aceite: a versão destes documentos que você aceitou ao criar a conta e a data do aceite.
 - Uso do aplicativo: os anúncios que você favoritou e as festas que montou (nome da festa, itens escolhidos, data e número de convidados quando informados, e os orçamentos gerados).
-- Fornecedores: CPF ou CNPJ, nome do responsável ou razão social, e as informações de cada anúncio.
+- Fornecedores: se o cadastro é de pessoa física ou jurídica, CPF ou CNPJ, nome do responsável ou razão social, as informações de cada anúncio e o resultado da análise do cadastro e de cada anúncio (a situação, a data e, em caso de recusa, o motivo).
 - Sessão: quando cada sessão foi aberta e até quando vale, e a identificação do aplicativo ou navegador usado.
-- Segurança: o endereço IP de quem tenta entrar ou criar conta é mantido por cerca de um minuto, só na memória do servidor, para limitar tentativas em excesso.
+- Datas: quando a conta, as festas, o cadastro de fornecedor e os anúncios foram criados e alterados.
+- Segurança: o endereço IP de quem cria conta, entra, renova a sessão, troca a senha ou exclui a conta é mantido por cerca de um minuto, só na memória do servidor, para limitar tentativas em excesso.
 
 Não coletamos sua localização, seus contatos, suas fotos nem dados de pagamento. O aplicativo não usa ferramentas de publicidade nem de rastreamento.
 
@@ -64,12 +65,12 @@ A LGPD garante a você, entre outros, os direitos de:
 - obter informações sobre o compartilhamento;
 - reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
 
-Para exercer um direito que o aplicativo ainda não oferece diretamente, escreva para o contato do item 1.
+Para exercer um direito que o aplicativo ainda não oferece diretamente, ou para pedir a exclusão da conta sem ter o aplicativo instalado, escreva para o contato do item 1.
 
 ## 8. Crianças e adolescentes
 
-O Yvenist é destinado a pessoas com 18 anos ou mais e não coleta, de propósito, dados de crianças e adolescentes. [A confirmar antes do lançamento.]
+O Yvenist é destinado a pessoas com 18 anos ou mais e não coleta, de propósito, dados de crianças e adolescentes. [A confirmar antes do lançamento. Hoje o aplicativo não pergunta nem confere a idade.]
 
 ## 9. Mudanças nesta política
 
-Esta política pode mudar. A versão em vigor fica sempre disponível aqui, com a data, e mudanças relevantes são avisadas pelo aplicativo.
+Esta política pode mudar. A versão em vigor fica sempre disponível aqui, com a data, e mudanças relevantes são avisadas pelo aplicativo. [O aviso pelo aplicativo ainda não existe: criar antes do lançamento ou ajustar este trecho.]

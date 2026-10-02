@@ -26,6 +26,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [012](ADR-012-ci-a-cada-envio.md) | CI a cada envio, em cinco jobs | aceita |
 | [013](ADR-013-identificador-do-app.md) | Identificador `com.yvenist.app` | aceita (decisão dos donos) |
 | [014](ADR-014-textos-legais-como-assets.md) | Textos legais como arquivos do app, com versão casada à da API | aceita |
+| [015](ADR-015-paginas-legais-publicas.md) | Páginas legais públicas geradas dos mesmos arquivos do app | aceita |
 
 ## Quando criar um ADR
 
