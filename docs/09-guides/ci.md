@@ -45,7 +45,11 @@ curl -s "https://api.github.com/repos/KevenSanchesG/Yvenist/actions/runs/<id>/jo
 
 A primeira diz o commit, a situação e a conclusão de cada execução; a segunda,
 qual job e qual passo falhou. Sem credencial o limite é de 60 consultas por
-hora.
+hora, por endereço IP: ao acompanhar uma execução, consulte a cada dois ou
+três minutos, com um observador só. Em 2 de outubro de 2026 dois
+observadores consultando a cada 30 segundos esgotaram o limite antes de a
+execução terminar. Quanto resta: `curl -s https://api.github.com/rate_limit`
+(essa consulta não conta).
 
 O **log** de um job (`/actions/jobs/<id>/logs`) exige estar autenticado.
 Caminhos, do mais simples para o que pede autorização:

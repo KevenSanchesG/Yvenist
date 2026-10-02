@@ -23,8 +23,10 @@ Detalhes: [visão](vision.md).
 
 ## Estado atual (2 de outubro de 2026)
 
-- Branch de trabalho `feat/professional-foundation`, publicada no GitHub. A
-  `main` ainda tem só o protótipo original; nada foi mesclado.
+- A `main` tem todo o trabalho desde 2 de outubro de 2026: a branch
+  `feat/professional-foundation` foi mesclada nela, a pedido dos donos, por
+  avanço rápido (sem commit de mesclagem). O trabalho continua na branch;
+  novo envio e nova mesclagem só quando os donos pedirem.
 - CI verde nos cinco jobs (app, backend em SQLite e PostgreSQL, integração na
   máquina e dentro do Chrome, APK Android, Docker). Detalhes: [CI](../09-guides/ci.md).
 - Funciona: catálogo e busca, contas, favoritos, Party Maker, cadastro de

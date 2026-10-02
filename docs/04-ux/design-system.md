@@ -138,9 +138,11 @@ barra de navegação do sistema, em qualquer Android que permita
 | Perfil rolado | um fundo na cor da tela cobre a barra de status quando o cabeçalho sai de baixo dela, para o conteúdo não passar por baixo do relógio |
 
 Uma tela com `AppBar` não precisa fazer nada pela barra de status. Pela borda
-de baixo, toda tela precisa: os testes comuns rodam sem barras do sistema e
-não acusam um último item escondido. `test/app/system_bars_test.dart` confere
-as telas que vão até a borda, com as barras de um aparelho.
+de baixo, toda tela empilhada precisa (dentro de uma aba não: a barra
+inferior do app já ocupa o espaço). Os testes comuns rodam sem barras do
+sistema e não acusam um último item escondido;
+`test/app/system_bars_test.dart` confere as telas que vão até a borda, com
+as barras de um aparelho.
 
 ## Escolha do tema
 

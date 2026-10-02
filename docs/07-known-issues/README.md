@@ -21,7 +21,6 @@ gatilho, não é para agora.
 | KI-02 | A política de privacidade e a página de exclusão de conta não têm endereço público | escolher onde hospedar as páginas, que já são geradas por `tools/build_legal_site.py` ([legal](../03-features/legal.md)); a Play Store exige as duas | donos |
 | KI-03 | A API não está hospedada | escolher e contratar a hospedagem e apontar o endereço da API para ela; a receita com HTTPS está pronta em `deploy/` ([deployment](../09-guides/deployment.md)) | donos |
 | KI-05 | iOS nunca foi compilado | um Mac com Xcode; a lista do que fazer nele está em [ios-build](../09-guides/ios-build.md) | donos |
-| KI-06 | A branch não foi mesclada na `main` | decisão | donos |
 
 ## Produto
 

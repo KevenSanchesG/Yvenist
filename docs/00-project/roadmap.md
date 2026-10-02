@@ -13,7 +13,6 @@ combinada.
 
 | OPEN QUESTION | Por que trava |
 |---|---|
-| Mesclar `feat/professional-foundation` na `main`? | todo o trabalho desde o protótipo está na branch |
 | Quem revisa os textos legais e quais são os dados da empresa? | termos e política têm trechos entre colchetes ([legal](../03-features/legal.md)) |
 | Em que endereço ficam a política e a página de exclusão de conta? | a Play Store exige as duas em endereços públicos; as páginas já são geradas ([legal](../03-features/legal.md)) |
 | Idade mínima: basta a declaração ao aceitar os termos, ou o app pergunta a data de nascimento? | os textos dizem 18 anos e o app não confere |
@@ -62,7 +61,7 @@ que torna cada uma urgente.
 
 ## `[PROPOSTA]` Ordem sugerida
 
-1. Mesclar a branch e hospedar a API (sem isso nada chega a usuários).
+1. Hospedar a API (sem isso nada chega a usuários).
 2. Fechar os textos legais e publicar no Android em teste interno.
 3. Página de detalhe do anúncio e data/convidados da festa: a API já atende, e
    são o que mais falta para a festa montada ser útil.

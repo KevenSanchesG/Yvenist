@@ -37,6 +37,7 @@ Cada item tem um documento em [03-features](../03-features/README.md).
 - Cadastro de salão em seis etapas, com CPF/CNPJ validado.
 - Fila de análise para administradores.
 - Termos de Uso e Política de Privacidade em versão preliminar.
+- Tema claro e escuro, à escolha da pessoa (Perfil → Aparência).
 
 ## O que o app anuncia e ainda não faz
 

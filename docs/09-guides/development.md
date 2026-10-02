@@ -97,7 +97,10 @@ use `git commit -F arquivo.txt`.
   concluída e verificada. Mensagens em inglês, no formato
   `tipo(escopo): resumo` (`feat`, `fix`, `test`, `docs`, `ci`, `chore`,
   `refactor`, `style`).
-- **Nada é mesclado na `main` sem a decisão dos donos.**
+- **Nada é enviado ao GitHub nem mesclado na `main` sem o pedido dos donos.**
+  Quando pedirem: enviar a branch, esperar o CI passar e só então avançar a
+  `main` até o mesmo commit (`git push origin feat/professional-foundation:main`),
+  sem commit de mesclagem. Foi assim em 2 de outubro de 2026.
 - A identidade do Git está configurada só neste repositório, não globalmente.
 
 ## Antes de mexer no banco
