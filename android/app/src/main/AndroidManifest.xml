@@ -2,10 +2,16 @@
     <!-- Necessária também em release: o app carrega imagens e dados pela rede.
          (O manifesto de debug já a declara, mas ele não vale para release.) -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- allowBackup="false": os tokens da sessão ficam cifrados com uma chave
+         do Keystore, que não acompanha o backup do Google. Restaurados em outro
+         aparelho eles não poderiam ser lidos (recomendação do pacote
+         flutter_secure_storage), e dados de conta não devem ir para a nuvem
+         sem a pessoa saber. -->
     <application
         android:label="Yvenist"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

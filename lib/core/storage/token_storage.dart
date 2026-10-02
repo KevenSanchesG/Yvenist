@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Par de tokens de uma sessão autenticada.
@@ -41,11 +42,19 @@ class SecureTokenStorage implements TokenStorage {
   Future<AuthTokens?> read() async {
     if (_loaded) return _cached;
 
-    final accessToken = await _storage.read(key: _accessKey);
-    final refreshToken = await _storage.read(key: _refreshKey);
-    _cached = (accessToken != null && refreshToken != null)
-        ? AuthTokens(accessToken: accessToken, refreshToken: refreshToken)
-        : null;
+    try {
+      final accessToken = await _storage.read(key: _accessKey);
+      final refreshToken = await _storage.read(key: _refreshKey);
+      _cached = (accessToken != null && refreshToken != null)
+          ? AuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+          : null;
+    } on PlatformException {
+      // O cofre do sistema pode falhar (por exemplo, quando os dados do app
+      // são restaurados em outro aparelho e a chave não vem junto). Sem
+      // conseguir ler, o app abre sem sessão: a pessoa entra de novo e os
+      // tokens são regravados. Nada é apagado aqui.
+      _cached = null;
+    }
     _loaded = true;
     return _cached;
   }

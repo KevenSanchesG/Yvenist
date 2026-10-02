@@ -164,9 +164,79 @@ void main() {
     });
 
     test('recusa o que não é uma URL de API', () {
-      for (final invalid in ['api/v1', 'ftp://x.com', 'javascript:alert(1)']) {
+      for (final invalid in [
+        'api/v1',
+        'api.yvenist.com/api/v1',
+        'ftp://x.com',
+        'javascript:alert(1)',
+        'http://',
+      ]) {
         expect(AppConfig.parseBaseUrl(invalid), isNull, reason: invalid);
       }
+    });
+
+    group('valor de API_BASE_URL no build', () {
+      test('vazio é modo demonstração', () {
+        expect(AppConfig.fromRaw('', isRelease: true).isDemoMode, isTrue);
+        expect(AppConfig.fromRaw('  ', isRelease: false).isDemoMode, isTrue);
+      });
+
+      test('URL válida liga o app à API', () {
+        final config = AppConfig.fromRaw(
+          'https://api.yvenist.com/api/v1/',
+          isRelease: true,
+        );
+
+        expect(config.isDemoMode, isFalse);
+        expect(config.apiBaseUrl, Uri.parse('https://api.yvenist.com/api/v1'));
+      });
+
+      test('valor errado é erro, e não modo demonstração em silêncio', () {
+        // Esquecer o "https://" publicaria um app com dados de mentira.
+        for (final invalid in ['api.yvenist.com/api/v1', 'ftp://x.com']) {
+          expect(
+            () => AppConfig.fromRaw(invalid, isRelease: false),
+            throwsA(
+              isA<FormatException>().having(
+                (e) => e.message,
+                'message',
+                contains('API_BASE_URL inválida'),
+              ),
+            ),
+            reason: invalid,
+          );
+        }
+      });
+
+      test('release exige https; desenvolvimento aceita http', () {
+        const lan = 'http://192.168.0.10:8000/api/v1';
+
+        expect(AppConfig.fromRaw(lan, isRelease: false).isDemoMode, isFalse);
+        expect(
+          () => AppConfig.fromRaw(lan, isRelease: true),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('precisa usar https'),
+            ),
+          ),
+        );
+      });
+
+      test('o próprio aparelho pode usar http mesmo em release', () {
+        for (final local in [
+          'http://localhost:8000/api/v1',
+          'http://127.0.0.1:8000/api/v1',
+          'http://[::1]:8000/api/v1',
+        ]) {
+          expect(
+            AppConfig.fromRaw(local, isRelease: true).isDemoMode,
+            isFalse,
+            reason: local,
+          );
+        }
+      });
     });
 
     test('a versão exibida é a mesma do pubspec.yaml', () {
