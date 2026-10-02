@@ -283,10 +283,41 @@ void main() {
           );
           final failure = other.state.session.failure;
           expect(failure, isA<ValidationFailure>());
+          expect((failure! as ValidationFailure).fieldErrors, {
+            'password': 'Use pelo menos 8 caracteres.',
+          });
+        });
+
+        test('senha muito comum é recusada, e o servidor explica', () async {
+          const tooCommon = 'Esta senha é muito comum. Escolha outra.';
+          final (phone, account) = await signedUpDevice();
+          final session = phone.state.session;
+
+          // Na troca de senha...
           expect(
-            (failure! as ValidationFailure).fieldErrors.keys,
-            contains('password'),
+            await session.changePassword(
+              currentPassword: account.password,
+              newPassword: 'Password123',
+            ),
+            isFalse,
           );
+          expect(session.error, tooCommon);
+          expect((session.failure! as ValidationFailure).fieldErrors, {
+            'new_password': tooCommon,
+          });
+
+          // ...e no cadastro.
+          final other = await device();
+          expect(
+            await other.state.session.signUp(
+              fullName: 'Outra Pessoa',
+              email: Account.unique(random).email,
+              password: '12345678',
+            ),
+            isFalse,
+          );
+          expect(other.state.session.error, tooCommon);
+          expect(other.state.session.isSignedIn, isFalse);
         });
 
         test('token de acesso vencido é renovado sem interromper', () async {

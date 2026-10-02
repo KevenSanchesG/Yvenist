@@ -18,6 +18,9 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  /// Nomes, na API, dos campos que esta tela mostra.
+  static const List<String> _formFields = ['full_name', 'email', 'password'];
+
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
@@ -72,10 +75,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final session = context.watch<SessionController>();
     final failure = session.failure;
-    // Erros que o servidor atribuiu a um campo aparecem no próprio campo.
+    // Erros que o servidor atribuiu a um campo aparecem no próprio campo; os
+    // demais (inclusive de um campo que esta tela não tem), no aviso do topo.
     final serverFields = failure is ValidationFailure
         ? failure.fieldErrors
         : const <String, String>{};
+    final hasFieldError = _formFields.any(serverFields.containsKey);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar conta')),
@@ -84,11 +89,14 @@ class _RegisterPageState extends State<RegisterPage> {
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
+            // Ao voltar a digitar, o erro devolvido pelo servidor some: ele
+            // era sobre o que foi enviado antes.
+            onChanged: session.clearError,
             child: AutofillGroup(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (failure != null && serverFields.isEmpty) ...[
+                  if (failure != null && !hasFieldError) ...[
                     FormErrorBanner(message: failure.message),
                     const SizedBox(height: 16),
                   ],
@@ -98,9 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.name],
                     validator: validateFullName,
-                    forceErrorText: serverFields.containsKey('full_name')
-                        ? 'Nome inválido.'
-                        : null,
+                    forceErrorText: serverFields['full_name'],
                     decoration: const InputDecoration(
                       labelText: 'Nome completo',
                     ),
@@ -113,9 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     autocorrect: false,
                     autofillHints: const [AutofillHints.email],
                     validator: validateEmail,
-                    forceErrorText: serverFields.containsKey('email')
-                        ? 'E-mail inválido.'
-                        : null,
+                    forceErrorText: serverFields['email'],
                     decoration: const InputDecoration(labelText: 'E-mail'),
                   ),
                   const SizedBox(height: 16),
@@ -126,6 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     textInputAction: TextInputAction.next,
                     validator: validateNewPassword,
                     helperText: 'Pelo menos $passwordMinLength caracteres.',
+                    serverError: serverFields['password'],
                   ),
                   const SizedBox(height: 16),
                   PasswordField(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/auth/domain/entities/app_user.dart';
 
@@ -15,6 +16,23 @@ class OfflineAtStartAuth extends InMemoryAuthRepository {
   Future<AppUser?> restoreSession() {
     if (offline) throw const NetworkFailure();
     return super.restoreSession();
+  }
+}
+
+/// Autenticação cujo cadastro é recusado como a API recusaria, apontando o
+/// campo (as regras do servidor podem ser mais rígidas que as da tela).
+class RejectingSignUpAuth extends InMemoryAuthRepository {
+  RejectingSignUpAuth(this.fieldErrors) : super(startSignedIn: false);
+
+  final Map<String, String> fieldErrors;
+
+  @override
+  Future<AppUser> signUp({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    throw ValidationFailure(fieldErrors.values.first, fieldErrors: fieldErrors);
   }
 }
 
@@ -249,6 +267,62 @@ void main() {
       expect(typedIn('Senha'), 'senha-segura-123');
       expect(typedIn('Repita a senha'), 'senha-segura-123');
     }, signedIn: false);
+
+    appTest(
+      'erro que o servidor aponta em um campo aparece nesse campo',
+      (tester, app) async {
+        const tooCommon = 'Esta senha é muito comum. Escolha outra.';
+        await openRegister(tester);
+        await fillRegistration(tester, password: 'password123');
+        await scrollToAndTap(tester, find.byType(Checkbox));
+
+        await scrollToAndTap(tester, filledButton('Criar conta'));
+
+        expect(
+          find.descendant(
+            of: find.widgetWithText(TextFormField, 'Senha'),
+            matching: find.text(tooCommon),
+          ),
+          findsOneWidget,
+        );
+        expect(find.byType(FormErrorBanner), findsNothing);
+        expect(find.widgetWithText(AppBar, 'Criar conta'), findsOneWidget);
+
+        // Voltar a digitar apaga o erro: ele era sobre a senha anterior.
+        await enterField(tester, 'Senha', 'outra-senha-melhor');
+        await tester.pumpAndSettle(); // o texto do erro some com uma animação
+        expect(find.text(tooCommon), findsNothing);
+      },
+      dependencies: () => demoDependencies(
+        auth: RejectingSignUpAuth({
+          'password': 'Esta senha é muito comum. Escolha outra.',
+        }),
+      ),
+    );
+
+    appTest(
+      'erro em um campo que a tela não tem vai para o aviso do topo',
+      (tester, app) async {
+        await openRegister(tester);
+        await fillRegistration(tester);
+        await scrollToAndTap(tester, find.byType(Checkbox));
+
+        await scrollToAndTap(tester, filledButton('Criar conta'));
+
+        expect(
+          find.descendant(
+            of: find.byType(FormErrorBanner),
+            matching: find.text('Código de convite inválido.'),
+          ),
+          findsOneWidget,
+        );
+      },
+      dependencies: () => demoDependencies(
+        auth: RejectingSignUpAuth({
+          'invite_code': 'Código de convite inválido.',
+        }),
+      ),
+    );
 
     appTest('valida todos os campos e o aceite dos termos', (
       tester,

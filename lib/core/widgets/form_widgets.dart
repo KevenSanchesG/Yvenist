@@ -91,6 +91,7 @@ class PasswordField extends StatefulWidget {
     this.onFieldSubmitted,
     this.isNewPassword = false,
     this.helperText,
+    this.serverError,
   });
 
   final TextEditingController controller;
@@ -102,6 +103,9 @@ class PasswordField extends StatefulWidget {
   /// Diz ao gerenciador de senhas se é para preencher ou para sugerir uma.
   final bool isNewPassword;
   final String? helperText;
+
+  /// Erro que o servidor atribuiu a este campo, mostrado como os de validação.
+  final String? serverError;
 
   @override
   State<PasswordField> createState() => _PasswordFieldState();
@@ -131,6 +135,7 @@ class _PasswordFieldState extends State<PasswordField> {
       textInputAction: widget.textInputAction,
       onFieldSubmitted: widget.onFieldSubmitted,
       validator: widget.validator,
+      forceErrorText: widget.serverError,
       autofillHints: [
         widget.isNewPassword
             ? AutofillHints.newPassword

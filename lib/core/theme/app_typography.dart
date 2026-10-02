@@ -6,6 +6,10 @@ import 'package:yvenist/core/theme/app_colors.dart';
 /// Nenhum estilo fica abaixo de 11sp: tamanhos menores (o protótipo usava 8 a
 /// 10sp nos cards) não são legíveis para boa parte das pessoas.
 abstract final class AppTypography {
+  /// A fonte escolhida para o app. **Os arquivos dela ainda não estão no
+  /// projeto**: enquanto não forem adicionados (veja `docs/arquitetura.md`,
+  /// "Fonte"), cada plataforma usa a sua fonte padrão: Roboto no Android,
+  /// San Francisco no iOS.
   static const String fontFamily = 'Inter';
 
   static const TextStyle headerSearch = TextStyle(

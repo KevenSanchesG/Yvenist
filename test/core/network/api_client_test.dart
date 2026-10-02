@@ -317,10 +317,30 @@ void main() {
       await expectLater(
         client.post('/auth/register', body: <String, dynamic>{}),
         throwsA(
-          isA<ValidationFailure>().having((f) => f.fieldErrors, 'fieldErrors', {
-            'email': 'E-mail inválido.',
-            'password': 'Senha curta.',
-          }),
+          isA<ValidationFailure>()
+              .having((f) => f.fieldErrors, 'fieldErrors', {
+                'email': 'E-mail inválido.',
+                'password': 'Senha curta.',
+              })
+              // A mensagem principal é a do primeiro campo, mais útil na tela
+              // do que o resumo "Alguns campos estão inválidos."
+              .having((f) => f.message, 'message', 'E-mail inválido.'),
+        ),
+      );
+    });
+
+    test('erro de validação sem campos usa a mensagem do servidor', () async {
+      final client = clientWith(
+        (_) => errorResponse(422, 'wrong_password', 'Senha atual incorreta.'),
+      );
+
+      await expectLater(
+        client.post('/users/me/password', body: <String, dynamic>{}),
+        throwsA(
+          isA<ValidationFailure>()
+              .having((f) => f.message, 'message', 'Senha atual incorreta.')
+              .having((f) => f.code, 'code', 'wrong_password')
+              .having((f) => f.fieldErrors, 'fieldErrors', isEmpty),
         ),
       );
     });

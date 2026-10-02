@@ -207,10 +207,15 @@ class ApiClient {
 
     switch (response.statusCode) {
       case 400 || 422:
+        final fieldErrors = _fieldErrors(error);
         return ValidationFailure(
-          message ?? 'Confira os dados informados.',
+          // Quando o servidor aponta os campos, o erro do primeiro diz mais
+          // do que o resumo ("Alguns campos estão inválidos").
+          fieldErrors.values.firstOrNull ??
+              message ??
+              'Confira os dados informados.',
           code: code ?? 'validation_error',
-          fieldErrors: _fieldErrors(error),
+          fieldErrors: fieldErrors,
         );
       case 401:
         return message == null
