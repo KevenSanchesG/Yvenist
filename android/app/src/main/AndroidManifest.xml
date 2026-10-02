@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária também em release: o app carrega imagens e dados pela rede.
+         (O manifesto de debug já a declara, mas ele não vale para release.) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="yvenist"
+        android:label="Yvenist"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Event App',
+      title: 'Yvenist',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

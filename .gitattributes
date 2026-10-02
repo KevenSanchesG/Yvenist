@@ -1,0 +1,21 @@
+# Finais de linha normalizados: LF no repositório e no working tree,
+# independentemente do sistema operacional de quem faz o checkout.
+* text=auto eol=lf
+
+# Scripts do Windows precisam de CRLF para funcionar.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binários: nunca converter finais de linha.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.jar binary
+*.jks binary
+*.keystore binary
