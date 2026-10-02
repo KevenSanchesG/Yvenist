@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from decimal import Decimal
 
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -27,6 +28,8 @@ from app.modules.accounts.service import normalize_email
 from app.modules.catalog.models import Category, EventType, Listing, ListingStatus
 from app.modules.catalog.text import build_search_text
 from app.modules.vendors.models import PersonType, VendorProfile, VendorStatus
+
+_EMAIL = TypeAdapter(EmailStr)
 
 DEMO_VENDOR_EMAIL = "demo.fornecedor@yvenist.example"
 # CPF de exemplo com dígitos verificadores válidos, usado só nos dados de demonstração.
@@ -53,10 +56,25 @@ _DEMO_GROUPS = (
 _LISTINGS_PER_GROUP = 8
 
 
+def validated_email(email: str) -> str:
+    """Valida o e-mail com a mesma regra do login e devolve a forma gravada no banco.
+
+    Sem isso seria possível criar um administrador com um endereço que a API
+    recusa na hora de entrar (um domínio interno como ``admin@empresa.local``,
+    por exemplo): a conta existiria, mas ninguém conseguiria usá-la.
+    """
+    try:
+        return normalize_email(_EMAIL.validate_python(email.strip()))
+    except ValidationError as error:
+        raise ValueError(
+            f"E-mail inválido: {email!r}. Use um endereço que possa entrar pelo app."
+        ) from error
+
+
 def create_admin(session: Session, hasher: PasswordHasher, settings: Settings, *,
                  email: str, full_name: str, password: str) -> str:  # fmt: skip
     """Cria o administrador ou promove a conta existente. Devolve o que foi feito."""
-    normalized = normalize_email(email)
+    normalized = validated_email(email)
     user = session.scalar(select(User).where(User.email == normalized))
     if user is not None:
         user.is_admin = True
@@ -187,15 +205,15 @@ def main(argv: Sequence[str] | None = None, settings: Settings | None = None) ->
     try:
         with create_session_factory(engine)() as session:
             if arguments.command == "create-admin":
-                existing = session.scalar(
-                    select(User.id).where(User.email == normalize_email(arguments.email))
-                )
+                # Antes de pedir a senha: um e-mail inválido já encerra aqui.
+                email = validated_email(arguments.email)
+                existing = session.scalar(select(User.id).where(User.email == email))
                 password = "" if existing is not None else _read_admin_password()
                 message = create_admin(
                     session,
                     hasher,
                     settings,
-                    email=arguments.email,
+                    email=email,
                     full_name=arguments.name,
                     password=password,
                 )

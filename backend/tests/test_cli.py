@@ -91,6 +91,31 @@ class TestCreateAdmin:
         assert "pelo menos 8 caracteres" in capsys.readouterr().err
         assert session.scalar(select(func.count()).select_from(User)) == 0
 
+    @pytest.mark.parametrize("email", ["admin@empresa.local", "admin@yvenist.test", "admin"])
+    def test_refuses_an_email_the_login_would_reject(
+        self,
+        email: str,
+        cli_settings: Settings,
+        session: Session,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # Regressão: o comando criava a conta, mas o login respondia 422 para
+        # esses endereços e o administrador nunca conseguia entrar.
+        monkeypatch.setenv("YVENIST_ADMIN_PASSWORD", "senha-do-admin-123")
+
+        exit_code = cli.main(["create-admin", "--email", email], cli_settings)
+
+        assert exit_code == 1
+        assert "E-mail inválido" in capsys.readouterr().err
+        assert session.scalar(select(func.count()).select_from(User)) == 0
+        with TestClient(create_app(cli_settings)) as client:
+            login = client.post(
+                "/api/v1/auth/login",
+                json={"email": email, "password": "senha-do-admin-123"},
+            )
+        assert login.status_code == 422
+
 
 class TestSeedDemo:
     def test_publishes_demo_listings_visible_in_the_catalog(
