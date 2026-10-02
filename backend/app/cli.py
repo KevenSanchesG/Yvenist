@@ -23,6 +23,7 @@ from app.core.config import Settings
 from app.core.database import create_db_engine, create_session_factory, utcnow
 from app.core.security import PasswordHasher
 from app.modules.accounts.models import RefreshToken, User
+from app.modules.accounts.passwords import COMMON_PASSWORD_MESSAGE, is_too_common
 from app.modules.accounts.schemas import PASSWORD_MIN_LENGTH
 from app.modules.accounts.service import normalize_email
 from app.modules.catalog.models import Category, EventType, Listing, ListingStatus
@@ -83,6 +84,8 @@ def create_admin(session: Session, hasher: PasswordHasher, settings: Settings, *
 
     if len(password) < PASSWORD_MIN_LENGTH:
         raise ValueError(f"A senha precisa ter pelo menos {PASSWORD_MIN_LENGTH} caracteres.")
+    if is_too_common(password):
+        raise ValueError(COMMON_PASSWORD_MESSAGE)
     session.add(
         User(
             email=normalized,

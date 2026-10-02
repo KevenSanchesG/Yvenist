@@ -17,6 +17,14 @@ def build_app(**settings: object) -> FastAPI:
     return application
 
 
+def fields_of(response) -> dict[str, str]:
+    """Os erros por campo de uma resposta 422: {campo: mensagem}."""
+    assert response.status_code == 422, response.text
+    return {
+        field["field"]: field["message"] for field in response.json()["error"]["details"]["fields"]
+    }
+
+
 class TestErrorFormat:
     def test_unknown_route_uses_the_standard_error_body(self, client: TestClient) -> None:
         response = client.get("/api/v1/nao-existe")
@@ -42,7 +50,57 @@ class TestErrorFormat:
         assert response.status_code == 422
         error = response.json()["error"]
         assert error["code"] == "validation_error"
-        assert {field["field"] for field in error["details"]["fields"]} == {"email", "password"}
+        # A mensagem de cada campo vai para a tela do app: em português, e sem
+        # devolver o valor enviado (que aqui inclui a senha).
+        assert {field["field"]: field["message"] for field in error["details"]["fields"]} == {
+            "email": "E-mail inválido.",
+            "password": "Use pelo menos 8 caracteres.",
+        }
+        assert "curta" not in response.text
+
+    def test_missing_and_mistyped_fields_are_explained_in_portuguese(
+        self, client: TestClient, user: AuthenticatedUser
+    ) -> None:
+        missing = client.post("/api/v1/auth/login", json={"email": "ana@example.com"})
+        mistyped = client.put(
+            "/api/v1/parties/nao-e-um-uuid",
+            headers=user.headers,
+            json={"title": "Festa", "status": "nao-existe", "items": "nenhum"},
+        )
+
+        assert fields_of(missing) == {"password": "Campo obrigatório."}
+        assert fields_of(mistyped) == {
+            "party_id": "Identificador inválido.",
+            "status": "Opção inválida.",
+            "items": "Informe uma lista.",
+        }
+
+    def test_messages_written_by_our_validators_come_through_unchanged(
+        self, client: TestClient, user: AuthenticatedUser
+    ) -> None:
+        response = client.patch(
+            "/api/v1/users/me",
+            headers=user.headers,
+            json={"phone": "123", "full_name": "A"},
+        )
+
+        assert fields_of(response) == {
+            "phone": "Telefone inválido.",
+            "full_name": "Informe o nome completo.",
+        }
+
+    def test_limits_carry_their_numbers(self, client: TestClient, user: AuthenticatedUser) -> None:
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "ana@example.com",
+                "password": "x" * 129,
+                "full_name": "Ana",
+                "accept_terms": True,
+            },
+        )
+
+        assert fields_of(response) == {"password": "Use no máximo 128 caracteres."}
 
     def test_malformed_json_is_a_validation_error(self, client: TestClient) -> None:
         response = client.post(

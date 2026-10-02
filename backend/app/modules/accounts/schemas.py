@@ -5,6 +5,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.modules.accounts.passwords import COMMON_PASSWORD_MESSAGE, is_too_common
+
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_MAX_LENGTH = 128
 
@@ -19,6 +21,8 @@ def _clean_name(value: str) -> str:
 def _validate_password(value: str) -> str:
     if not value.strip():
         raise ValueError("A senha não pode ser só de espaços.")
+    if is_too_common(value):
+        raise ValueError(COMMON_PASSWORD_MESSAGE)
     return value
 
 
@@ -35,8 +39,9 @@ def _normalize_phone(value: str | None) -> str | None:
 
 
 FullName = Annotated[str, Field(max_length=120), AfterValidator(_clean_name)]
-# Só comprimento: a recomendação atual (NIST 800-63B) é exigir tamanho, não
-# regras de composição, que empurram o usuário para senhas previsíveis.
+# Tamanho mínimo e uma lista de senhas muito comuns: a recomendação atual
+# (NIST 800-63B) é essa, e não regras de composição, que empurram o usuário
+# para senhas previsíveis.
 NewPassword = Annotated[
     str,
     Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH),

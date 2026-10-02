@@ -113,6 +113,69 @@ def _field_path(location: tuple[Any, ...]) -> str:
     return ".".join(parts)
 
 
+# O Pydantic descreve os erros em inglês. A mensagem de um campo vai para a
+# tela do app, então cada tipo de erro que os contratos podem produzir tem o seu
+# texto em português. As chaves entre chaves vêm do contexto do próprio erro.
+_FIELD_MESSAGES = {
+    "missing": "Campo obrigatório.",
+    "string_type": "Informe um texto.",
+    "string_too_short": "Use pelo menos {min_length} caracteres.",
+    "string_too_long": "Use no máximo {max_length} caracteres.",
+    "int_type": "Informe um número inteiro.",
+    "int_parsing": "Informe um número inteiro.",
+    "int_from_float": "Informe um número inteiro.",
+    "greater_than": "O valor precisa ser maior que {gt}.",
+    "greater_than_equal": "O valor mínimo é {ge}.",
+    "less_than": "O valor precisa ser menor que {lt}.",
+    "less_than_equal": "O valor máximo é {le}.",
+    "bool_type": "Informe verdadeiro ou falso.",
+    "bool_parsing": "Informe verdadeiro ou falso.",
+    "enum": "Opção inválida.",
+    "literal_error": "Opção inválida.",
+    "uuid_type": "Identificador inválido.",
+    "uuid_parsing": "Identificador inválido.",
+    "date_type": "Data inválida.",
+    "date_parsing": "Data inválida.",
+    "date_from_datetime_parsing": "Data inválida.",
+    "date_from_datetime_inexact": "Data inválida.",
+    "datetime_type": "Data e hora inválidas.",
+    "datetime_parsing": "Data e hora inválidas.",
+    "datetime_from_date_parsing": "Data e hora inválidas.",
+    "url_type": "Endereço (URL) inválido.",
+    "url_parsing": "Endereço (URL) inválido.",
+    "url_scheme": "Endereço (URL) inválido.",
+    "url_too_long": "Endereço (URL) longo demais.",
+    "list_type": "Informe uma lista.",
+    "too_long": "Envie no máximo {max_length} itens.",
+    "too_short": "Envie pelo menos {min_length} itens.",
+    "model_type": "Formato inválido.",
+    "model_attributes_type": "Formato inválido.",
+    "dict_type": "Formato inválido.",
+    "json_invalid": "O corpo da requisição não é um JSON válido.",
+}
+_GENERIC_FIELD_MESSAGE = "Valor inválido."
+
+
+def _field_message(error: dict[str, Any]) -> str:
+    """Texto em português para um erro de validação do Pydantic."""
+    context = error.get("ctx") or {}
+    if error.get("type") == "value_error":
+        cause = context.get("error")
+        if isinstance(cause, ValueError) and str(cause):
+            # Levantado pelos nossos validadores, já escrito para o usuário.
+            return str(cause)
+        # O validador de e-mail explica o motivo em inglês, em "reason".
+        return "E-mail inválido." if "reason" in context else _GENERIC_FIELD_MESSAGE
+
+    template = _FIELD_MESSAGES.get(str(error.get("type")))
+    if template is None:
+        return _GENERIC_FIELD_MESSAGE
+    try:
+        return template.format(**context)
+    except (KeyError, IndexError):
+        return _GENERIC_FIELD_MESSAGE
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
@@ -128,7 +191,7 @@ def register_error_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         # Não devolvemos ``input``: ele pode conter a senha que o cliente enviou.
         fields = [
-            {"field": _field_path(tuple(error["loc"])), "message": error["msg"]}
+            {"field": _field_path(tuple(error["loc"])), "message": _field_message(error)}
             for error in exc.errors()
         ]
         return JSONResponse(
