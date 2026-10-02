@@ -9,7 +9,8 @@
 #   backend      lint, tipos e testes da API em SQLite e em PostgreSQL
 #   integration  o app de verdade falando com a API de verdade, na máquina e
 #                dentro do navegador
-#   android      o APK de debug compila
+#   android      o APK de debug compila; o pacote de release compila e sai
+#                assinado pela chave de android/key.properties
 #   docker       a imagem da API e o docker-compose sobem e respondem; a
 #                receita de produção (deploy/) sobe com HTTPS e com as travas
 
@@ -208,7 +209,7 @@ jobs:
         run: cat "$RUNNER_TEMP/api.log"
 
   android:
-    name: Android (APK de debug)
+    name: Android (APK de debug e pacote de release)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -225,6 +226,28 @@ jobs:
 
       - name: Compila o APK
         run: flutter build apk --debug
+
+      # O caminho de publicação, com uma chave criada aqui e descartada com o
+      # executor. Prova que o pacote de release compila e que quem o assina é
+      # a chave indicada em android/key.properties, e não a de debug. A chave
+      # de envio de verdade nunca passa pelo CI.
+      - name: Pacote de release assinado por uma chave de teste
+        run: |
+          keystore="$RUNNER_TEMP/chave-de-teste.jks"
+          password="$(openssl rand -hex 16)"
+          keytool -genkeypair -keystore "$keystore" -storepass "$password" -keypass "$password" \
+            -alias upload -keyalg RSA -keysize 2048 -validity 2 \
+            -dname "CN=Yvenist CI chave descartavel"
+          cat > android/key.properties <<EOF
+          storePassword=$password
+          keyPassword=$password
+          keyAlias=upload
+          storeFile=$keystore
+          EOF
+          flutter build appbundle --release \
+            --dart-define=API_BASE_URL=https://api.exemplo.invalid/api/v1
+          keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab \
+            | grep --quiet "CN=Yvenist CI chave descartavel"
 
   docker:
     name: Docker (imagem + compose)

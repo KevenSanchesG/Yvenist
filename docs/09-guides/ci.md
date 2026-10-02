@@ -22,7 +22,7 @@ branch.
 | `app` | `dart format`, `flutter analyze`, `flutter test`, `python tools/check_docs.py`, os testes de `tools/` e a geração das páginas legais | código formatado, sem apontamentos, testes verdes, Knowledge Base íntegra, páginas legais geradas dos textos do app |
 | `backend` | `ruff`, `mypy`, `pytest` em SQLite e depois em PostgreSQL 17 | a API, com os testes de concorrência e as migrações no banco de produção |
 | `integration` | migra, semeia, cria um administrador, sobe a API; `flutter test --tags integration` na máquina e com `--platform chrome` | o app real conversa com a API real, também de dentro do navegador |
-| `android` | `flutter build apk --debug` | o app compila para Android |
+| `android` | `flutter build apk --debug`; depois cria uma chave de teste, compila `flutter build appbundle --release` e confere quem assinou | o app compila para Android; o pacote de release compila e é assinado pela chave de `android/key.properties` |
 | `docker` | `docker compose up --build`, espera `/health/ready`, confere o usuário do processo, semeia e consulta o catálogo; depois sobe a receita de produção de `deploy/` e confere HTTPS, o redirecionamento de `http`, o cabeçalho HSTS, a documentação desligada, a recusa de `seed-demo` e o limite de login atrás do proxy | a imagem e o compose funcionam; a receita de [implantação](deployment.md) sobe com HTTPS e com as travas de produção |
 
 Versões fixadas no topo do arquivo: Flutter 3.41.7, Python 3.14.
@@ -67,6 +67,7 @@ Caminhos, do mais simples para o que pede autorização:
 
 ## O que o CI não cobre
 
-iOS (pediria um executor macOS), build de release assinado, desempenho, e
+iOS (pediria um executor macOS), a chave de envio de verdade (o pacote de
+release é assinado com uma chave de teste criada no próprio job), desempenho, e
 qualquer coisa em um servidor de verdade (não existe): a receita de produção é
 conferida com o domínio `localhost` e um certificado de teste.

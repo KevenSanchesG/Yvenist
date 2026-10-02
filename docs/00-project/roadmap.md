@@ -27,13 +27,16 @@ combinada.
 
 ## Para publicar no Android
 
-Passo a passo em [android-release](../09-guides/android-release.md). Falta:
-criar a chave de publicação, hospedar a API em `https`, fechar os textos legais
-e publicar a política de privacidade em uma URL.
+Passo a passo, e o que a loja exige, em
+[android-release](../09-guides/android-release.md). Falta: criar a chave de
+envio, hospedar a API em `https` ([deployment](../09-guides/deployment.md)),
+fechar os textos legais, publicar a política de privacidade e a página de
+exclusão de conta, e a conta de desenvolvedor.
 
 ## Para o iOS
 
-Nunca foi compilado: exige um Mac ([problema conhecido](../07-known-issues/README.md)).
+Nunca foi compilado: exige um Mac. O que já está pronto no projeto e a lista
+do que fazer no Mac: [ios-build](../09-guides/ios-build.md).
 
 ## Funções previstas ("Em breve")
 

@@ -63,9 +63,11 @@ nada.
 |---|---|---|
 | Android em aparelho | emulador Pixel 6 contra a API: criar conta, favoritar, montar festa, solicitar orçamento, sessão recuperada depois de reiniciar | 2026-10-02 |
 | Build de release assinado | chave descartável via `key.properties`, instalado e aberto | 2026-10-02 |
+| Pacote para a loja | recusa sem a chave; com uma chave descartável compila e sai assinado por ela; alvo API 36; bibliotecas de 64 bits em 16 KB ([android-release](../09-guides/android-release.md)) | 2026-10-02 |
 | Web contra a API | Chrome controlado por script: vitrine, login, sessão recuperada ao recarregar, fila de análise | 2026-10-02 |
+| API em modo de produção | o processo de verdade, com a configuração de produção ([deployment](../09-guides/deployment.md)) | 2026-10-02 |
 
-Não conferido: iOS (exige um Mac).
+Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios-build.md)).
 
 ## Convenções
 

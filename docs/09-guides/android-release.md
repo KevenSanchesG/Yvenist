@@ -7,7 +7,7 @@ updated: 2026-10-02
 # Publicação no Android
 
 O que precisa acontecer para o app sair da máquina de desenvolvimento e ir para
-a Play Store.
+a Play Store. **O app nunca foi enviado à loja.**
 
 ## 1. Identificador do app
 
@@ -15,23 +15,42 @@ a Play Store.
 ele está em cada plataforma e a pergunta em aberto sobre o domínio:
 [ADR-013](../05-decisions/ADR-013-identificador-do-app.md).
 
-## 2. Criar a chave de publicação
+## 2. As duas chaves
 
-Uma vez só. A chave prova que as atualizações vêm de vocês; **se ela for
-perdida, não dá mais para atualizar o app**. Guarde o arquivo e as senhas em um
-gerenciador de senhas, fora do repositório.
+Na Play Store um app novo tem duas chaves (ajuda do Play Console, "Play App
+Signing", conferida em 2 de outubro de 2026):
+
+| Chave | Quem guarda | Para quê |
+|---|---|---|
+| de assinatura do app | o Google | assina o que chega aos aparelhos |
+| **de envio** (*upload key*) | **vocês** | assina o pacote que vocês enviam ao Play Console |
+
+O projeto só lida com a chave de envio. **Ela ainda não existe**: criá-la é dos
+donos ([KI-04](../07-known-issues/README.md)).
+
+## 3. Criar a chave de envio
+
+Uma vez só, na máquina de quem publica:
 
 ```powershell
 keytool -genkeypair -v -keystore C:\caminho\seguro\yvenist-upload.jks `
   -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-(`keytool` vem com o Android Studio, em `Android Studio\jbr\bin`.)
+(`keytool` vem com o Android Studio, em `Android Studio\jbr\bin`.) O comando
+pede duas senhas e gera um arquivo `.jks`.
 
-## 3. Apontar o build para a chave
+| Pergunta | Resposta |
+|---|---|
+| Onde guardar | o arquivo `.jks` e as duas senhas em um gerenciador de senhas, com uma cópia fora da máquina. **Nunca no repositório**: `*.jks`, `*.keystore` e `android/key.properties` estão no `.gitignore` |
+| Quem precisa dela | só quem gera o pacote para a loja. O CI não a usa |
+| Se vazar | quem a tiver só consegue enviar uma versão se também entrar na conta do Play Console. Peça a troca da chave (abaixo) e ative a verificação em duas etapas na conta |
+| Se for perdida | **o app não se perde**. Cria-se uma chave nova e pede-se a troca no Play Console (no menu em inglês: *Protected with Play → Play Store protection → Manage Play app signing → Request upload key reset*). Até a troca ser aceita, não dá para enviar atualizações |
 
-Crie `android/key.properties` (o arquivo está no `.gitignore`; nunca o
-versione):
+## 4. Apontar o build para a chave
+
+Copie `android/key.properties.example` para `android/key.properties` e
+preencha:
 
 ```properties
 storePassword=<senha do keystore>
@@ -40,11 +59,7 @@ keyAlias=upload
 storeFile=C:/caminho/seguro/yvenist-upload.jks
 ```
 
-Com esse arquivo presente, o build de release é assinado com a chave de
-publicação. Sem ele, o build ainda funciona, assinado com a chave de debug:
-serve para testar na própria máquina, mas a loja recusa.
-
-## 4. Gerar o pacote
+## 5. Gerar o pacote
 
 A URL da API entra no build. Em release ela **precisa ser `https`**; com outro
 valor o app abre uma tela de erro de configuração em vez de funcionar pela
@@ -54,22 +69,27 @@ metade.
 flutter build appbundle --release --dart-define=API_BASE_URL=https://api.seudominio.com/api/v1
 ```
 
-O arquivo para enviar à Play Store fica em
+O arquivo para enviar fica em
 `build/app/outputs/bundle/release/app-release.aab`.
 
-Para conferir a assinatura de um APK:
+**Sem `android/key.properties` esse comando falha na hora**, dizendo o motivo
+(`android/app/build.gradle.kts`): um pacote para a loja assinado com a chave de
+debug seria recusado no envio. Um APK de release (`flutter build apk
+--release`) continua saindo sem a chave, assinado com a de debug, para testar
+na própria máquina.
+
+Para conferir quem assinou:
 
 ```powershell
-flutter build apk --release --dart-define=API_BASE_URL=https://api.seudominio.com/api/v1
-& "$env:LOCALAPPDATA\Android\sdk\build-tools\<versão>\apksigner.bat" verify --print-certs build\app\outputs\flutter-apk\app-release.apk
+keytool -printcert -jarfile build\app\outputs\bundle\release\app-release.aab
 ```
 
-O "certificate DN" tem de ser o da chave de vocês, e não `CN=Android Debug`.
+O dono do certificado tem de ser o da chave de vocês, e não `CN=Android Debug`.
 
 > Sem `--dart-define=API_BASE_URL` o build sai em **modo demonstração**, com
 > dados de exemplo em memória. Serve para mostrar o app, não para publicar.
 
-## 5. A cada nova versão
+## 6. A cada nova versão
 
 Aumente a versão em `pubspec.yaml` (`version: 1.0.1+2`: o número depois do `+`
 tem de crescer a cada envio) e a constante `AppConfig.appVersion`, que é a
@@ -80,16 +100,28 @@ diferentes.
 
 | Item | Onde |
 |---|---|
-| Permissão de internet também em release | `android/app/src/main/AndroidManifest.xml` |
+| Permissão de internet também em release, e nenhuma outra | `android/app/src/main/AndroidManifest.xml` |
 | `http` sem TLS só em debug | `android/app/src/debug/AndroidManifest.xml` |
 | Backup do Google desligado (tokens e dados da conta não vão para a nuvem) | `android:allowBackup="false"` no manifesto principal |
 | Tokens da sessão no Keystore | `lib/core/storage/token_storage.dart` |
 | Release recusa API sem `https` | `lib/core/config/app_config.dart` |
 | Chave e senhas fora do Git | `.gitignore` (`*.jks`, `*.keystore`, `android/key.properties`) |
+| Pacote para a loja só com a chave de envio | `android/app/build.gradle.kts` |
+| O caminho de assinatura continua funcionando | job `android` do [CI](ci.md): gera uma chave de teste, compila o pacote de release e confere quem assinou |
 
-Conferido em um emulador (Android 13) em 2 de outubro de 2026: build de release
-assinado pela chave configurada em `key.properties` (uma chave descartável,
-apagada depois), instalado e aberto, com o backup desligado.
+## O que a loja exige, e como está
+
+Conferido na ajuda do Play Console e na documentação do Android em 2 de
+outubro de 2026.
+
+| Exigência | Estado |
+|---|---|
+| Mirar o Android 16 (API 36) ou mais novo, desde 31 de agosto de 2026 | atendida: o build de release mira a API 36 (é o padrão do Flutter 3.41) |
+| Bibliotecas de 64 bits alinhadas em 16 KB | atendida: as seis do pacote de release foram conferidas uma a uma |
+| Política de privacidade em um endereço público | **falta publicar** ([legal](../03-features/legal.md)) |
+| Página pública para pedir a exclusão da conta | **falta publicar**; a página já é gerada |
+| Ficha "Segurança dos dados" | o levantamento está pronto em [personal-data](../01-architecture/personal-data.md); quem preenche são os donos |
+| Conta de desenvolvedor no Play Console | dos donos. Em conta **pessoal** criada depois de 13 de novembro de 2023, a loja pede um teste fechado com 12 pessoas por 14 dias seguidos antes de liberar a produção |
 
 ## Antes de publicar de verdade
 
@@ -99,10 +131,18 @@ apagada depois), instalado e aberto, com o backup desligado.
   exclusão de conta** em endereços públicos ([legal](../03-features/legal.md)).
   A loja exige as duas: quem cria conta pelo app tem de poder pedir a exclusão
   também sem ele.
-- A ficha "Segurança dos dados" pede a declaração do que é coletado. O
-  levantamento pelo código, já no formato da ficha, está em
-  [personal-data](../01-architecture/personal-data.md).
-- iOS não foi compilado neste projeto (exige um Mac).
+- iOS não foi compilado neste projeto ([ios-build](ios-build.md)).
 
 Tudo o que ainda bloqueia a publicação:
 [problemas conhecidos](../07-known-issues/README.md).
+
+## O que foi conferido
+
+| O quê | Como | Quando |
+|---|---|---|
+| Build de release assinado pela chave de `key.properties`, instalado e aberto em um emulador (Android 13), com o backup desligado | chave descartável, apagada depois | 2026-10-02 |
+| Pacote para a loja (`.aab`): recusa sem a chave; com uma chave de teste, compila e sai assinado por ela | na máquina de desenvolvimento; chave descartável, apagada depois | 2026-10-02 |
+| O manifesto final de release: pacote `com.yvenist.app`, mínimo Android 7 (API 24), alvo API 36, só a permissão de internet | lido do build | 2026-10-02 |
+
+**Não conferido:** o envio ao Play Console, a assinatura pelo Google, o teste
+fechado.

@@ -8,14 +8,28 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Chave de publicação: descrita em android/key.properties, que não é versionado
-// (veja docs/09-guides/android-release.md). Sem esse arquivo o build de release ainda
-// funciona, assinado com a chave de debug.
+// Chave de envio à loja: descrita em android/key.properties, que não é versionado
+// (modelo em android/key.properties.example; passo a passo em
+// docs/09-guides/android-release.md). Sem esse arquivo um APK de release ainda
+// é gerado, assinado com a chave de debug, para testar na própria máquina.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+// Um app bundle só serve para enviar à loja, e a loja recusa a chave de debug.
+// Sem a chave de envio o pacote nem começa a ser gerado: o erro aparece aqui,
+// com o motivo, e não minutos depois nem na tela de envio do Play Console.
+gradle.taskGraph.whenReady {
+    if (hasTask("${project.path}:bundleRelease") && !hasReleaseKeystore) {
+        throw GradleException(
+            "Sem android/key.properties o app bundle sairia assinado com a chave de " +
+                "debug, que a Play Store recusa. Crie a chave de envio e o arquivo: " +
+                "docs/09-guides/android-release.md",
+        )
+    }
 }
 
 android {

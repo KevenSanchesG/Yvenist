@@ -62,6 +62,7 @@ O que mudou e quando: [changelog](../08-changelog/README.md). O que falta:
 | como rodar e testar | [development](../09-guides/development.md), [ci](../09-guides/ci.md), [web](../09-guides/web.md) |
 | como pôr a API no ar, com HTTPS | [deployment](../09-guides/deployment.md) |
 | como publicar no Android | [android-release](../09-guides/android-release.md) |
+| o que falta para o iOS, e o que fazer no Mac | [ios-build](../09-guides/ios-build.md) |
 | como usar este cofre no Obsidian | [obsidian](../09-guides/obsidian.md) |
 
 ## Como a memória funciona

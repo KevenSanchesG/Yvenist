@@ -105,8 +105,14 @@ ROOT_FILES = {
 NOT_A_LITERAL_PATH = re.compile(r"[<>*{}…\s$|]|\.\.\.")
 
 # Citados de propósito sem existir no repositório: arquivos que ficam só na
-# máquina de quem publica ou no servidor (estão no .gitignore).
-EXPECTED_ABSENT = {"android/key.properties", "deploy/.env"}
+# máquina de quem publica ou no servidor (estão no .gitignore), e os que o
+# primeiro build de iOS em um Mac vai criar (docs/09-guides/ios-build.md).
+EXPECTED_ABSENT = {
+    "android/key.properties",
+    "deploy/.env",
+    "ios/Podfile",
+    "ios/Podfile.lock",
+}
 
 # O changelog é história: cita os caminhos como eram no dia.
 CHANGELOG = DOCS / "08-changelog"
