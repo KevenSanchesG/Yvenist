@@ -26,4 +26,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 # Atrás de um proxy reverso, defina FORWARDED_ALLOW_IPS com o IP do proxy para
 # que o limite de requisições enxergue o IP real do cliente.
-CMD ["uvicorn", "app.main:get_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+# --no-access-log: a aplicação já registra cada requisição (com o id dela e
+# sem query string); o log de acesso do uvicorn só duplicaria as linhas.
+CMD ["uvicorn", "app.main:get_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--no-access-log"]

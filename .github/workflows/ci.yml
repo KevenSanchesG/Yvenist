@@ -1,0 +1,230 @@
+# Verificações automáticas do Yvenist: rodam a cada push na main e em todo
+# pull request. Cada job é independente; se um falhar, os outros continuam.
+#
+# O que cada job garante (e onde isso já foi conferido à mão):
+#   app          formatação, análise estática e testes do Flutter
+#   backend      lint, tipos e testes da API em SQLite e em PostgreSQL
+#   integration  o app de verdade falando com a API de verdade
+#   android      o APK de debug compila
+#   docker       a imagem da API e o docker-compose sobem e respondem
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um push novo cancela a execução que ainda estiver rodando na mesma branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Nenhum job precisa escrever no repositório.
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.41.7"
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  app:
+    name: App (Flutter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Formatação
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Análise estática
+        run: flutter analyze
+
+      # Os testes de integração ficam de fora aqui (são pulados sem
+      # YVENIST_API_URL); eles têm um job próprio.
+      - name: Testes
+        run: flutter test
+
+  backend:
+    name: Backend (Python + PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: yvenist
+          POSTGRES_PASSWORD: yvenist
+          POSTGRES_DB: yvenist_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U yvenist -d yvenist_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Dependências
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Formatação
+        run: ruff format --check .
+
+      - name: Tipos
+        run: mypy app tests
+
+      - name: Testes (SQLite em memória)
+        run: pytest -q
+
+      # A mesma suíte no banco de produção, mais o que só existe nele: os
+      # testes de requisições simultâneas e as migrações rodando de verdade.
+      - name: Testes (PostgreSQL)
+        env:
+          YVENIST_TEST_DATABASE_URL: postgresql+psycopg://yvenist:yvenist@localhost:5432/yvenist_test
+        run: pytest -q
+
+  integration:
+    name: Integração (app + API + PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: yvenist
+          POSTGRES_PASSWORD: yvenist
+          POSTGRES_DB: yvenist
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U yvenist -d yvenist"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      YVENIST_DATABASE_URL: postgresql+psycopg://yvenist:yvenist@localhost:5432/yvenist
+      # Os testes criam dezenas de contas em sequência.
+      YVENIST_RATE_LIMIT_ENABLED: "false"
+      YVENIST_PASSWORD_HASH_PROFILE: test
+      # Conta de administrador criada só para este job (banco descartável).
+      YVENIST_ADMIN_EMAIL: admin@example.com
+      YVENIST_ADMIN_PASSWORD: senha-do-admin-de-ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Dependências da API
+        run: pip install -r backend/requirements.txt
+
+      - name: Banco de dados (migrações, anúncios de exemplo e administrador)
+        working-directory: backend
+        run: |
+          alembic upgrade head
+          python -m app.cli seed-demo
+          python -m app.cli create-admin --email "$YVENIST_ADMIN_EMAIL"
+
+      - name: Sobe a API
+        working-directory: backend
+        run: |
+          nohup uvicorn app.main:get_app --factory --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
+          curl --silent --show-error --fail --retry 30 --retry-delay 1 --retry-connrefused \
+            http://127.0.0.1:8000/health/ready
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Dependências do app
+        run: flutter pub get
+
+      - name: Testes de integração
+        env:
+          YVENIST_API_URL: http://127.0.0.1:8000/api/v1
+        run: flutter test --tags integration test/integration
+
+      - name: Log da API (só se algo falhou)
+        if: failure()
+        run: cat "$RUNNER_TEMP/api.log"
+
+  android:
+    name: Android (APK de debug)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Compila o APK
+        run: flutter build apk --debug
+
+  docker:
+    name: Docker (imagem + compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sobe PostgreSQL, migrações e API
+        run: docker compose up --detach --build
+
+      - name: Espera a API responder
+        run: |
+          curl --silent --show-error --fail --retry 40 --retry-delay 2 --retry-all-errors \
+            http://127.0.0.1:8000/health/ready
+
+      - name: O processo não roda como root
+        run: test "$(docker compose exec -T api id -u)" = "10001"
+
+      - name: O catálogo responde a partir do banco migrado
+        run: |
+          docker compose exec -T api python -m app.cli seed-demo
+          curl --silent --show-error --fail \
+            "http://127.0.0.1:8000/api/v1/catalog/listings?limit=1" | grep -q '"items"'
+
+      - name: Logs (só se algo falhou)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Derruba tudo
+        if: always()
+        run: docker compose down --volumes
