@@ -1,5 +1,7 @@
 """As migrações precisam produzir exatamente o banco que os modelos descrevem."""
 
+import uuid
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -8,31 +10,54 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import Engine, inspect, select, text
+from sqlalchemy import Engine, func, insert, inspect, literal_column, select, text
 from sqlalchemy.exc import IntegrityError
 
-from app.core.database import create_db_engine
+from app.core.database import create_db_engine, utcnow
 from app.models import Base
+from app.modules.accounts.models import User
 from app.modules.catalog.models import Category, EventType
 from app.modules.catalog.reference_data import CATEGORIES, EVENT_TYPES
+from app.modules.parties.models import Party
+from tests.conftest import TEST_DATABASE_URL
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
+
+Migrated = tuple[Engine, str]
 
 
 def alembic_config(url: str) -> Config:
     config = Config(str(BACKEND_ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_ROOT / "migrations"))
-    config.set_main_option("sqlalchemy.url", url)
+    # "%" é caractere de interpolação nos arquivos .ini; uma senha codificada na
+    # URL (%40 para "@", por exemplo) precisa dele dobrado.
+    config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return config
 
 
+def drop_everything(engine: Engine) -> None:
+    Base.metadata.drop_all(engine)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS alembic_version"))
+
+
 @pytest.fixture
-def migrated(tmp_path: Path) -> Any:
-    """Banco SQLite novo, criado só pelas migrações."""
-    url = f"sqlite:///{(tmp_path / 'migrated.db').as_posix()}"
-    command.upgrade(alembic_config(url), "head")
+def migrated(tmp_path: Path) -> Iterator[Migrated]:
+    """Banco em que só as migrações rodaram.
+
+    Em SQLite é um arquivo novo por teste. Com ``YVENIST_TEST_DATABASE_URL``
+    (o CI usa PostgreSQL) é o próprio banco de testes, limpo antes e depois:
+    as migrações têm de funcionar no banco de produção, não só no SQLite.
+    """
+    if TEST_DATABASE_URL.startswith("sqlite"):
+        url = f"sqlite:///{(tmp_path / 'migrated.db').as_posix()}"
+    else:
+        url = TEST_DATABASE_URL
     engine = create_db_engine(url)
+    drop_everything(engine)
+    command.upgrade(alembic_config(url), "head")
     yield engine, url
+    drop_everything(engine)
     engine.dispose()
 
 
@@ -74,22 +99,22 @@ def describe_schema(engine: Engine) -> dict[str, Any]:
     return schema
 
 
-def test_migrated_schema_is_identical_to_the_models(migrated: Any, tmp_path: Path) -> None:
-    migrated_engine, _ = migrated
-    from_models = create_db_engine(f"sqlite:///{(tmp_path / 'models.db').as_posix()}")
-    Base.metadata.create_all(from_models)
-    try:
-        expected = describe_schema(from_models)
-        actual = describe_schema(migrated_engine)
-    finally:
-        from_models.dispose()
+def test_migrated_schema_is_identical_to_the_models(migrated: Migrated) -> None:
+    engine, _ = migrated
+    actual = describe_schema(engine)
 
+    # O mesmo banco, agora criado direto dos modelos.
+    drop_everything(engine)
+    Base.metadata.create_all(engine)
+    expected = describe_schema(engine)
+
+    assert expected, "os modelos não criaram nenhuma tabela"
     assert set(actual) == set(expected)
     for table in expected:
         assert actual[table] == expected[table], f"tabela {table} diverge dos modelos"
 
 
-def test_autogenerate_finds_nothing_pending(migrated: Any) -> None:
+def test_autogenerate_finds_nothing_pending(migrated: Migrated) -> None:
     engine, _ = migrated
 
     with engine.connect() as connection:
@@ -99,7 +124,7 @@ def test_autogenerate_finds_nothing_pending(migrated: Any) -> None:
     assert pending == []
 
 
-def test_reference_data_matches_the_application_constants(migrated: Any) -> None:
+def test_reference_data_matches_the_application_constants(migrated: Migrated) -> None:
     engine, _ = migrated
 
     with engine.connect() as connection:
@@ -119,38 +144,56 @@ def test_reference_data_matches_the_application_constants(migrated: Any) -> None
                 )
             )
         ]
-        all_active = connection.execute(
-            text("SELECT COUNT(*) FROM categories WHERE is_active = 0")
+        inactive = connection.execute(
+            select(func.count()).select_from(Category).where(Category.is_active.is_(False))
         ).scalar_one()
 
     assert categories == [dict(category) for category in CATEGORIES]
     assert event_types == [dict(event_type) for event_type in EVENT_TYPES]
-    assert all_active == 0
+    assert inactive == 0
 
 
-def test_migrated_database_enforces_the_enum_checks(migrated: Any) -> None:
+def test_migrated_database_enforces_the_enum_checks(migrated: Migrated) -> None:
     engine, _ = migrated
+    owner_id = uuid.uuid4()
+    now = utcnow()
 
-    insert_party = (
-        "INSERT INTO parties (id, owner_id, title, status, version, created_at, updated_at)"
-        " VALUES (:id, 'u1', 'Festa', :status, 1, '2026-01-01', '2026-01-01')"
-    )
+    def party_with(status: str) -> Any:
+        # literal_column manda o valor direto no SQL, sem passar pela validação
+        # que o tipo Enum faz no Python: quem está sendo testado é o banco.
+        return insert(Party).values(
+            id=uuid.uuid4(),
+            owner_id=owner_id,
+            title="Festa",
+            status=literal_column(f"'{status}'"),
+            version=1,
+            created_at=now,
+            updated_at=now,
+        )
+
     with engine.connect() as connection:
         connection.execute(
-            text(
-                "INSERT INTO users (id, email, password_hash, full_name, is_admin, is_active,"
-                " token_version, terms_version, terms_accepted_at, created_at, updated_at)"
-                " VALUES ('u1', 'a@b.c', 'x', 'Ana', 0, 1, 1, 'v', '2026-01-01', '2026-01-01',"
-                " '2026-01-01')"
+            insert(User).values(
+                id=owner_id,
+                email="ana@example.com",
+                password_hash="x",
+                full_name="Ana",
+                is_admin=False,
+                is_active=True,
+                token_version=1,
+                terms_version="v",
+                terms_accepted_at=now,
+                created_at=now,
+                updated_at=now,
             )
         )
         # Um status válido entra; um inválido é barrado pelo CHECK.
-        connection.execute(text(insert_party), {"id": "p1", "status": "planning"})
+        connection.execute(party_with("planning"))
         with pytest.raises(IntegrityError):
-            connection.execute(text(insert_party), {"id": "p2", "status": "status-invalido"})
+            connection.execute(party_with("status-invalido"))
 
 
-def test_downgrade_removes_every_table(migrated: Any) -> None:
+def test_downgrade_removes_every_table(migrated: Migrated) -> None:
     engine, url = migrated
 
     command.downgrade(alembic_config(url), "base")

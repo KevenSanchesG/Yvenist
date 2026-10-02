@@ -70,8 +70,14 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 @pytest.fixture
-def db(app: FastAPI) -> Iterator[Session]:
-    """Sessão direta no banco do teste, para preparar e conferir dados."""
+def db(app: FastAPI, client: TestClient) -> Iterator[Session]:
+    """Sessão direta no banco do teste, para preparar e conferir dados.
+
+    Depende de ``client`` só pela ordem de encerramento: a sessão precisa fechar
+    antes de o cliente desligar a aplicação, que descarta o pool de conexões.
+    Fechada depois, a conexão dela ficava presa no pool descartado e só era
+    encerrada pelo coletor de lixo (o PostgreSQL acusa isso; o SQLite não).
+    """
     with app.state.session_factory() as session:
         yield session
 
