@@ -45,7 +45,8 @@ resto. Não escreva como fato o que não está no código.
   SQLAlchemy síncrono, Alembic.
 - **Party Maker**: as regras existem no app (`Party`) e na API
   (`reconcile` em `backend/app/modules/parties/domain.py`) e mudam juntas.
-- Detalhes: `docs/01-architecture/overview.md`.
+- Detalhes: `docs/01-architecture/overview.md`. Os princípios que o código
+  segue em todo lugar: `docs/01-architecture/principles.md`.
 
 ## Comandos
 

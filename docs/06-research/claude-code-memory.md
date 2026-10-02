@@ -94,5 +94,24 @@ O repositório fica em `…\Projeto\Yvenist`, e a pasta `…\Projeto` não é um
 repositório. Abrir o Claude Code em `Projeto` faz o `CLAUDE.md` do Yvenist ser
 tratado como arquivo de subpasta: ele só carrega depois que o Claude lê algo
 dentro de `Yvenist\`. Por isso existe um `CLAUDE.md` mínimo em `…\Projeto`
-(fora do Git), que importa o do repositório. O caminho recomendado continua
-sendo abrir a sessão dentro de `Yvenist\`.
+(fora do Git, só na máquina de desenvolvimento), que manda ler o do
+repositório antes de qualquer tarefa. Ele não usa `@` para importar: o arquivo
+de uma pasta acima também carrega quando a sessão é aberta dentro de
+`Yvenist\`, e a importação poria as mesmas instruções duas vezes no contexto.
+O caminho recomendado continua sendo abrir a sessão dentro de `Yvenist\`.
+
+## Conferido em uma sessão de verdade
+
+Em 2 de outubro de 2026 uma sessão nova do Claude Code 2.1.287 foi aberta na
+raiz do repositório, sem nenhum contexto, e recebeu seis perguntas sobre o
+projeto. O que se observou:
+
+- o `CLAUDE.md` do repositório e o da pasta acima já estavam no contexto, com
+  a lista de skills (incluindo `/atualizar-memoria`);
+- a regra `.claude/rules/documentation.md` carregou sozinha quando o primeiro
+  documento de `docs/` foi lido;
+- a sessão seguiu o protocolo (índice, `git status`, `git log`), leu 8 dos 72
+  documentos, conferiu dois pontos contra o código e respondeu certo às seis
+  perguntas.
+
+Os números estão no [changelog](../08-changelog/2026-10.md).
