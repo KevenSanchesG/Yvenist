@@ -13,6 +13,7 @@ O que mudou no projeto, por data. É o único lugar com números que envelhecem
 |---|---|
 | Outubro de 2026 | [2026-10](2026-10.md) |
 | Relatório da fundação profissional (2 de outubro de 2026) | [2026-10-fundacao-profissional](2026-10-fundacao-profissional.md) |
+| Relatório da memória persistente (2 de outubro de 2026) | [2026-10-memoria-persistente](2026-10-memoria-persistente.md) |
 
 O histórico linha a linha está no Git (`git log`). Aqui fica o resumo que uma
 pessoa lê: o que mudou **para quem usa ou mantém** o projeto, e o que foi
