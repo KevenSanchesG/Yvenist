@@ -5,9 +5,9 @@ class GuestCount {
 
   GuestCount(this.value) {
     if (value < 1) {
-      throw PartyDomainException(
+      throw const PartyDomainException(
         'invalid_guest_count',
-        'GuestCount deve ser >= 1.',
+        'O número de convidados precisa ser pelo menos 1.',
       );
     }
   }

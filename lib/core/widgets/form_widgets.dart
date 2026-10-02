@@ -52,7 +52,7 @@ class FormErrorBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.danger.withValues(alpha: 0.08),
+          color: AppColors.tint(AppColors.danger),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
         ),

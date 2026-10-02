@@ -5,7 +5,10 @@ class Quantity {
 
   Quantity(this.value) {
     if (value < 1) {
-      throw PartyDomainException('invalid_quantity', 'Quantity deve ser >= 1.');
+      throw const PartyDomainException(
+        'invalid_quantity',
+        'A quantidade precisa ser pelo menos 1.',
+      );
     }
   }
 

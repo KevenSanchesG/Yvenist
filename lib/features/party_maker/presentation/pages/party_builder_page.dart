@@ -188,7 +188,7 @@ class _Summary extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.10),
+                color: AppColors.tint(AppColors.primaryStrong),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -223,7 +223,14 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      // A folga extra embaixo é do botão central da navegação, que sobe por
+      // cima do fim desta aba: sem ela ele encobre a borda do botão do rodapé.
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + AppSpacing.navButtonOverlap,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [

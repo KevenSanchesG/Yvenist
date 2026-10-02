@@ -72,6 +72,14 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
             current: current,
             onSelected: tabs.goTo,
           ),
+          floatingActionButton: PartyTabButton(
+            isSelected: current == AppTab.partyMaker,
+            onPressed: () => tabs.goTo(AppTab.partyMaker),
+          ),
+          floatingActionButtonLocation: const PartyTabButtonLocation(),
+          // O botão faz parte da barra: não entra nem sai com animação.
+          floatingActionButtonAnimator:
+              FloatingActionButtonAnimator.noAnimation,
         ),
       ),
     );

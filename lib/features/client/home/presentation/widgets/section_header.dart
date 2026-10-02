@@ -18,6 +18,9 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      // Nó próprio: sem isso o rótulo se funde ao da faixa inteira, e o leitor
+      // de tela anuncia os cards como se fizessem parte do botão.
+      container: true,
       button: true,
       header: true,
       label: '$title. $subtitle. Ver todos',

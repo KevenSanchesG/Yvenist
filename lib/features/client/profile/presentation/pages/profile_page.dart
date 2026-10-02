@@ -103,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onClientMode: () => setState(() => _vendorMode = false),
               onVendorMode: _selectVendorMode,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 22),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -313,18 +313,20 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
-    // No modo cliente o fundo usa o laranja escurecido: o nome e o e-mail, em
-    // branco, precisam de contraste.
+    // Degradês escuros o bastante para o nome e o e-mail, em branco.
     final colors = vendorMode
-        ? const [AppColors.vendor, AppColors.vendorAccent]
-        : const [AppColors.primaryStrong, AppColors.primary];
+        ? AppColors.vendorGradient
+        : AppColors.clientGradient;
 
     return Stack(
-      clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
       children: [
+        // O seletor de modo fica metade sobre o cabeçalho, metade abaixo. A
+        // margem reserva essa metade de baixo dentro da pilha: o que é
+        // desenhado fora dos limites de um widget não recebe toques.
         Container(
           width: double.infinity,
+          margin: const EdgeInsets.only(bottom: _ModeToggle.height / 2),
           padding: EdgeInsets.fromLTRB(20, topPadding + 32, 20, 56),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -373,7 +375,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         Positioned(
-          bottom: -26,
+          bottom: 0,
           left: 24,
           right: 24,
           child: _ModeToggle(
@@ -394,6 +396,8 @@ class _ModeToggle extends StatelessWidget {
     required this.onVendorMode,
   });
 
+  static const double height = 52;
+
   final bool vendorMode;
   final VoidCallback onClientMode;
   final VoidCallback onVendorMode;
@@ -404,10 +408,10 @@ class _ModeToggle extends StatelessWidget {
       color: Colors.white,
       elevation: 4,
       shadowColor: Colors.black26,
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(height / 2),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 52,
+        height: height,
         child: Row(
           children: [
             _ModeOption(
@@ -451,7 +455,7 @@ class _ModeOption extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            color: selected ? color.withValues(alpha: 0.1) : null,
+            color: selected ? AppColors.tint(color) : null,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: FittedBox(
@@ -492,7 +496,7 @@ class _VendorBanner extends StatelessWidget {
       VendorStatus.none => _PromoBanner(
         title: 'Tem um salão ou serviço?',
         subtitle: 'Anuncie no Yvenist sem pagar nada por isso.',
-        colors: const [AppColors.vendor, AppColors.vendorAccent],
+        colors: AppColors.vendorGradient,
         icon: Icons.storefront,
         onTap: onStart,
       ),
@@ -520,7 +524,7 @@ class _VendorBanner extends StatelessWidget {
       VendorStatus.approved => _PromoBanner(
         title: 'Você é um fornecedor!',
         subtitle: 'Abra o Modo Fornecedor para acompanhar seus anúncios.',
-        colors: const [AppColors.success, Color(0xFF16A34A)],
+        colors: AppColors.successGradient,
         icon: Icons.check_circle,
         onTap: onOpenVendorMode,
       ),
@@ -550,7 +554,7 @@ class _StatusNotice extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: AppColors.tint(color),
         border: Border.all(color: color.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -717,12 +721,15 @@ class _StatItem extends StatelessWidget {
       ),
     );
 
+    // O rótulo substitui os dois textos soltos. O InkWell fica fora do
+    // ExcludeSemantics para o toque também existir para leitores de tela.
+    final described = ExcludeSemantics(child: content);
     return Semantics(
       button: onTap != null,
       label: '$value ${label.replaceAll('\n', ' ')}',
-      child: ExcludeSemantics(
-        child: onTap == null ? content : InkWell(onTap: onTap, child: content),
-      ),
+      child: onTap == null
+          ? described
+          : InkWell(onTap: onTap, child: described),
     );
   }
 }

@@ -5,9 +5,9 @@ class PartyTitle {
 
   PartyTitle(String value) : value = value.trim() {
     if (this.value.isEmpty) {
-      throw PartyDomainException(
+      throw const PartyDomainException(
         'invalid_party_title',
-        'Título não pode ser vazio.',
+        'Dê um nome para a festa.',
       );
     }
   }

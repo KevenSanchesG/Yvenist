@@ -174,7 +174,7 @@ void main() {
       final party = await controller.startNewParty('   ');
 
       expect(party, isNull);
-      expect(controller.error, 'Título não pode ser vazio.');
+      expect(controller.error, 'Dê um nome para a festa.');
       expect(controller.parties, isEmpty);
       expect(controller.isBusy, isFalse);
     });
@@ -229,7 +229,7 @@ void main() {
       expect(added, isFalse);
       expect(
         controller.error,
-        'Só é possível adicionar itens em draft/planning.',
+        'Esta festa está com o orçamento solicitado e não pode receber itens.',
       );
       expect(controller.budgetItemViews, hasLength(1));
     });
@@ -247,7 +247,10 @@ void main() {
       );
 
       expect(added, isFalse);
-      expect(controller.error, contains('Salão'));
+      expect(
+        controller.error,
+        'Esta festa já tem um salão. Remova o atual para escolher outro.',
+      );
     });
 
     test('festa inexistente falha com mensagem', () async {
@@ -344,7 +347,7 @@ void main() {
       await controller.addItemToParty(party.id, draft());
 
       expect(await controller.removeItemFromActiveParty('nao-existe'), isFalse);
-      expect(controller.error, 'Item não encontrado na Party.');
+      expect(controller.error, 'Este item não está mais na festa.');
     });
 
     test('sem festa ativa, falha com mensagem', () async {
@@ -371,7 +374,10 @@ void main() {
       await controller.startNewParty('Casamento');
 
       expect(await controller.lockActivePartyForPayment(), isFalse);
-      expect(controller.error, contains('sem itens'));
+      expect(
+        controller.error,
+        'Adicione ao menos um item antes de solicitar o orçamento.',
+      );
     });
 
     test('sem festa ativa, falha com mensagem', () async {

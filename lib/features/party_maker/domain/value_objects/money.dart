@@ -38,7 +38,8 @@ class Money implements Comparable<Money> {
     if (currency != other.currency) {
       throw PartyDomainException(
         'currency_mismatch',
-        'Moedas diferentes: $currency vs ${other.currency}',
+        'Todos os itens da festa precisam estar na mesma moeda '
+            '($currency e ${other.currency} não combinam).',
       );
     }
   }

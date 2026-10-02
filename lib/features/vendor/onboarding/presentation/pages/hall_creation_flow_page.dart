@@ -759,16 +759,26 @@ class _BottomBar extends StatelessWidget {
             onPressed: canGoBack ? onBack : null,
             child: const Text('Voltar'),
           ),
-          const Spacer(),
-          FilledButton(
-            onPressed: isBusy ? null : onNext,
-            child: isBusy
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : Text(isLastStep ? 'Enviar anúncio' : 'Avançar'),
+          const SizedBox(width: 12),
+          // Ocupa o espaço que sobra: com letras grandes (acessibilidade) o
+          // rótulo quebra a linha em vez de estourar a largura da tela.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                onPressed: isBusy ? null : onNext,
+                child: isBusy
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      )
+                    : Text(
+                        isLastStep ? 'Enviar anúncio' : 'Avançar',
+                        textAlign: TextAlign.center,
+                      ),
+              ),
+            ),
           ),
         ],
       ),

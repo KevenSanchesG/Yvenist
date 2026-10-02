@@ -36,7 +36,7 @@ class VendorWelcomePage extends StatelessWidget {
           ),
           const ColoredBox(color: Color(0xB3000000)),
           SafeArea(
-            child: Padding(
+            child: _FillOrScroll(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,6 +106,30 @@ class VendorWelcomePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Ocupa a tela inteira quando o conteúdo cabe (os `Spacer` distribuem a
+/// sobra) e passa a rolar quando não cabe, como acontece com letras grandes.
+class _FillOrScroll extends StatelessWidget {
+  const _FillOrScroll({required this.padding, required this.child});
+
+  final EdgeInsets padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: padding,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight - padding.vertical,
+          ),
+          child: IntrinsicHeight(child: child),
+        ),
       ),
     );
   }

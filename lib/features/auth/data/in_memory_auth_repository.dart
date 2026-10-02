@@ -121,6 +121,20 @@ class InMemoryAuthRepository implements AuthRepository {
     }
     _accounts.remove(account.user.email);
     _currentEmail = null;
+
+    // A conta de teste anunciada na tela de entrada continua existindo, mas
+    // volta zerada: com outro id, não enxerga as festas e os favoritos da
+    // conta que acabou de ser apagada.
+    if (account.user.email == demoEmail) {
+      _accounts[demoEmail] = _Account(
+        AppUser(
+          id: 'demo-user-${++_sequence}',
+          email: demoEmail,
+          fullName: demoUser.fullName,
+        ),
+        demoPassword,
+      );
+    }
   }
 
   _Account? get _current => _accounts[_currentEmail];

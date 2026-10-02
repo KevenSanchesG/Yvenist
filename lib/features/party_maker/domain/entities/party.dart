@@ -49,13 +49,27 @@ class Party {
       throw const PartyLockedMutationNotAllowed();
     }
     if (status == PartyStatus.paid) {
-      throw const InvalidPartyTransition('Party paid não pode ser alterada.');
+      throw const InvalidPartyTransition(
+        'Uma festa já paga não pode ser alterada.',
+      );
     }
     if (status == PartyStatus.cancelled) {
       throw const InvalidPartyTransition(
-        'Party cancelada não pode ser alterada.',
+        'Uma festa cancelada não pode ser alterada.',
       );
     }
+  }
+
+  /// Por que a festa, no status em que está, não pode [action]
+  /// (ex.: "receber itens"). A frase vai para a tela.
+  String _notEditableMessage(String action) {
+    final reason = switch (status) {
+      PartyStatus.locked => 'está com o orçamento solicitado',
+      PartyStatus.paid => 'já foi paga',
+      PartyStatus.cancelled => 'foi cancelada',
+      PartyStatus.draft || PartyStatus.planning => 'não está em planejamento',
+    };
+    return 'Esta festa $reason e não pode $action.';
   }
 
   void _touch() => updatedAt = DateTime.now();
@@ -64,7 +78,7 @@ class Party {
   void startPlanning() {
     if (status != PartyStatus.draft) {
       throw const InvalidPartyTransition(
-        'Só é possível iniciar planning a partir de draft.',
+        'Só um rascunho pode passar para o planejamento.',
       );
     }
     status = PartyStatus.planning;
@@ -103,9 +117,7 @@ class Party {
     String? imageUrlSnapshot,
   }) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition(
-        'Só é possível adicionar itens em draft/planning.',
-      );
+      throw InvalidPartyTransition(_notEditableMessage('receber itens'));
     }
 
     final item = PartyItem(
@@ -124,9 +136,7 @@ class Party {
 
   void removeItem(PartyItemId id) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition(
-        'Só é possível remover itens em draft/planning.',
-      );
+      throw InvalidPartyTransition(_notEditableMessage('perder itens'));
     }
     budget = budget.removeItem(id);
     _touch();
@@ -134,9 +144,7 @@ class Party {
 
   void updateItemQuantity(PartyItemId id, Quantity q) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition(
-        'Só é possível atualizar quantidade em draft/planning.',
-      );
+      throw InvalidPartyTransition(_notEditableMessage('ter itens alterados'));
     }
     budget = budget.updateQuantity(id, q);
     _touch();
@@ -144,9 +152,7 @@ class Party {
 
   void updateItemPrice(PartyItemId id, Money newUnitPriceSnapshot) {
     if (status != PartyStatus.draft && status != PartyStatus.planning) {
-      throw const InvalidPartyTransition(
-        'Só é possível atualizar preço em draft/planning.',
-      );
+      throw InvalidPartyTransition(_notEditableMessage('ter itens alterados'));
     }
     budget = budget.updateUnitPrice(id, newUnitPriceSnapshot);
     _touch();
@@ -156,7 +162,7 @@ class Party {
   void lockForPayment() {
     if (status != PartyStatus.planning) {
       throw const InvalidPartyTransition(
-        'Só é possível lockForPayment a partir de planning.',
+        'Só uma festa em planejamento pode ter o orçamento solicitado.',
       );
     }
     if (budget.items.isEmpty) throw const CannotLockWithoutItems();
@@ -191,7 +197,7 @@ class Party {
   void unlock() {
     if (status != PartyStatus.locked) {
       throw const InvalidPartyTransition(
-        'Só é possível unlock a partir de locked.',
+        'Só uma festa com orçamento solicitado pode ser liberada para edição.',
       );
     }
     paymentSnapshot = null;
@@ -202,13 +208,13 @@ class Party {
   void confirmPayment() {
     if (status != PartyStatus.locked) {
       throw const InvalidPartyTransition(
-        'Só é possível confirmar pagamento a partir de locked.',
+        'Só uma festa com orçamento solicitado pode ser paga.',
       );
     }
     if (paymentSnapshot == null) {
       throw const PartyDomainException(
         'missing_payment_snapshot',
-        'Snapshot é obrigatório para confirmar pagamento.',
+        'Não há orçamento registrado para confirmar o pagamento.',
       );
     }
     status = PartyStatus.paid;
@@ -221,7 +227,7 @@ class Party {
       throw const CannotCancelAfterPaidInMvp();
     }
     if (status == PartyStatus.cancelled) {
-      throw const InvalidPartyTransition('Party já está cancelada.');
+      throw const InvalidPartyTransition('Esta festa já está cancelada.');
     }
 
     // MVP: neutro
