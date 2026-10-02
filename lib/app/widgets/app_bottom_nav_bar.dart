@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/theme/app_typography.dart';
 
 /// Barra de navegação inferior: quatro abas e, no centro, o espaço do botão do
@@ -21,21 +22,26 @@ class AppBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     // Respeita a área de gestos/botões do sistema na parte de baixo da tela.
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final colors = context.colors;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: colors.shadow,
             blurRadius: 10,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       // Material (e não um Container colorido) para o efeito de toque dos
       // itens aparecer por cima do fundo.
       child: Material(
-        color: AppColors.bottomNavBackground,
+        color: colors.surface,
+        // No tema escuro a sombra não se vê: uma linha separa a barra da tela.
+        shape: colors.isDark
+            ? Border(top: BorderSide(color: colors.divider))
+            : null,
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
           child: SizedBox(
@@ -101,31 +107,39 @@ class PartyTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Semantics(
       button: true,
       selected: isSelected,
       label: 'Minhas festas',
-      // Um círculo branco com o círculo colorido dentro. (Uma borda branca
-      // desenhada por cima do círculo deixava um fio laranja na beirada.)
-      child: Material(
-        color: Colors.white,
-        shape: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(_ringWidth),
-          child: Material(
-            // Mais escuro com a aba aberta: é o "você está aqui" deste botão,
-            // que não tem o traço das outras abas.
-            color: isSelected ? AppColors.primaryStrong : AppColors.primary,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onPressed,
-              child: const SizedBox(
-                width: size - 2 * _ringWidth,
-                height: size - 2 * _ringWidth,
-                child: ExcludeSemantics(
-                  child: Icon(Icons.cake, color: Colors.white, size: 30),
-                ),
+      // Um anel na cor da barra com o círculo colorido dentro. (Uma borda
+      // desenhada por cima do círculo deixava um fio laranja na beirada.) Com
+      // a aba aberta o anel ganha um halo laranja: é o "você está aqui" deste
+      // botão, que não tem o traço das outras abas.
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected
+              ? Color.alphaBlend(
+                  colors.primary.withValues(alpha: 0.32),
+                  colors.surface,
+                )
+              : colors.surface,
+        ),
+        padding: const EdgeInsets.all(_ringWidth),
+        child: Material(
+          color: colors.primary,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            child: SizedBox(
+              width: size - 2 * _ringWidth,
+              height: size - 2 * _ringWidth,
+              child: ExcludeSemantics(
+                child: Icon(Icons.cake, color: colors.onPrimary, size: 30),
               ),
             ),
           ),
@@ -165,14 +179,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // O ícone ativo usa o laranja da marca; o texto pequeno, a versão
-    // escurecida, que tem contraste suficiente.
-    final iconColor = isSelected
-        ? AppColors.primary
-        : AppColors.navIconInactive;
-    final labelColor = isSelected
-        ? AppColors.primaryStrong
-        : AppColors.navIconInactive;
+    final colors = context.colors;
+    // A aba ativa no laranja da marca; as outras, no cinza discreto.
+    final color = isSelected ? colors.primary : colors.textTertiary;
 
     return Semantics(
       button: true,
@@ -193,9 +202,9 @@ class _NavItem extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   height: 3,
                   width: isSelected ? 30 : 0,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(4),
                     ),
                   ),
@@ -205,7 +214,7 @@ class _NavItem extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(icon, size: 28, color: iconColor),
+                    Icon(icon, size: 28, color: color),
                     const SizedBox(height: 2),
                     Text(
                       label,
@@ -215,7 +224,7 @@ class _NavItem extends StatelessWidget {
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.w500,
-                        color: labelColor,
+                        color: color,
                       ),
                     ),
                   ],

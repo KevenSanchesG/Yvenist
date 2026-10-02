@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/auth/domain/auth_validators.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
@@ -149,7 +149,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         ),
         TextButton(
           onPressed: session.isBusy ? null : _delete,
-          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+          style: TextButton.styleFrom(foregroundColor: context.colors.danger),
           child: Text(session.isBusy ? 'Excluindo...' : 'Excluir conta'),
         ),
       ],

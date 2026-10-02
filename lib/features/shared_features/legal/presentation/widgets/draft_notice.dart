@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Aviso de que os documentos legais ainda são uma versão preliminar.
 ///
@@ -15,20 +14,22 @@ class DraftNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.headerBackground,
+        color: colors.surfaceMuted,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ExcludeSemantics(
-            child: Icon(Icons.info_outline, color: AppColors.textSecondary),
+          ExcludeSemantics(
+            child: Icon(Icons.info_outline, color: colors.textSecondary),
           ),
           const SizedBox(width: 12),
-          const Expanded(child: Text(message, style: AppTypography.body)),
+          Expanded(child: Text(message, style: context.text.body)),
         ],
       ),
     );

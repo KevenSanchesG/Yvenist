@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
@@ -14,11 +13,14 @@ class ListingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: colors.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: Row(
@@ -36,7 +38,7 @@ class ListingTile extends StatelessWidget {
                     children: [
                       Text(
                         listing.title,
-                        style: AppTypography.cardTitle.copyWith(fontSize: 15),
+                        style: text.cardTitle.copyWith(fontSize: 15),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -48,8 +50,8 @@ class ListingTile extends StatelessWidget {
                       Text(
                         'A partir de '
                         '${formatBrl(listing.priceFromCents, hideZeroCents: true)}',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.primaryStrong,
+                        style: text.caption.copyWith(
+                          color: colors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

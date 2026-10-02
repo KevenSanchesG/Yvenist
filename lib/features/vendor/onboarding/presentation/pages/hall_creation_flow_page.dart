@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
@@ -285,7 +284,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
             child: ExcludeSemantics(
               child: LinearProgressIndicator(
                 value: (_step + 1) / _stepCount,
-                backgroundColor: AppColors.divider,
+                backgroundColor: context.colors.divider,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(3),
               ),
@@ -575,7 +574,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         const SizedBox(height: 24),
         Text(
           'Política de cancelamento',
-          style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+          style: context.text.body.copyWith(fontWeight: FontWeight.w700),
         ),
         RadioGroup<CancellationPolicy>(
           groupValue: _policy,
@@ -625,7 +624,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.headerBackground,
+            color: context.colors.surfaceMuted,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -685,15 +684,15 @@ class _Step extends StatelessWidget {
             header: true,
             child: Text(
               title,
-              style: AppTypography.sectionTitle.copyWith(fontSize: 24),
+              style: context.text.sectionTitle.copyWith(fontSize: 24),
             ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
               subtitle!,
-              style: AppTypography.body.copyWith(
-                color: AppColors.textSecondary,
+              style: context.text.body.copyWith(
+                color: context.colors.textSecondary,
               ),
             ),
           ],
@@ -722,15 +721,21 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        // No tema escuro a sombra não se vê: uma linha separa a barra.
+        border: colors.isDark
+            ? Border(top: BorderSide(color: colors.divider))
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: colors.shadow,
             blurRadius: 10,
-            offset: Offset(0, -5),
+            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -784,13 +789,13 @@ class _ReviewRow extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+              style: context.text.body.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: AppTypography.body,
+              style: context.text.body,
               textAlign: TextAlign.end,
             ),
           ),

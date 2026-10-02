@@ -19,6 +19,8 @@ class ConfigErrorApp extends StatelessWidget {
       title: 'Yvenist',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      // Sem escolha guardada para ler: segue o tema do aparelho.
+      darkTheme: AppTheme.dark(),
       home: Scaffold(
         body: SafeArea(
           child: EmptyStateView(

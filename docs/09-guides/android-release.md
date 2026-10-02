@@ -25,12 +25,24 @@ Signing", conferida em 2 de outubro de 2026):
 | de assinatura do app | o Google | assina o que chega aos aparelhos |
 | **de envio** (*upload key*) | **vocês** | assina o pacote que vocês enviam ao Play Console |
 
-O projeto só lida com a chave de envio. **Ela ainda não existe**: criá-la é dos
-donos ([KI-04](../07-known-issues/README.md)).
+O projeto só lida com a chave de envio. **Ela existe desde 2 de outubro de
+2026**, criada a pedido dos donos na máquina de desenvolvimento do Keven, fora
+do repositório:
+
+| O quê | Como está |
+|---|---|
+| Arquivo | `yvenist-upload.jks`, na pasta `yvenist-chave-de-envio` da pasta pessoal do usuário, com um `LEIA-ME.txt` ao lado. O caminho exato está em `android/key.properties`, que só existe naquela máquina |
+| Chave | apelido `upload`, RSA de 2048 bits, válida até 17 de fevereiro de 2054 |
+| Impressão digital do certificado (SHA-256) | `C4:CA:8C:91:B5:DC:7D:9F:34:71:AC:18:CB:08:63:C6:BD:70:D3:95:A1:81:67:AC:85:A7:B3:65:7B:B9:BE:7E`. Não é segredo: serve para conferir que o pacote foi assinado pela chave certa |
+| Senhas | geradas na hora e gravadas **só** em `android/key.properties`. Não estão em nenhum outro lugar |
+
+**Falta os donos guardarem uma cópia** do arquivo `.jks` e das duas senhas
+fora daquela máquina ([KI-55](../07-known-issues/README.md)). Sem cópia, apagar
+a pasta do projeto leva as senhas junto.
 
 ## 3. Criar a chave de envio
 
-Uma vez só, na máquina de quem publica:
+Já foi feito (acima). O comando fica registrado para o caso de uma chave nova:
 
 ```powershell
 keytool -genkeypair -v -keystore C:\caminho\seguro\yvenist-upload.jks `
@@ -49,8 +61,8 @@ pede duas senhas e gera um arquivo `.jks`.
 
 ## 4. Apontar o build para a chave
 
-Copie `android/key.properties.example` para `android/key.properties` e
-preencha:
+Na máquina onde a chave foi criada isso já está feito. Em outra máquina, copie
+`android/key.properties.example` para `android/key.properties` e preencha:
 
 ```properties
 storePassword=<senha do keystore>
@@ -142,6 +154,7 @@ Tudo o que ainda bloqueia a publicação:
 |---|---|---|
 | Build de release assinado pela chave de `key.properties`, instalado e aberto em um emulador (Android 13), com o backup desligado | chave descartável, apagada depois | 2026-10-02 |
 | Pacote para a loja (`.aab`): recusa sem a chave; com uma chave de teste, compila e sai assinado por ela | na máquina de desenvolvimento; chave descartável, apagada depois | 2026-10-02 |
+| Pacote para a loja assinado pela **chave de envio de verdade**, com o pacote `br.com.yvenist.app` | `keytool -printcert -jarfile` no `.aab`: a impressão digital é a da tabela da seção 2. Build em modo demonstração, só para conferir a assinatura | 2026-10-02 |
 | O manifesto final de release: mínimo Android 7 (API 24), alvo API 36, só a permissão de internet | lido do build | 2026-10-02 |
 | O identificador `br.com.yvenist.app` no pacote e na atividade inicial | lido do manifesto final de um APK de debug | 2026-10-02 |
 

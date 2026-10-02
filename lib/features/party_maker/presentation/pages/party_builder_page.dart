@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
@@ -172,6 +172,9 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -181,20 +184,20 @@ class _Summary extends StatelessWidget {
               itemCount == 1
                   ? '1 item selecionado'
                   : '$itemCount itens selecionados',
-              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+              style: text.body.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           if (isLocked)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.tint(AppColors.primaryStrong),
+                color: colors.tint(colors.primary),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'Orçamento solicitado',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.primaryStrong,
+                style: text.caption.copyWith(
+                  color: colors.primary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -222,6 +225,9 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
     return Container(
       // A folga extra embaixo é do botão central da navegação, que sobe por
       // cima do fim desta aba: sem ela ele encobre a borda do botão do rodapé.
@@ -231,13 +237,17 @@ class _Footer extends StatelessWidget {
         16,
         16 + AppSpacing.navButtonOverlap,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        // No tema escuro a sombra não se vê: uma linha separa o rodapé.
+        border: colors.isDark
+            ? Border(top: BorderSide(color: colors.divider))
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: colors.shadow,
             blurRadius: 10,
-            offset: Offset(0, -4),
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -248,14 +258,14 @@ class _Footer extends StatelessWidget {
             children: [
               Text(
                 'Total',
-                style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+                style: text.body.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               Text(
                 formatBrl(totalCents),
-                style: AppTypography.body.copyWith(
+                style: text.body.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primaryStrong,
+                  color: colors.primary,
                 ),
               ),
             ],

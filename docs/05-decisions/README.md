@@ -19,7 +19,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [005](ADR-005-festa-gravada-por-estado.md) | A festa é gravada inteira, por estado desejado, com versão | aceita |
 | [006](ADR-006-concorrencia-pelo-banco.md) | Corridas são decididas pelo banco | aceita |
 | [007](ADR-007-dinheiro-e-snapshots.md) | Dinheiro em centavos; item guarda cópia de nome e preço | aceita |
-| [008](ADR-008-acessibilidade-e-cores.md) | Dois laranjas; contraste testado pelos tokens | aceita, com pendência dos donos |
+| [008](ADR-008-acessibilidade-e-cores.md) | Dois laranjas; contraste testado pelos tokens | substituída por ADR-017 |
 | [009](ADR-009-erros-uniformes.md) | Um formato de erro, em português, com código estável | aceita |
 | [010](ADR-010-fila-de-analise.md) | Recusar um cadastro recusa os anúncios dele; a tela só publica o que mostrou | aceita (confirmada pelos donos) |
 | [011](ADR-011-knowledge-base-em-docs.md) | Knowledge Base em `docs/`, aberta pelo Obsidian, sem MCP | aceita |
@@ -28,6 +28,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [014](ADR-014-textos-legais-como-assets.md) | Textos legais como arquivos do app, com versão casada à da API | aceita |
 | [015](ADR-015-paginas-legais-publicas.md) | Páginas legais públicas geradas dos mesmos arquivos do app | aceita |
 | [016](ADR-016-identificador-br-com-yvenist-app.md) | Identificador `br.com.yvenist.app`, seguindo o domínio dos donos | aceita (decisão dos donos) |
+| [017](ADR-017-um-laranja-e-tema-escuro.md) | Um laranja por tema (`#C2410C`), tema escuro e a escolha em Aparência | aceita (decisão dos donos) |
 
 ## Quando criar um ADR
 

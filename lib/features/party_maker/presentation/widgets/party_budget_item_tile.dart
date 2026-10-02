@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/party_maker/presentation/models/party_budget_item_view.dart';
@@ -19,13 +18,20 @@ class PartyBudgetItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        border: Border.all(color: colors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: ListTile(
@@ -40,20 +46,20 @@ class PartyBudgetItemTile extends StatelessWidget {
         ),
         title: Text(
           item.name,
-          style: AppTypography.cardTitle.copyWith(fontSize: 14),
+          style: text.cardTitle.copyWith(fontSize: 14),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           '${formatBrl(item.unitPriceCents)}  •  qtd ${item.quantity}',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.primaryStrong,
+          style: text.caption.copyWith(
+            color: colors.primary,
             fontWeight: FontWeight.w700,
           ),
         ),
         trailing: IconButton(
           icon: const Icon(Icons.remove_circle_outline),
-          color: AppColors.danger,
+          color: colors.danger,
           tooltip: 'Remover ${item.name}',
           onPressed: onRemove,
         ),

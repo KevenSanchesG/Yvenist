@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/shared_features/legal/domain/legal_document.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/pages/legal_document_page.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/widgets/draft_notice.dart';
@@ -45,12 +44,14 @@ class LegalPage extends StatelessWidget {
             title: 'Contrato do Fornecedor',
           ),
           const SizedBox(height: 8),
-          const Text('Seus dados (LGPD)', style: AppTypography.sectionTitle),
+          Text('Seus dados (LGPD)', style: context.text.sectionTitle),
           const SizedBox(height: 8),
           Text(
             'Você pode corrigir seus dados em Perfil > Dados Pessoais e apagar '
             'a conta, com tudo o que está ligado a ela, em Perfil > Segurança.',
-            style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            style: context.text.body.copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -76,10 +77,10 @@ class _DocumentTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: context.colors.divider),
       ),
       child: ListTile(
-        leading: Icon(icon, color: AppColors.primary),
+        leading: Icon(icon, color: context.colors.primary),
         title: Text(title),
         subtitle: Text(isAvailable ? 'Versão preliminar' : 'Em elaboração'),
         trailing: isAvailable ? const Icon(Icons.chevron_right) : null,

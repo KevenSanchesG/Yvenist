@@ -13,6 +13,7 @@ import 'package:yvenist/features/client/home/presentation/pages/home_page.dart';
 import 'package:yvenist/features/client/profile/presentation/pages/profile_page.dart';
 import 'package:yvenist/features/client/shared/listing_search_controller.dart';
 import 'package:yvenist/features/party_maker/presentation/pages/party_maker_entry_page.dart';
+import 'package:yvenist/features/shared_features/appearance/presentation/pages/appearance_page.dart';
 import 'package:yvenist/features/shared_features/chat/presentation/pages/chat_page.dart';
 
 /// Estrutura principal: as cinco abas e a barra de navegação inferior.
@@ -50,7 +51,7 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
     _visited.add(current);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.systemUi,
+      value: AppTheme.systemUi(context.colors),
       child: PopScope(
         // O "voltar" do sistema, fora da Home, leva à Home em vez de fechar o
         // app: é o mesmo destino das setas de voltar das abas.
@@ -102,6 +103,9 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
         title: 'Sua conta',
         message: 'Entre para ver seus dados, festas e favoritos.',
         reason: 'Entre para acessar a sua conta.',
+        // O tema é uma preferência do aparelho: quem não entrou também
+        // escolhe, e é aqui que procuraria.
+        showAppearance: true,
         child: ProfilePage(),
       ),
     };
@@ -116,12 +120,16 @@ class _RequiresAccount extends StatelessWidget {
     required this.message,
     required this.reason,
     required this.child,
+    this.showAppearance = false,
   });
 
   final String title;
   final String message;
   final String reason;
   final Widget child;
+
+  /// Oferece ao visitante o atalho para a tela de aparência.
+  final bool showAppearance;
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +154,16 @@ class _RequiresAccount extends StatelessWidget {
             message: message,
             actionLabel: 'Entrar ou criar conta',
             onAction: () => ensureSignedIn(context, reason: reason),
+            footer: showAppearance
+                ? TextButton.icon(
+                    onPressed: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppearancePage()),
+                    ),
+                    icon: const Icon(Icons.brightness_6_outlined),
+                    label: const Text('Aparência'),
+                  )
+                : null,
           ),
         ),
       ),

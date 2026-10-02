@@ -67,7 +67,7 @@ pytest -q
 | Integração app ↔ API | subir a API com `YVENIST_RATE_LIMIT_ENABLED=false` e `YVENIST_PASSWORD_HASH_PROFILE=test`, depois `YVENIST_API_URL=http://127.0.0.1:8000/api/v1 flutter test --tags integration test/integration` |
 | Cenários da fila de análise | além disso: `python -m app.cli create-admin --email admin@example.com` e as variáveis `YVENIST_ADMIN_EMAIL` / `YVENIST_ADMIN_PASSWORD` |
 | Integração dentro do navegador | só no CI ([web](web.md)) |
-| Regenerar as capturas de tela | `flutter test --update-goldens --run-skipped --tags screenshots test/visual/screenshots_test.dart` |
+| Regenerar as capturas de tela, nos dois temas | `flutter test --update-goldens --run-skipped --tags screenshots test/visual/screenshots_test.dart` ([screens](../04-ux/screens.md)) |
 
 No PowerShell as variáveis são definidas antes do comando:
 `$env:YVENIST_API_URL = 'http://127.0.0.1:8000/api/v1'`.

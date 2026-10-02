@@ -104,8 +104,8 @@ Integração, PostgreSQL, capturas de tela, web e publicação:
   Comentário explica o porquê.
 - Commits em inglês, `tipo(escopo): resumo`. No PowerShell use
   `git commit -F arquivo.txt` (aspas duplas quebram o `-m`).
-- Cor de texto só pelos tokens de `lib/core/theme/`. `AppColors.primary`
-  (`#FF6600`) nunca é cor de texto.
+- Cor e estilo de texto só pelo tema em uso (`context.colors`, `context.text`):
+  o app tem tema claro e escuro, e toda tela funciona nos dois.
 - Nome de teste em português, descrevendo o comportamento.
 - As regras de cada área estão em `.claude/rules/` e carregam sozinhas quando
   um arquivo da área é lido.

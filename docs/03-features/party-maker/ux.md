@@ -36,7 +36,7 @@ tem essa folga a mais embaixo. Rótulo para leitor de tela: "Minhas festas".
 | Status | Texto | Cor |
 |---|---|---|
 | `draft`, `planning` | Rascunho, Em planejamento | `textSecondary` |
-| `locked` | Orçamento solicitado | `primaryStrong` |
+| `locked` | Orçamento solicitado | `primary` |
 | `paid` | Pago | `success` |
 | `cancelled` | Cancelado | `danger` |
 

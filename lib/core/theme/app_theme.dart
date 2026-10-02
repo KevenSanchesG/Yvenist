@@ -1,118 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_palette.dart';
 import 'package:yvenist/core/theme/app_typography.dart';
 
-/// Tema único do app. Cada tela herda daqui em vez de repetir cores e bordas.
+/// O caminho das telas até as cores e os estilos de texto do tema em uso.
+extension AppThemeContext on BuildContext {
+  /// As cores do tema em uso (claro ou escuro).
+  AppPalette get colors => Theme.of(this).extension<AppPalette>()!;
+
+  /// Os estilos de texto, com as cores do tema em uso.
+  AppTypography get text => AppTypography.forPalette(colors);
+}
+
+/// Os dois temas do app. Cada tela herda daqui em vez de repetir cores e
+/// bordas.
 abstract final class AppTheme {
-  static const SystemUiOverlayStyle systemUi = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarDividerColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  );
+  static final ThemeData _light = _build(AppPalette.light);
+  static final ThemeData _dark = _build(AppPalette.dark);
 
-  /// Para telas cujo topo é escuro (o cabeçalho do perfil): relógio e ícones
-  /// da barra de status em branco.
-  static const SystemUiOverlayStyle systemUiOnDarkHeader = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light, // Android
-    statusBarBrightness: Brightness.dark, // iOS
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarDividerColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  );
+  static ThemeData light() => _light;
+  static ThemeData dark() => _dark;
 
-  static ThemeData light() {
-    // O destaque de um item selecionado, igual ao do seletor de modo do
-    // perfil. Opaco, porque o Material pinta os componentes com ele direto.
-    final selectedHighlight = Color.alphaBlend(
-      AppColors.tint(AppColors.primaryStrong),
-      Colors.white,
+  /// Barra de status e de navegação do sistema para uma tela comum: ícones
+  /// escuros no tema claro, claros no escuro.
+  static SystemUiOverlayStyle systemUi(AppPalette colors) {
+    final icons = colors.isDark ? Brightness.light : Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: icons, // Android
+      statusBarBrightness: colors.brightness, // iOS
+      systemNavigationBarColor: colors.surface,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: icons,
     );
-    // O Material 3 deriva do laranja da marca todas as cores que os
-    // componentes usam sozinhos, e o resultado destoa do resto do app. Cada
-    // papel abaixo troca a cor derivada por um token do app.
-    final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
-      // A cor derivada para controles (caixas de seleção, dia escolhido no
-      // calendário, campo em foco) é um marrom que não aparece em mais nenhum
-      // lugar: usa o mesmo laranja dos botões.
-      primary: AppColors.primaryStrong,
-      onPrimary: Colors.white,
-      // Item selecionado (segmento de um botão segmentado, filtro marcado):
-      // o derivado é um rosado.
-      primaryContainer: selectedHighlight,
-      onPrimaryContainer: AppColors.primaryStrong,
-      secondaryContainer: selectedHighlight,
-      onSecondaryContainer: AppColors.primaryStrong,
-      // Superfícies neutras. As derivadas saem rosadas: cartões, menus, listas
-      // suspensas e o calendário destoavam do branco do resto do app.
-      surface: Colors.white,
-      surfaceContainerLowest: Colors.white,
-      surfaceContainerLow: Colors.white,
-      surfaceContainer: Colors.white,
-      surfaceContainerHigh: AppColors.headerBackground,
-      surfaceContainerHighest: AppColors.divider,
-      surfaceTint: Colors.transparent,
-      // Texto que os componentes escrevem (rótulo de campo e de filtro, itens
-      // de menu, calendário): os derivados são marrons.
-      onSurface: AppColors.textPrimary,
-      onSurfaceVariant: AppColors.textSecondary,
-      // Contornos: o de um controle precisa de 3:1 com o fundo; o decorativo é
-      // o mesmo dos cartões e dos campos.
-      outline: AppColors.textTertiary,
-      outlineVariant: AppColors.divider,
-      // Aviso (SnackBar).
-      inverseSurface: AppColors.textPrimary,
-      onInverseSurface: Colors.white,
+  }
+
+  /// Para telas cujo topo é escuro nos dois temas (o cabeçalho do perfil):
+  /// relógio e ícones da barra de status em branco.
+  static SystemUiOverlayStyle systemUiOnDarkHeader(AppPalette colors) {
+    return systemUi(colors).copyWith(
+      statusBarIconBrightness: Brightness.light, // Android
+      statusBarBrightness: Brightness.dark, // iOS
     );
+  }
+
+  static ThemeData _build(AppPalette colors) {
+    final text = AppTypography.forPalette(colors);
+
+    // O Material 3 deriva da cor da marca todas as cores que os componentes
+    // usam sozinhos, e o resultado destoa do resto do app (marrons e rosados
+    // no tema claro). Cada papel abaixo troca a cor derivada por uma da
+    // paleta do app.
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.brand,
+          brightness: colors.brightness,
+        ).copyWith(
+          // Controles: caixa de seleção, opção marcada, dia escolhido no
+          // calendário, rótulo e cursor do campo em foco.
+          primary: colors.primary,
+          onPrimary: colors.onPrimary,
+          // Item selecionado (segmento de um botão segmentado, filtro
+          // marcado): o mesmo destaque do seletor de modo do perfil.
+          primaryContainer: colors.selectedSurface,
+          onPrimaryContainer: colors.primary,
+          secondaryContainer: colors.selectedSurface,
+          onSecondaryContainer: colors.primary,
+          // Cartões, menus, listas suspensas, calendário.
+          surface: colors.surface,
+          surfaceContainerLowest: colors.surface,
+          surfaceContainerLow: colors.surface,
+          surfaceContainer: colors.surface,
+          surfaceContainerHigh: colors.surfaceMuted,
+          surfaceContainerHighest: colors.divider,
+          surfaceTint: Colors.transparent,
+          // Texto que os componentes escrevem: rótulo de campo e de filtro,
+          // itens de menu, calendário.
+          onSurface: colors.textPrimary,
+          onSurfaceVariant: colors.textSecondary,
+          // Contornos: o de um controle precisa de 3:1 com o fundo; o
+          // decorativo é o mesmo dos cartões e dos campos.
+          outline: colors.outline,
+          outlineVariant: colors.divider,
+          // Aviso (SnackBar): as cores do texto e do fundo, invertidas.
+          inverseSurface: colors.textPrimary,
+          onInverseSurface: colors.background,
+          inversePrimary: colors.inversePrimary,
+          error: colors.danger,
+        );
     final fieldBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.divider),
+      borderSide: BorderSide(color: colors.divider),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      extensions: [colors],
       fontFamily: AppTypography.fontFamily,
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
+      scaffoldBackgroundColor: colors.background,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.background,
+        foregroundColor: colors.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTypography.sectionTitle,
-        iconTheme: IconThemeData(color: AppColors.primary),
-        systemOverlayStyle: systemUi,
+        titleTextStyle: text.sectionTitle,
+        iconTheme: IconThemeData(color: colors.primary),
+        systemOverlayStyle: systemUi(colors),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colors.surface,
         border: fieldBorder,
         enabledBorder: fieldBorder,
         // O mesmo laranja do rótulo e do cursor do campo em foco, que vêm de
         // `scheme.primary`.
         focusedBorder: fieldBorder.copyWith(
-          borderSide: const BorderSide(
-            color: AppColors.primaryStrong,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colors.primary, width: 2),
         ),
         errorBorder: fieldBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.danger),
+          borderSide: BorderSide(color: colors.danger),
         ),
         focusedErrorBorder: fieldBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.danger, width: 2),
+          borderSide: BorderSide(color: colors.danger, width: 2),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          // Texto branco sobre o laranja escurecido: contraste AA.
-          backgroundColor: AppColors.primaryStrong,
-          foregroundColor: Colors.white,
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
           minimumSize: const Size(64, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
@@ -125,11 +144,11 @@ abstract final class AppTheme {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.primaryStrong),
+        style: TextButton.styleFrom(foregroundColor: colors.primary),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryStrong,
+          foregroundColor: colors.primary,
           minimumSize: const Size(64, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
@@ -139,40 +158,36 @@ abstract final class AppTheme {
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),
-      // Diálogos, calendário, folhas e menus em branco, como os cards (o
-      // padrão do Material 3 para diálogos é um tom acima da superfície).
-      dialogTheme: const DialogThemeData(
-        backgroundColor: Colors.white,
+      // Diálogos, calendário, folhas e menus na cor dos cartões (o padrão do
+      // Material 3 para diálogos é um tom acima da superfície).
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: AppTypography.sectionTitle,
-        contentTextStyle: AppTypography.body,
+        titleTextStyle: text.sectionTitle,
+        contentTextStyle: text.body,
       ),
-      datePickerTheme: const DatePickerThemeData(
-        backgroundColor: Colors.white,
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: Colors.white,
-        modalBackgroundColor: Colors.white,
+        backgroundColor: colors.surface,
+        modalBackgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
-        dragHandleColor: Colors.grey.shade400,
+        dragHandleColor: colors.textTertiary,
       ),
-      popupMenuTheme: const PopupMenuThemeData(
-        color: Colors.white,
+      popupMenuTheme: PopupMenuThemeData(
+        color: colors.surface,
         surfaceTintColor: Colors.transparent,
       ),
-      // Abas com as cores de texto do app: o laranja da marca, sozinho, não
-      // tem contraste suficiente para o rótulo.
-      tabBarTheme: const TabBarThemeData(
-        labelColor: AppColors.primaryStrong,
-        unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primaryStrong,
-        dividerColor: AppColors.divider,
+      tabBarTheme: TabBarThemeData(
+        labelColor: colors.primary,
+        unselectedLabelColor: colors.textSecondary,
+        indicatorColor: colors.primary,
+        dividerColor: colors.divider,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primary,
-      ),
-      dividerTheme: const DividerThemeData(color: AppColors.divider),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: colors.primary),
+      dividerTheme: DividerThemeData(color: colors.divider),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:yvenist/app/app_state.dart';
 import 'package:yvenist/app/widgets/app_bottom_nav_bar.dart';
 import 'package:yvenist/app/yvenist_app.dart';
 import 'package:yvenist/core/config/app_config.dart';
+import 'package:yvenist/core/storage/theme_preference_storage.dart';
 import 'package:yvenist/features/admin/data/in_memory_review_repository.dart';
 import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
@@ -71,13 +72,14 @@ void appTest(
 }
 
 /// As dependências do modo demonstração, com a possibilidade de trocar o
-/// catálogo, a autenticação ou a fila de análise por outra versão (uma que
-/// falha, ou uma já com itens).
+/// catálogo, a autenticação, a fila de análise ou a escolha de tema guardada
+/// por outra versão (uma que falha, ou uma já com conteúdo).
 AppDependencies demoDependencies({
   InMemoryAuthRepository? auth,
   AuthRepository? authOverride,
   CatalogRepository? catalog,
   ReviewRepository? reviews,
+  ThemePreferenceStorage? themePreferences,
 }) {
   final accounts = auth ?? InMemoryAuthRepository();
   return AppDependencies(
@@ -92,7 +94,19 @@ AppDependencies demoDependencies({
       currentUserId: () => accounts.currentUserId,
     ),
     reviews: reviews ?? InMemoryReviewRepository(),
+    themePreferences: themePreferences,
   );
+}
+
+/// Põe o app no tema escuro, como quem escolhe "Escuro" em Aparência.
+Future<void> useDarkTheme(WidgetTester tester, TestApp app) async {
+  await app.state.theme.select(ThemeMode.dark);
+  await tester.pumpAndSettle();
+}
+
+/// O tema que a tela na frente está usando.
+Brightness currentBrightness(WidgetTester tester) {
+  return Theme.of(tester.element(find.byType(Scaffold).last)).brightness;
 }
 
 /// Um botão da navegação inferior, pelo rótulo acessível ("Início",

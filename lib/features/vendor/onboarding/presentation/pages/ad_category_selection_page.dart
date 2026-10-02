@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/vendor/onboarding/presentation/pages/hall_creation_flow_page.dart';
 
 /// Escolha do que anunciar. Por enquanto só o fluxo de salão existe; as
@@ -63,14 +62,15 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isAvailable = onTap != null;
+    final colors = context.colors;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
-        color: Colors.white,
+        color: colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.divider),
+          side: BorderSide(color: colors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
@@ -79,25 +79,23 @@ class _CategoryCard extends StatelessWidget {
           onTap: onTap,
           leading: CircleAvatar(
             radius: 26,
-            backgroundColor: AppColors.headerBackground,
+            backgroundColor: colors.surfaceMuted,
             child: Icon(
               icon,
               size: 28,
-              color: isAvailable ? AppColors.primary : AppColors.textSecondary,
+              color: isAvailable ? colors.primary : colors.textSecondary,
             ),
           ),
           title: Text(
             title,
-            style: AppTypography.cardTitle.copyWith(
-              color: isAvailable
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
+            style: context.text.cardTitle.copyWith(
+              color: isAvailable ? colors.textPrimary : colors.textSecondary,
             ),
           ),
-          subtitle: Text(subtitle, style: AppTypography.caption),
+          subtitle: Text(subtitle, style: context.text.caption),
           trailing: isAvailable
               ? const Icon(Icons.arrow_forward_ios, size: 16)
-              : const Text('Em breve', style: AppTypography.caption),
+              : Text('Em breve', style: context.text.caption),
         ),
       ),
     );

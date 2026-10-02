@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Item de lista das telas de conta (segurança, dados...).
 ///
@@ -25,9 +24,10 @@ class ProfileActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isAvailable = onTap != null;
+    final colors = context.colors;
     final color = !isAvailable
-        ? AppColors.textSecondary
-        : (isDestructive ? AppColors.danger : AppColors.primary);
+        ? colors.textSecondary
+        : (isDestructive ? colors.danger : colors.primary);
     final supportingText = subtitle ?? (isAvailable ? null : 'Em breve');
 
     return Card(
@@ -35,7 +35,7 @@ class ProfileActionTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: colors.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
@@ -43,23 +43,23 @@ class ProfileActionTile extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.tint(color),
+            color: colors.tint(color),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color),
         ),
         title: Text(
           title,
-          style: AppTypography.body.copyWith(
+          style: context.text.body.copyWith(
             fontWeight: FontWeight.w600,
             color: isDestructive && isAvailable
-                ? AppColors.danger
-                : AppColors.textPrimary,
+                ? colors.danger
+                : colors.textPrimary,
           ),
         ),
         subtitle: supportingText == null ? null : Text(supportingText),
         trailing: isAvailable
-            ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+            ? Icon(Icons.chevron_right, color: colors.textSecondary)
             : null,
       ),
     );
@@ -80,7 +80,7 @@ class ProfileSectionTitle extends StatelessWidget {
         header: true,
         child: Text(
           title.toUpperCase(),
-          style: AppTypography.caption.copyWith(
+          style: context.text.caption.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
           ),

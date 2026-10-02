@@ -14,17 +14,18 @@ O que o CI roda: [ci](../09-guides/ci.md).
 | Onde | O que prova |
 |---|---|
 | `test/features/**` | regras de domínio, controllers e repositórios. Os da API são testados contra uma camada HTTP de mentira (`support/fake_api.dart`): caminho, corpo e tradução de erros |
-| `test/core/**` | `ApiClient` (renovação da sessão), cofre de tokens, utilitários, **contraste das cores** (`theme_contrast_test.dart`), arquivos embutidos (`bundled_assets_test.dart`) |
+| `test/core/**` | `ApiClient` (renovação da sessão), cofre de tokens, utilitários, **contraste das cores nos dois temas** (`theme_contrast_test.dart`), nenhuma cor escrita à mão nas telas (`theme_usage_test.dart`), a escolha de tema e onde ela é guardada (`theme_mode_test.dart`), arquivos embutidos (`bundled_assets_test.dart`) |
 | `test/app/*_flow_test.dart` | o app inteiro em modo demonstração, na tela de um celular (360×780): navegar, buscar, entrar, montar festa, anunciar, analisar |
-| `test/app/accessibility_test.dart` | área de toque de 48×48, rótulos, leitores de tela, e cada fluxo de novo com a fonte do sistema em 200% |
+| `test/app/accessibility_test.dart` | área de toque de 48×48, rótulos, leitores de tela, cada fluxo de novo com a fonte do sistema em 200% e os fluxos principais de novo **no tema escuro** |
 | `test/integration/` | o código real do app contra uma API no ar. Pulado sem `YVENIST_API_URL`. Roda na máquina e **dentro do Chrome** |
-| `test/visual/screenshots_test.dart` | gera `docs/screenshots/` a partir das telas reais (etiqueta `screenshots`, fora da suíte normal) |
+| `test/visual/screenshots_test.dart` | gera `docs/screenshots/` a partir das telas reais, nos dois temas (etiqueta `screenshots`, fora da suíte normal) |
 
 Apoio (`test/support/`):
 
 | Arquivo | Para que serve |
 |---|---|
-| `app_harness.dart` | `appTest` sobe o app para um teste de fluxo; `demoDependencies` troca uma dependência; `openTab`, `tapAndSettle`, `scrollToAndTap`, `enterField` |
+| `app_harness.dart` | `appTest` sobe o app para um teste de fluxo; `demoDependencies` troca uma dependência; `openTab`, `tapAndSettle`, `scrollToAndTap`, `enterField`; `useDarkTheme` põe o app no tema escuro |
+| `fake_keystore.dart` | `FakeKeystore`: o cofre do sistema visto pelo canal do plugin, em um mapa; pode ser mandado falhar |
 | `visual_harness.dart` | fontes reais (a Inter embutida), imagens de rede de mentira, tela de celular |
 | `fake_api.dart` | `FakeApi`: define a resposta de cada rota e confere o que foi pedido |
 | `catalog_fixtures.dart`, `review_fixtures.dart` | dados de exemplo e repositórios que podem ser mandados falhar ou esperar |
@@ -66,6 +67,7 @@ nada.
 | Pacote para a loja | recusa sem a chave; com uma chave descartável compila e sai assinado por ela; alvo API 36; bibliotecas de 64 bits em 16 KB ([android-release](../09-guides/android-release.md)) | 2026-10-02 |
 | Web contra a API | Chrome controlado por script: vitrine, login, sessão recuperada ao recarregar, fila de análise | 2026-10-02 |
 | API em modo de produção | o processo de verdade, com a configuração de produção ([deployment](../09-guides/deployment.md)) | 2026-10-02 |
+| Tema escuro em um Android | emulador Pixel 6 (Android 13), modo demonstração: escolher "Escuro" em Aparência muda na hora; depois de encerrar o app à força e abrir de novo, ele abre no tema escuro | 2026-10-02 |
 
 Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios-build.md)).
 
@@ -73,6 +75,8 @@ Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios
 
 - Nome do teste em português, dizendo o comportamento: `'recusar exige o motivo…'`.
 - Defeito corrigido ganha um teste com o comentário `Regressão:`.
+- A suíte roda no tema claro. O que só aparece no tema escuro (uma borda que
+  tira espaço, uma cor que some) precisa de um teste que chame `useDarkTheme`.
 - Um teste de tela nunca usa rede: as imagens são substituídas
   (`withFakeNetworkImages`) e os dados vêm dos repositórios em memória.
 - Texto longo lido de um asset em teste de tela: carregar com `cache: false`.

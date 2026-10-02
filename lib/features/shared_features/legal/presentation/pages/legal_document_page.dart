@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/shared_features/legal/domain/legal_document.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/widgets/draft_notice.dart';
@@ -73,7 +72,7 @@ class _BlockView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bodyStyle = AppTypography.body.copyWith(height: 1.5);
+    final bodyStyle = context.text.body.copyWith(height: 1.5);
 
     switch (block.kind) {
       case LegalBlockKind.title:
@@ -82,7 +81,7 @@ class _BlockView extends StatelessWidget {
           padding: const EdgeInsets.only(top: 24),
           child: Semantics(
             header: true,
-            child: Text(block.text, style: AppTypography.sectionTitle),
+            child: Text(block.text, style: context.text.sectionTitle),
           ),
         );
       case LegalBlockKind.paragraph:
@@ -99,7 +98,9 @@ class _BlockView extends StatelessWidget {
               ExcludeSemantics(
                 child: Text(
                   '•  ',
-                  style: bodyStyle.copyWith(color: AppColors.textSecondary),
+                  style: bodyStyle.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ),
               Expanded(child: Text(block.text, style: bodyStyle)),

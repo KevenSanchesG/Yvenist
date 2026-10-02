@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/vendor/onboarding/presentation/pages/ad_category_selection_page.dart';
 
@@ -22,90 +24,102 @@ class VendorWelcomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
-    return Scaffold(
-      // Fundo escuro mesmo que a foto não carregue: o texto branco continua
-      // legível.
-      backgroundColor: AppColors.vendor,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          AppNetworkImage(
-            url: _backgroundUrl,
-            width: size.width,
-            height: size.height,
-          ),
-          const ColoredBox(color: Color(0xB3000000)),
-          SafeArea(
-            child: _FillOrScroll(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    tooltip: 'Fechar',
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'Transforme seu espaço em renda extra',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      height: 1.1,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // A tela é escura nos dois temas: o relógio e os ícones da barra de
+      // status ficam brancos.
+      value: AppTheme.systemUiOnDarkHeader(context.colors),
+      child: Scaffold(
+        // Fundo escuro mesmo que a foto não carregue: o texto branco continua
+        // legível.
+        backgroundColor: AppColors.vendorGradient.first,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            AppNetworkImage(
+              url: _backgroundUrl,
+              width: size.width,
+              height: size.height,
+            ),
+            const ColoredBox(color: AppColors.photoScrim),
+            SafeArea(
+              child: _FillOrScroll(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.onGradient,
+                      ),
+                      tooltip: 'Fechar',
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'É fácil começar. Hoje você já pode anunciar o seu salão; '
-                    'brinquedos, buffet e decoração chegam em seguida.',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 32),
-                  for (final benefit in _benefits)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          ExcludeSemantics(
-                            child: Icon(
-                              benefit.icon,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              benefit.text,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
+                    const Spacer(),
+                    const Text(
+                      'Transforme seu espaço em renda extra',
+                      style: TextStyle(
+                        color: AppColors.onGradient,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'É fácil começar. Hoje você já pode anunciar o seu salão; '
+                      'brinquedos, buffet e decoração chegam em seguida.',
+                      style: TextStyle(
+                        color: AppColors.onGradient,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    for (final benefit in _benefits)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            ExcludeSemantics(
+                              child: Icon(
+                                benefit.icon,
+                                // Sobre fundo escuro nos dois temas: o laranja claro.
+                                color: AppColors.brandOnDark,
+                                size: 20,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdCategorySelectionPage(),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                benefit.text,
+                                style: const TextStyle(
+                                  color: AppColors.onGradient,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: const Text('Começar meu anúncio'),
+                    const Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.push<void>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdCategorySelectionPage(),
+                          ),
+                        ),
+                        child: const Text('Começar meu anúncio'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

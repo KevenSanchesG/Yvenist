@@ -1,14 +1,19 @@
 ---
 title: "ADR-008: Dois laranjas; contraste testado pelos tokens"
 type: adr
-status: aceita
+status: substituída por ADR-017
 date: 2026-10-02
 ---
 
 # ADR-008: Dois laranjas; contraste testado pelos tokens
 
-**Status:** aceita, com uma pendência dos donos · **Data:** 2026-10-02 ·
-**Decidida por:** evolução técnica (commits `790377a`, `948339e`, `68a8c8d`)
+**Status:** **substituída pelo
+[ADR-017](ADR-017-um-laranja-e-tema-escuro.md)** no mesmo dia: os donos
+escolheram `#C2410C` como tom único e pediram o tema escuro. O contraste
+conferido por teste e as superfícies neutras continuam valendo, e estão lá. O
+texto abaixo fica como registro do que tinha sido decidido · **Data:**
+2026-10-02 · **Decidida por:** evolução técnica (commits `790377a`, `948339e`,
+`68a8c8d`)
 
 ## Contexto
 

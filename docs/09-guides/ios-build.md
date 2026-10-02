@@ -23,7 +23,7 @@ separa o que já está pronto, conferido lendo os arquivos em 2 de outubro de
 | Permissões | nenhuma descrição de uso, porque o app não usa câmera, fotos, localização nem contatos | `ios/Runner/Info.plist` |
 | Rede | sem exceção de segurança de transporte: só `https`, como no release do Android | `ios/Runner/Info.plist` (não há `NSAppTransportSecurity`) |
 | Fonte, textos legais, tema | são arquivos e código do Flutter, iguais em todas as plataformas | `pubspec.yaml`, `lib/` |
-| Relógio sobre o cabeçalho escuro do perfil | já tem o valor do iOS (`statusBarBrightness`) | `lib/core/theme/app_theme.dart` |
+| Relógio da barra de status, nos dois temas e sobre os topos escuros (perfil, convite ao fornecedor) | já tem o valor do iOS (`statusBarBrightness`) | `lib/core/theme/app_theme.dart` |
 | Código sem `dart:io` em `lib/` | nada do app depende de uma plataforma | regra em `.claude/rules/flutter-app.md` |
 | Exclusão de conta dentro do app | existe (Perfil → Segurança). A App Store a exige de todo app que cria conta, desde 30 de junho de 2022 | `security_page.dart` |
 
@@ -58,6 +58,11 @@ Em ordem. Cada item é uma pendência até ser feito e conferido.
    para iPhone, ou testar no iPad.
 7. **Leitor de tela**: VoiceOver nas telas principais
    ([KI-41](../07-known-issues/README.md)).
+   **Tema escuro**: a tela de abertura (`ios/Runner/Base.lproj/LaunchScreen.storyboard`)
+   tem fundo branco fixo; com o iPhone no modo escuro ela pisca em branco antes
+   de o app aparecer. Trocar o fundo, no Xcode, por uma cor que acompanhe o
+   sistema. Conferir também a escolha de tema guardada depois de fechar e
+   reabrir o app.
 8. **Assinatura**: conta no Apple Developer Program (dos donos), a equipe
    escolhida no Xcode (hoje não há `DEVELOPMENT_TEAM` no projeto) e o
    identificador `br.com.yvenist.app` registrado na conta.

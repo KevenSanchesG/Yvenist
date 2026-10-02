@@ -17,6 +17,7 @@ Regras: [accounts](../02-domain/accounts.md). Motivos: [ADR-004](../05-decisions
 | Perfil | `client/profile/presentation/pages/profile_page.dart` | cabeçalho com nome e e-mail, seletor Cliente/Fornecedor, contadores, menus |
 | Dados Pessoais | `client/profile/presentation/pages/personal_data_page.dart` | nome, telefone, data de nascimento; o e-mail aparece e não pode ser mudado |
 | Segurança | `shared_features/security/presentation/pages/security_page.dart` | alterar senha; excluir conta (pede a senha) |
+| Aparência | `shared_features/appearance/presentation/pages/appearance_page.dart` | tema claro, escuro ou o do aparelho. Não depende de conta ([design-system](../04-ux/design-system.md)) |
 
 ![Entrar](../screenshots/entrar.png) ![Criar conta](../screenshots/criar-conta.png) ![Perfil](../screenshots/perfil.png)
 
@@ -47,7 +48,9 @@ que a pessoa tinha pedido continua**.
 
 ## O perfil
 
-Menus com o que existe e o que é "Em breve". Para administradores aparece a
+Menus com o que existe e o que é "Em breve". Em "Configurações e suporte", o
+primeiro item é **Aparência**; o visitante, que não vê os menus, tem um atalho
+para ela abaixo do convite a entrar. Para administradores aparece a
 seção **Administração** ([admin-review](admin-review.md)). O banner de
 fornecedor muda conforme a situação do cadastro
 ([vendor-onboarding](vendor-onboarding.md)).
@@ -55,7 +58,8 @@ fornecedor muda conforme a situação do cadastro
 ## Testes
 
 `test/features/auth/*`, `test/app/account_flow_test.dart`,
-`test/core/secure_token_storage_test.dart`, `test/core/network/api_client_test.dart`.
+`test/app/appearance_flow_test.dart`, `test/core/secure_token_storage_test.dart`,
+`test/core/network/api_client_test.dart`.
 
 ## O que não existe
 

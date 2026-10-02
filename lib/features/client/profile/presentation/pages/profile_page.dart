@@ -5,7 +5,6 @@ import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/admin/presentation/pages/review_queue_page.dart';
 import 'package:yvenist/features/auth/domain/entities/app_user.dart';
@@ -15,6 +14,7 @@ import 'package:yvenist/features/client/favorites/presentation/pages/favorites_p
 import 'package:yvenist/features/client/profile/presentation/pages/personal_data_page.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
 import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+import 'package:yvenist/features/shared_features/appearance/presentation/pages/appearance_page.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/pages/legal_page.dart';
 import 'package:yvenist/features/shared_features/payments/presentation/pages/payment_methods_page.dart';
 import 'package:yvenist/features/shared_features/security/presentation/pages/security_page.dart';
@@ -93,18 +93,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
     // Se a aprovação for retirada, o modo fornecedor deixa de valer.
     final vendorMode = _vendorMode && vendor.isApproved;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: colors.backgroundMuted,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
             // Enquanto o cabeçalho escuro está no topo, o relógio e os ícones
             // da barra de status ficam brancos; rolando a tela, voltam a ser
-            // escuros sobre o fundo claro.
+            // os do tema.
             AnnotatedRegion<SystemUiOverlayStyle>(
-              value: AppTheme.systemUiOnDarkHeader,
+              value: AppTheme.systemUiOnDarkHeader(colors),
               child: _Header(
                 user: user,
                 vendorMode: vendorMode,
@@ -289,6 +290,13 @@ class _ProfilePageState extends State<ProfilePage> {
       const _SectionTitle('Configurações e suporte'),
       _MenuCard(
         children: [
+          // Primeiro da lista: é a única configuração que muda o app inteiro,
+          // e fica junto das outras, onde uma configuração é procurada.
+          _MenuItem(
+            icon: Icons.brightness_6_outlined,
+            title: 'Aparência',
+            onTap: () => _push(const AppearancePage()),
+          ),
           _MenuItem(
             icon: Icons.lock_outline,
             title: 'Segurança',
@@ -308,14 +316,14 @@ class _ProfilePageState extends State<ProfilePage> {
           onPressed: _confirmSignOut,
           icon: const Icon(Icons.logout),
           label: const Text('Sair da conta'),
-          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+          style: TextButton.styleFrom(foregroundColor: context.colors.danger),
         ),
       ),
       const SizedBox(height: 8),
-      const Center(
+      Center(
         child: Text(
           'Versão ${AppConfig.appVersion}',
-          style: AppTypography.caption,
+          style: context.text.caption,
         ),
       ),
     ];
@@ -342,8 +350,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
-    // Degradês escuros o bastante para o nome e o e-mail, em branco.
-    final colors = vendorMode
+    final text = context.text;
+    // Degradês escuros o bastante para o nome e o e-mail, em branco. São os
+    // mesmos nos dois temas.
+    final gradient = vendorMode
         ? AppColors.vendorGradient
         : AppColors.clientGradient;
 
@@ -359,7 +369,7 @@ class _Header extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(20, topPadding + 32, 20, 56),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: colors,
+              colors: gradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -371,13 +381,13 @@ class _Header extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.onGradient,
                 child: ExcludeSemantics(
                   child: Text(
                     user.initials,
-                    style: AppTypography.sectionTitle.copyWith(
+                    style: text.sectionTitle.copyWith(
                       fontSize: 28,
-                      color: colors.first,
+                      color: gradient.first,
                     ),
                   ),
                 ),
@@ -385,9 +395,9 @@ class _Header extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 user.fullName,
-                style: AppTypography.sectionTitle.copyWith(
+                style: text.sectionTitle.copyWith(
                   fontSize: 20,
-                  color: Colors.white,
+                  color: AppColors.onGradient,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -396,7 +406,7 @@ class _Header extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 vendorMode ? 'Fornecedor aprovado' : user.email,
-                style: AppTypography.caption.copyWith(color: Colors.white),
+                style: text.caption.copyWith(color: AppColors.onGradient),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -433,10 +443,12 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Material(
-      color: Colors.white,
+      color: colors.surface,
       elevation: 4,
-      shadowColor: Colors.black26,
+      shadowColor: colors.shadow,
       borderRadius: BorderRadius.circular(height / 2),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
@@ -446,13 +458,13 @@ class _ModeToggle extends StatelessWidget {
             _ModeOption(
               label: 'Modo Cliente',
               selected: !vendorMode,
-              color: AppColors.primaryStrong,
+              color: colors.primary,
               onTap: onClientMode,
             ),
             _ModeOption(
               label: 'Modo Fornecedor',
               selected: vendorMode,
-              color: AppColors.vendor,
+              color: colors.vendor,
               onTap: onVendorMode,
             ),
           ],
@@ -477,23 +489,29 @@ class _ModeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Expanded(
       child: Semantics(
         button: true,
         selected: selected,
         child: InkWell(
           onTap: onTap,
-          child: Container(
-            color: selected ? AppColors.tint(color) : null,
+          // O destaque passa de um lado para o outro, em vez de saltar.
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            color: selected
+                ? colors.tint(color)
+                : colors.tint(color).withValues(alpha: 0),
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 label,
-                style: AppTypography.body.copyWith(
+                style: context.text.body.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: selected ? color : AppColors.textSecondary,
+                  color: selected ? color : colors.textSecondary,
                 ),
               ),
             ),
@@ -521,6 +539,8 @@ class _VendorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return switch (vendor.status) {
       VendorStatus.none => _PromoBanner(
         title: 'Tem um salão ou serviço?',
@@ -531,7 +551,7 @@ class _VendorBanner extends StatelessWidget {
       ),
       VendorStatus.pendingReview => _StatusNotice(
         icon: Icons.hourglass_top,
-        color: AppColors.warning,
+        color: colors.warning,
         title: 'Análise em andamento',
         message: 'Estamos verificando os dados do seu anúncio.',
         // Só existe no modo demonstração, onde não há quem aprove.
@@ -542,7 +562,7 @@ class _VendorBanner extends StatelessWidget {
       ),
       VendorStatus.rejected => _StatusNotice(
         icon: Icons.error_outline,
-        color: AppColors.danger,
+        color: colors.danger,
         title: 'Cadastro não aprovado',
         message:
             vendor.profile?.rejectionReason ??
@@ -580,10 +600,12 @@ class _StatusNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = context.text;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.tint(color),
+        color: context.colors.tint(color),
         border: Border.all(color: color.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -601,13 +623,13 @@ class _StatusNotice extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AppTypography.body.copyWith(
+                      style: text.body.copyWith(
                         fontWeight: FontWeight.w700,
                         color: color,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(message, style: AppTypography.caption),
+                    Text(message, style: text.caption),
                   ],
                 ),
               ),
@@ -660,8 +682,8 @@ class _PromoBanner extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: AppTypography.body.copyWith(
-                            color: Colors.white,
+                          style: context.text.body.copyWith(
+                            color: AppColors.onGradient,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -669,15 +691,17 @@ class _PromoBanner extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: AppTypography.caption.copyWith(
-                            color: Colors.white,
+                          style: context.text.caption.copyWith(
+                            color: AppColors.onGradient,
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  ExcludeSemantics(child: Icon(icon, color: Colors.white)),
+                  ExcludeSemantics(
+                    child: Icon(icon, color: AppColors.onGradient),
+                  ),
                 ],
               ),
             ),
@@ -699,10 +723,12 @@ class _DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Material(
-      color: Colors.white,
+      color: colors.surface,
       elevation: 1,
-      shadowColor: Colors.black12,
+      shadowColor: colors.shadow,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
@@ -736,15 +762,15 @@ class _StatItem extends StatelessWidget {
         children: [
           Text(
             value,
-            style: AppTypography.sectionTitle.copyWith(
-              color: AppColors.primaryStrong,
+            style: context.text.sectionTitle.copyWith(
+              color: context.colors.primary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: AppTypography.caption.copyWith(height: 1.2),
+            style: context.text.caption.copyWith(height: 1.2),
           ),
         ],
       ),
@@ -776,7 +802,7 @@ class _SectionTitle extends StatelessWidget {
         header: true,
         child: Text(
           title.toUpperCase(),
-          style: AppTypography.caption.copyWith(
+          style: context.text.caption.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
           ),
@@ -794,7 +820,7 @@ class _MenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -821,24 +847,22 @@ class _MenuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isAvailable = onTap != null;
+    final colors = context.colors;
+    final text = context.text;
 
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: AppColors.textSecondary, size: 22),
+      leading: Icon(icon, color: colors.textSecondary, size: 22),
       title: Text(
         title,
-        style: AppTypography.body.copyWith(
+        style: text.body.copyWith(
           fontWeight: FontWeight.w500,
-          color: isAvailable ? AppColors.textPrimary : AppColors.textSecondary,
+          color: isAvailable ? colors.textPrimary : colors.textSecondary,
         ),
       ),
       trailing: isAvailable
-          ? const Icon(
-              Icons.chevron_right,
-              size: 18,
-              color: AppColors.textSecondary,
-            )
-          : const Text('Em breve', style: AppTypography.caption),
+          ? Icon(Icons.chevron_right, size: 18, color: colors.textSecondary)
+          : Text('Em breve', style: text.caption),
     );
   }
 }

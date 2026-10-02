@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
@@ -33,19 +32,30 @@ class ListingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
       width: width,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: AppColors.cardShadow,
-            offset: Offset(0, 4),
+            color: colors.shadow,
+            offset: const Offset(0, 4),
             blurRadius: 12,
           ),
         ],
       ),
+      // No tema escuro a sombra não se vê: a borda delimita o card. Desenhada
+      // por cima, e não como borda do fundo, para não tirar espaço do
+      // conteúdo: o card tem altura fixa nas listas horizontais.
+      foregroundDecoration: colors.isDark
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.divider),
+            )
+          : null,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +99,7 @@ class ListingCard extends StatelessWidget {
                   children: [
                     Text(
                       listing.title,
-                      style: AppTypography.cardTitle,
+                      style: context.text.cardTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -108,8 +118,7 @@ class ListingCard extends StatelessWidget {
   }
 }
 
-/// Selo "A partir de R$ ...". Fundo no laranja escurecido para o texto branco
-/// ter contraste suficiente.
+/// Selo "A partir de R$ ...", no laranja da marca.
 class PriceBadge extends StatelessWidget {
   const PriceBadge({super.key, required this.listing});
 
@@ -120,12 +129,12 @@ class PriceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.primaryStrong,
+        color: context.colors.primary,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         'A partir de ${formatBrl(listing.priceFromCents, hideZeroCents: true)}',
-        style: AppTypography.cardPrice,
+        style: context.text.cardPrice,
       ),
     );
   }
@@ -138,23 +147,21 @@ class RatingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = context.text;
     if (!listing.hasRatings) {
-      return const Text('Novo', style: AppTypography.cardRatingCount);
+      return Text('Novo', style: text.cardRatingCount);
     }
 
     return Row(
       children: [
-        const Icon(Icons.star, size: 14, color: AppColors.primary),
+        Icon(Icons.star, size: 14, color: context.colors.primary),
         const SizedBox(width: 4),
-        Text(
-          formatRating(listing.ratingAverage),
-          style: AppTypography.cardRatingScore,
-        ),
+        Text(formatRating(listing.ratingAverage), style: text.cardRatingScore),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
             '(${listing.ratingCount})',
-            style: AppTypography.cardRatingCount,
+            style: text.cardRatingCount,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -173,16 +180,16 @@ class LocationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.location_on_outlined,
           size: 14,
-          color: AppColors.primary,
+          color: context.colors.primary,
         ),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
             listing.locationLabel,
-            style: AppTypography.cardLocation,
+            style: context.text.cardLocation,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -256,17 +263,26 @@ class _RoundAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
       isSelected: highlighted,
       iconSize: 20,
-      icon: Icon(icon),
+      // Marcar e desmarcar troca o ícone com uma transição curta, em vez de
+      // um salto: é a resposta visual ao toque.
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        transitionBuilder: (child, animation) =>
+            ScaleTransition(scale: animation, child: child),
+        child: Icon(icon, key: ValueKey(icon)),
+      ),
       style: IconButton.styleFrom(
-        backgroundColor: highlighted ? AppColors.primaryStrong : Colors.white,
-        foregroundColor: highlighted ? Colors.white : AppColors.primaryStrong,
+        backgroundColor: highlighted ? colors.primary : colors.raisedSurface,
+        foregroundColor: highlighted ? colors.onPrimary : colors.primary,
         elevation: 2,
-        shadowColor: Colors.black38,
+        shadowColor: colors.shadow,
         fixedSize: const Size(34, 34),
         minimumSize: const Size(34, 34),
         padding: EdgeInsets.zero,

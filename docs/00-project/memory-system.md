@@ -28,10 +28,13 @@ Detalhes: [visão](vision.md).
 - CI verde nos cinco jobs (app, backend em SQLite e PostgreSQL, integração na
   máquina e dentro do Chrome, APK Android, Docker). Detalhes: [CI](../09-guides/ci.md).
 - Funciona: catálogo e busca, contas, favoritos, Party Maker, cadastro de
-  salão, fila de análise para administradores, textos legais preliminares.
+  salão, fila de análise para administradores, textos legais preliminares,
+  tema claro e escuro à escolha da pessoa.
 - Não existe (aparece como "Em breve"): pagamentos, chat, avaliações,
   notificações, envio de fotos, página de detalhe do anúncio.
-- Nunca foi publicado em loja nem colocado em produção.
+- Nunca foi publicado em loja nem colocado em produção. A chave de envio do
+  Android já existe, fora do repositório
+  ([android-release](../09-guides/android-release.md)).
 
 O que mudou e quando: [changelog](../08-changelog/README.md). O que falta:
 [roadmap](roadmap.md) e [problemas conhecidos](../07-known-issues/README.md).

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Título de uma faixa da Home. A linha inteira leva a "ver todos".
 class SectionHeader extends StatelessWidget {
@@ -40,15 +40,15 @@ class SectionHeader extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppTypography.sectionTitle,
+                        style: context.text.sectionTitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      Text(subtitle, style: AppTypography.sectionSubtitle),
+                      Text(subtitle, style: context.text.sectionSubtitle),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.primary),
+                Icon(Icons.chevron_right, color: context.colors.primary),
               ],
             ),
           ),

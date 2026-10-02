@@ -50,7 +50,7 @@ conferir o build à mão em
 
 | Assunto | No celular | Na web |
 |---|---|---|
-| Tokens | cofre do sistema | armazenamento do navegador (`localStorage`) |
+| Tokens e a escolha de tema | cofre do sistema | armazenamento do navegador (`localStorage`). Em uma página `http` que não seja `localhost` o pacote não funciona: a sessão não é guardada e a escolha de tema vale até fechar a aba |
 | Imagens de anúncio | qualquer URL `https` | o servidor da imagem precisa permitir CORS |
 | Rede | sem restrição de origem | CORS |
 | Números | `int` de 64 bits | números de JavaScript: nada de `1 << 32` |

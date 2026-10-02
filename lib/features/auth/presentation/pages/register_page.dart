@@ -2,8 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/error/app_failure.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/auth/domain/auth_validators.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
@@ -152,13 +151,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     contentPadding: EdgeInsets.zero,
                     title: Text.rich(
                       TextSpan(
-                        style: AppTypography.body,
+                        style: context.text.body,
                         children: [
                           const TextSpan(text: 'Li e aceito os '),
                           TextSpan(
                             text: 'Termos de Uso e a Política de Privacidade',
-                            style: const TextStyle(
-                              color: AppColors.primaryStrong,
+                            style: TextStyle(
+                              color: context.colors.primary,
                               fontWeight: FontWeight.w700,
                               decoration: TextDecoration.underline,
                             ),
@@ -173,8 +172,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             liveRegion: true,
                             child: Text(
                               'É preciso aceitar para criar a conta.',
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.danger,
+                              style: context.text.caption.copyWith(
+                                color: context.colors.danger,
                               ),
                             ),
                           )

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/state/load_state.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/client/shared/listing_search_controller.dart';
 import 'package:yvenist/features/client/shared/listing_tile.dart';
@@ -97,7 +96,7 @@ class _Footer extends StatelessWidget {
         children: [
           Text(
             failure.message,
-            style: AppTypography.caption.copyWith(color: AppColors.danger),
+            style: context.text.caption.copyWith(color: context.colors.danger),
             textAlign: TextAlign.center,
           ),
           TextButton(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/party_maker/domain/entities/party.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
 import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
@@ -104,7 +103,7 @@ class _SelectPartyBottomSheetState extends State<SelectPartyBottomSheet> {
           children: [
             Text(
               'Em qual festa você quer adicionar\n${widget.draft.name}?',
-              style: AppTypography.sectionTitle,
+              style: context.text.sectionTitle,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -113,8 +112,8 @@ class _SelectPartyBottomSheetState extends State<SelectPartyBottomSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'Você ainda não tem festas em planejamento.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textSecondary,
+                  style: context.text.body.copyWith(
+                    color: context.colors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -141,7 +140,9 @@ class _SelectPartyBottomSheetState extends State<SelectPartyBottomSheet> {
                 liveRegion: true,
                 child: Text(
                   _errorMessage!,
-                  style: AppTypography.body.copyWith(color: AppColors.danger),
+                  style: context.text.body.copyWith(
+                    color: context.colors.danger,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),

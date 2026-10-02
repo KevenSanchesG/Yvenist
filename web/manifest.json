@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#FF6600",
+    "theme_color": "#C2410C",
     "description": "Yvenist: o marketplace de eventos e festas.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

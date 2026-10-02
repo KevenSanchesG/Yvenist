@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/client/shared/catalog_presentation.dart';
 import 'package:yvenist/features/client/shared/listing_results_view.dart';
@@ -71,7 +71,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         : Icon(
                             iconForCategory(category.iconKey),
                             size: 18,
-                            color: AppColors.primaryStrong,
+                            color: context.colors.primary,
                           ),
                     selected: query.categorySlug == category.slug,
                     onSelected: (_) => controller.toggleCategory(category.slug),

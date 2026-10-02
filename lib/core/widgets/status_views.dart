@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Indicador de carregamento centralizado, anunciado por leitores de tela.
 class LoadingView extends StatelessWidget {
@@ -29,6 +28,7 @@ class EmptyStateView extends StatelessWidget {
     this.message,
     this.actionLabel,
     this.onAction,
+    this.footer,
   });
 
   final IconData icon;
@@ -37,8 +37,14 @@ class EmptyStateView extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// Algo a mais abaixo da ação principal (um atalho secundário, por exemplo).
+  final Widget? footer;
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
@@ -46,21 +52,20 @@ class EmptyStateView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ExcludeSemantics(
-              child: Icon(icon, size: 72, color: Colors.grey.shade400),
+              // Só enfeite: mais apagado que o texto mais discreto.
+              child: Icon(
+                icon,
+                size: 72,
+                color: colors.textTertiary.withValues(alpha: 0.55),
+              ),
             ),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: AppTypography.sectionTitle,
-              textAlign: TextAlign.center,
-            ),
+            Text(title, style: text.sectionTitle, textAlign: TextAlign.center),
             if (message != null) ...[
               const SizedBox(height: 8),
               Text(
                 message!,
-                style: AppTypography.body.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                style: text.body.copyWith(color: colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -68,6 +73,7 @@ class EmptyStateView extends StatelessWidget {
               const SizedBox(height: 24),
               FilledButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
+            if (footer != null) ...[const SizedBox(height: 12), footer!],
           ],
         ),
       ),

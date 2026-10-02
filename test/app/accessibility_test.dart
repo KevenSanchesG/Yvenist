@@ -105,6 +105,22 @@ void main() {
       await expectAccessible(tester);
     });
 
+    appTest('aparência', (tester, app) async {
+      await openTab(tester, 'Perfil');
+      await scrollToAndTap(tester, find.text('Aparência'));
+
+      await expectAccessible(tester);
+    });
+
+    appTest('perfil de quem não entrou, com o atalho de aparência', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Perfil');
+
+      await expectAccessible(tester);
+    }, signedIn: false);
+
     appTest('entrar e criar conta, com erros na tela', (tester, app) async {
       await openTab(tester, 'Perfil');
       await tapAndSettle(tester, filledButton('Entrar ou criar conta'));
@@ -349,6 +365,9 @@ void main() {
       await tapAndSettle(tester, find.text('Política de Privacidade'));
       await tapAndSettle(tester, find.byType(BackButton));
       await tapAndSettle(tester, find.byType(BackButton));
+      await scrollToAndTap(tester, find.text('Aparência'));
+      await scrollToAndTap(tester, find.text('Escuro'));
+      await tapAndSettle(tester, find.byType(BackButton));
       await scrollToAndTap(tester, find.text('Segurança'));
       await tapAndSettle(tester, find.text('Alterar senha'));
 
@@ -438,5 +457,99 @@ void main() {
       expect(find.text('Confira antes de enviar'), findsOneWidget);
       expect(filledButton('Enviar anúncio'), findsOneWidget);
     }, textScale: scale);
+  });
+
+  group('tema escuro', () {
+    // O tema escuro troca sombra por borda e muda as cores de cada peça. As
+    // mesmas telas passam pelas mesmas conferências: um estouro de layout faz
+    // o teste falhar sozinho.
+    appTest('início, explorar e festas', (tester, app) async {
+      // Regressão: no escuro o card de anúncio ganhou uma borda que tirava um
+      // pixel do conteúdo, e a coluna do card estourava a altura fixa da
+      // lista horizontal.
+      await useDarkTheme(tester, app);
+      await expectAccessible(tester);
+
+      await openTab(tester, 'Explorar');
+      await tapAndSettle(tester, find.widgetWithText(FilterChip, 'Atrações'));
+      await expectAccessible(tester);
+
+      await openTab(tester, 'Início');
+      await addSalaoToNewParty(tester);
+      await openTab(tester, 'Minhas festas');
+      await expectAccessible(tester);
+
+      await tapAndSettle(tester, filledButton('Solicitar orçamento'));
+      await waitSnackBarLeave(tester);
+      await expectAccessible(tester);
+    });
+
+    appTest('perfil, aparência, segurança e termos', (tester, app) async {
+      await useDarkTheme(tester, app);
+      await openTab(tester, 'Perfil');
+      await expectAccessible(tester);
+
+      await scrollToAndTap(tester, find.text('Aparência'));
+      await expectAccessible(tester);
+      await tapAndSettle(tester, find.byType(BackButton));
+
+      await scrollToAndTap(tester, find.text('Segurança'));
+      await expectAccessible(tester);
+      await tapAndSettle(tester, find.byType(BackButton));
+
+      await scrollToAndTap(tester, find.text('Termos e Política'));
+      await tapAndSettle(tester, find.text('Termos de Uso'));
+      await expectAccessible(tester);
+    });
+
+    appTest('entrar e criar conta, com erros na tela', (tester, app) async {
+      await useDarkTheme(tester, app);
+      await openTab(tester, 'Perfil');
+      await tapAndSettle(tester, filledButton('Entrar ou criar conta'));
+      await enterField(tester, 'E-mail', InMemoryAuthRepository.demoEmail);
+      await enterField(tester, 'Senha', 'errada');
+      await tapAndSettle(tester, filledButton('Entrar'));
+      await expectAccessible(tester);
+
+      await tapAndSettle(tester, find.text('Não tem conta? Criar conta'));
+      await scrollToAndTap(tester, filledButton('Criar conta'));
+      await expectAccessible(tester);
+    }, signedIn: false);
+
+    appTest('convite e cadastro do salão', (tester, app) async {
+      await useDarkTheme(tester, app);
+      await openHallForm(tester);
+      await tapAndSettle(tester, filledButton('Avançar'));
+
+      await expectAccessible(tester);
+    });
+
+    appTest('fila de análise', (tester, app) async {
+      await useDarkTheme(tester, app);
+      await openTab(tester, 'Perfil');
+      await scrollToAndTap(tester, find.text('Fila de análise'));
+      await expectAccessible(tester);
+
+      await tapAndSettle(tester, find.text('Recusar'));
+      await expectAccessible(tester);
+      await tapAndSettle(tester, find.text('Cancelar'));
+
+      await tapAndSettle(tester, find.text('Anúncios (2)'));
+      await tapAndSettle(tester, find.text('Ver detalhes').first);
+      await expectAccessible(tester);
+    }, dependencies: () => adminDependencies(sampleReviewQueue()));
+
+    appTest('início, explorar e festas com letras grandes', (
+      tester,
+      app,
+    ) async {
+      await useDarkTheme(tester, app);
+      await openTab(tester, 'Explorar');
+      await openTab(tester, 'Início');
+      await addSalaoToNewParty(tester);
+      await openTab(tester, 'Minhas festas');
+
+      expect(find.text('1 item selecionado'), findsOneWidget);
+    }, textScale: 2);
   });
 }

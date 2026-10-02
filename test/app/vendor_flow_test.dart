@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
@@ -75,6 +76,37 @@ void main() {
       await tapAndSettle(tester, find.byTooltip('Fechar'));
       expect(find.text('Conta Demonstração'), findsOneWidget);
     });
+
+    appTest(
+      'o convite é escuro nos dois temas: o relógio e os ícones do sistema '
+      'ficam brancos',
+      (tester, app) async {
+        // Regressão: a tela não dizia ao sistema que o topo dela é escuro.
+        // Vindo do perfil já rolado, no tema claro, o relógio ficava escuro
+        // sobre a foto escura. (Com letras grandes o perfil rola o bastante
+        // para o cabeçalho escuro dele sair do topo.)
+        await openTab(tester, 'Perfil');
+        await tester.ensureVisible(find.text('Tem um salão ou serviço?'));
+        await tester.pumpAndSettle();
+        expect(
+          SystemChrome.latestStyle!.statusBarIconBrightness,
+          Brightness.dark,
+          reason: 'o cabeçalho escuro do perfil já saiu do topo',
+        );
+
+        await tapAndSettle(tester, find.text('Tem um salão ou serviço?'));
+
+        expect(
+          find.text('Transforme seu espaço em renda extra'),
+          findsOneWidget,
+        );
+        expect(
+          SystemChrome.latestStyle!.statusBarIconBrightness,
+          Brightness.light,
+        );
+      },
+      textScale: 2,
+    );
 
     appTest('só o salão pode ser anunciado; o resto aparece como "Em breve"', (
       tester,

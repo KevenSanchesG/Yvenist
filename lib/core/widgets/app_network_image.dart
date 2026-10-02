@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Imagem da rede que nunca quebra o layout: mostra um fundo neutro enquanto
 /// carrega e um ícone se a imagem falhar ou não existir.
@@ -27,7 +28,9 @@ class AppNetworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = url?.trim();
-    if (imageUrl == null || imageUrl.isEmpty) return _placeholder(fallbackIcon);
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return _placeholder(context, fallbackIcon);
+    }
 
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
     return Image.network(
@@ -39,20 +42,23 @@ class AppNetworkImage extends StatelessWidget {
       semanticLabel: semanticLabel,
       excludeFromSemantics: semanticLabel == null,
       loadingBuilder: (context, child, progress) {
-        return progress == null ? child : _placeholder(null);
+        return progress == null ? child : _placeholder(context, null);
       },
-      errorBuilder: (_, _, _) => _placeholder(Icons.broken_image_outlined),
+      errorBuilder: (context, _, _) =>
+          _placeholder(context, Icons.broken_image_outlined),
     );
   }
 
-  Widget _placeholder(IconData? icon) {
+  Widget _placeholder(BuildContext context, IconData? icon) {
+    final colors = context.colors;
+
     return Container(
       width: width,
       height: height,
-      color: Colors.grey.shade200,
+      color: colors.surfaceMuted,
       child: icon == null
           ? null
-          : ExcludeSemantics(child: Icon(icon, color: Colors.grey.shade500)),
+          : ExcludeSemantics(child: Icon(icon, color: colors.textTertiary)),
     );
   }
 }

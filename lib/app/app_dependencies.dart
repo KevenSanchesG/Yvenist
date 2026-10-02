@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/network/api_client.dart';
+import 'package:yvenist/core/storage/theme_preference_storage.dart';
 import 'package:yvenist/core/storage/token_storage.dart';
 import 'package:yvenist/features/admin/data/api_review_repository.dart';
 import 'package:yvenist/features/admin/data/in_memory_review_repository.dart';
@@ -35,20 +36,29 @@ class AppDependencies {
     required this.parties,
     required this.vendors,
     required this.reviews,
+    ThemePreferenceStorage? themePreferences,
     this.apiClient,
-  });
+  }) : themePreferences = themePreferences ?? InMemoryThemePreferenceStorage();
 
+  /// As dependências do app de verdade: a escolha de tema fica guardada no
+  /// aparelho nos dois modos.
   factory AppDependencies.fromConfig(AppConfig config) {
+    final themePreferences = DeviceThemePreferenceStorage();
     return config.isDemoMode
-        ? AppDependencies.demo(config: config)
-        : AppDependencies.api(config);
+        ? AppDependencies.demo(
+            config: config,
+            themePreferences: themePreferences,
+          )
+        : AppDependencies.api(config, themePreferences: themePreferences);
   }
 
-  /// Tudo pela API. [httpClient] e [tokenStorage] existem para os testes.
+  /// Tudo pela API. [httpClient], [tokenStorage] e [themePreferences] existem
+  /// para os testes.
   factory AppDependencies.api(
     AppConfig config, {
     http.Client? httpClient,
     TokenStorage? tokenStorage,
+    ThemePreferenceStorage? themePreferences,
   }) {
     final tokens = tokenStorage ?? SecureTokenStorage();
     final api = ApiClient(
@@ -65,6 +75,7 @@ class AppDependencies {
       parties: ApiPartyRepository(api),
       vendors: ApiVendorRepository(api),
       reviews: ApiReviewRepository(api),
+      themePreferences: themePreferences ?? DeviceThemePreferenceStorage(),
     );
   }
 
@@ -72,6 +83,7 @@ class AppDependencies {
   factory AppDependencies.demo({
     AppConfig config = const AppConfig(),
     bool startSignedIn = true,
+    ThemePreferenceStorage? themePreferences,
   }) {
     final auth = InMemoryAuthRepository(startSignedIn: startSignedIn);
     return AppDependencies(
@@ -86,6 +98,7 @@ class AppDependencies {
         currentUserId: () => auth.currentUserId,
       ),
       reviews: InMemoryReviewRepository(),
+      themePreferences: themePreferences,
     );
   }
 
@@ -96,6 +109,9 @@ class AppDependencies {
   final PartyRepository parties;
   final VendorRepository vendors;
   final ReviewRepository reviews;
+
+  /// Onde a escolha de tema fica guardada. Em memória, se nada for informado.
+  final ThemePreferenceStorage themePreferences;
 
   /// Presente só quando o app fala com a API.
   final ApiClient? apiClient;

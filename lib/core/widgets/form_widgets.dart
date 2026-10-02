@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 
 /// Botão principal de um formulário. Enquanto [isLoading] ele fica desabilitado
 /// e mostra o progresso, o que também impede o envio duplicado.
@@ -46,31 +45,29 @@ class FormErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Semantics(
       liveRegion: true,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.tint(AppColors.danger),
+          color: colors.tint(colors.danger),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+          border: Border.all(color: colors.danger.withValues(alpha: 0.4)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ExcludeSemantics(
-              child: Icon(
-                Icons.error_outline,
-                color: AppColors.danger,
-                size: 20,
-              ),
+            ExcludeSemantics(
+              child: Icon(Icons.error_outline, color: colors.danger, size: 20),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: AppTypography.body.copyWith(color: AppColors.danger),
+                style: context.text.body.copyWith(color: colors.danger),
               ),
             ),
           ],

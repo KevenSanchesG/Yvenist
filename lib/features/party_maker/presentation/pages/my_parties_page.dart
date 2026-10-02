@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/party_maker/domain/entities/party.dart';
@@ -75,31 +74,33 @@ class _PartyCard extends StatelessWidget {
         ? 'Sem itens'
         : '$itemCount ${itemCount == 1 ? 'item' : 'itens'} • '
               '${formatBrl(party.budget.total.cents)}';
+    final colors = context.colors;
+    final text = context.text;
 
     return Material(
-      color: Colors.white,
+      color: colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isActive ? AppColors.primary : AppColors.divider,
+          color: isActive ? colors.primary : colors.divider,
           width: 1.6,
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        title: Text(party.title.value, style: AppTypography.cardTitle),
+        title: Text(party.title.value, style: text.cardTitle),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 2),
             Text(
               party.status.label,
-              style: AppTypography.caption.copyWith(
-                color: party.status.color,
+              style: text.caption.copyWith(
+                color: party.status.colorIn(colors),
                 fontWeight: FontWeight.w700,
               ),
             ),
-            Text(summary, style: AppTypography.caption),
+            Text(summary, style: text.caption),
           ],
         ),
         isThreeLine: true,

@@ -20,6 +20,7 @@ Barra inferior (app_shell.dart)
 └── Perfil* ────────────── Dados Pessoais
                            Formas de Pagamento ("em breve")
                            Favoritos
+                           Aparência (tema claro, escuro ou o do aparelho)
                            Segurança ▸ Alterar senha · Excluir conta
                            Termos e Política ▸ Termos de Uso · Política de Privacidade
                            Fornecedor: Convite ▸ O que anunciar ▸ Formulário do salão
@@ -29,7 +30,9 @@ De qualquer card de anúncio:  + ▸ folha "Em qual festa?" ▸ diálogo "Nome d
 Onde uma conta é exigida:     Entrar ⇄ Criar conta
 ```
 
-`*` exige conta: para visitante a aba mostra um convite a entrar.
+`*` exige conta: para visitante a aba mostra um convite a entrar. Na aba
+Perfil o convite traz também o atalho para **Aparência**, que não depende de
+conta.
 `**` só para administradores.
 
 ## Capturas
@@ -44,26 +47,32 @@ regenerar:
 flutter test --update-goldens --run-skipped --tags screenshots test/visual/screenshots_test.dart
 ```
 
-| Tela | Arquivo em `docs/screenshots/` |
-|---|---|
-| Início | `home.png` |
-| Explorar | `explorar.png` |
-| Busca com resultados | `busca.png` |
-| Favoritos | `favoritos.png` |
-| Folha "Em qual festa?" | `adicionar-a-festa.png` |
-| Montagem da festa | `party-maker.png` |
-| Minhas Festas (com orçamento solicitado) | `minhas-festas.png` |
-| Perfil (com conta) | `perfil.png` |
-| Perfil (visitante) | `perfil-visitante.png` |
-| Dados Pessoais | `dados-pessoais.png` |
-| Entrar | `entrar.png` |
-| Criar conta | `criar-conta.png` |
-| Convite ao fornecedor | `fornecedor-convite.png` |
-| O que você vai anunciar? | `fornecedor-categorias.png` |
-| Formulário do salão, com erros de validação | `fornecedor-validacao.png` |
-| Termos de Uso | `termos-de-uso.png` |
-| Fila de análise: fornecedores | `admin-fornecedores.png` |
-| Fila de análise: anúncios | `admin-anuncios.png` |
+O teste passa por todas as telas duas vezes, uma em cada tema. Do tema
+escuro ficam no repositório só as telas da tabela abaixo; para ver as outras,
+acrescente `--dart-define=ALL_DARK=true` e elas saem em
+`build/screenshots-escuro/`, que não é versionada.
+
+| Tela | Arquivo em `docs/screenshots/` | No tema escuro |
+|---|---|---|
+| Início | `home.png` | `home-escuro.png` |
+| Explorar | `explorar.png` | `explorar-escuro.png` |
+| Busca com resultados | `busca.png` | |
+| Favoritos | `favoritos.png` | |
+| Folha "Em qual festa?" | `adicionar-a-festa.png` | |
+| Montagem da festa | `party-maker.png` | `party-maker-escuro.png` |
+| Minhas Festas (com orçamento solicitado) | `minhas-festas.png` | |
+| Perfil (com conta) | `perfil.png` | `perfil-escuro.png` |
+| Perfil (visitante) | `perfil-visitante.png` | |
+| Dados Pessoais | `dados-pessoais.png` | |
+| Aparência | `aparencia.png` | `aparencia-escuro.png` |
+| Entrar | `entrar.png` | `entrar-escuro.png` |
+| Criar conta | `criar-conta.png` | |
+| Convite ao fornecedor | `fornecedor-convite.png` | a tela é escura nos dois temas; só o botão muda de tom |
+| O que você vai anunciar? | `fornecedor-categorias.png` | |
+| Formulário do salão, com erros de validação | `fornecedor-validacao.png` | `fornecedor-validacao-escuro.png` |
+| Termos de Uso | `termos-de-uso.png` | |
+| Fila de análise: fornecedores | `admin-fornecedores.png` | `admin-fornecedores-escuro.png` |
+| Fila de análise: anúncios | `admin-anuncios.png` | |
 
 Mudou uma tela que tem captura → regenere e envie as imagens junto.
 

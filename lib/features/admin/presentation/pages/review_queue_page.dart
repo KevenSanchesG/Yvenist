@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/state/load_state.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
@@ -140,7 +139,7 @@ class _ReviewQueueView extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.grey.shade50,
+        backgroundColor: context.colors.backgroundMuted,
         appBar: AppBar(
           title: const Text('Fila de análise'),
           bottom: TabBar(
@@ -251,9 +250,9 @@ class _QueueList extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           if (index == 0) {
-            return const Text(
+            return Text(
               'Do mais antigo para o mais novo, até 50 por vez.',
-              style: AppTypography.caption,
+              style: context.text.caption,
             );
           }
           return children[index - 1];
@@ -289,19 +288,19 @@ class _VendorCard extends StatelessWidget {
         Text(
           '${isCompany ? 'Pessoa jurídica' : 'Pessoa física'} · '
           '${isCompany ? 'CNPJ' : 'CPF'} ${formatDocument(vendor.document)}',
-          style: AppTypography.body,
+          style: context.text.body,
         ),
         const SizedBox(height: 2),
         Text(
           'Cadastro de ${_dateFormat.format(vendor.createdAt.toLocal())}',
-          style: AppTypography.caption,
+          style: context.text.caption,
         ),
         const SizedBox(height: 8),
         Text(
           titles.isEmpty
               ? 'Nenhum anúncio em análise.'
               : 'Em análise com este cadastro: ${titles.join(', ')}.',
-          style: AppTypography.caption,
+          style: context.text.caption,
         ),
         const SizedBox(height: 12),
         _DecisionButtons(
@@ -341,20 +340,20 @@ class _ListingCard extends StatelessWidget {
     return _QueueCard(
       title: listing.title,
       children: [
-        Text('$categoryName · ${listing.location}', style: AppTypography.body),
+        Text('$categoryName · ${listing.location}', style: context.text.body),
         const SizedBox(height: 2),
         Text(
           'A partir de ${formatBrl(listing.priceFromCents)}',
-          style: AppTypography.body,
+          style: context.text.body,
         ),
         const SizedBox(height: 2),
         Text(
           'Fornecedor: ${listing.vendorName} · enviado em '
           '${_dateFormat.format(listing.createdAt.toLocal())}',
-          style: AppTypography.caption,
+          style: context.text.caption,
         ),
         ExpansionTile(
-          title: const Text('Ver detalhes', style: AppTypography.body),
+          title: Text('Ver detalhes', style: context.text.body),
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: 8),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +392,7 @@ class _ListingCard extends StatelessWidget {
           Text(
             'O cadastro deste fornecedor ainda não foi aprovado. Aprove o '
             'cadastro na aba Fornecedores para poder publicar o anúncio.',
-            style: AppTypography.caption.copyWith(color: AppColors.warning),
+            style: context.text.caption.copyWith(color: context.colors.warning),
           ),
           const SizedBox(height: 12),
         ],
@@ -418,7 +417,7 @@ class _QueueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -428,7 +427,7 @@ class _QueueCard extends StatelessWidget {
           children: [
             Semantics(
               header: true,
-              child: Text(title, style: AppTypography.cardTitle),
+              child: Text(title, style: context.text.cardTitle),
             ),
             const SizedBox(height: 4),
             ...children,
@@ -451,7 +450,7 @@ class _Detail extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text.rich(
         TextSpan(
-          style: AppTypography.body,
+          style: context.text.body,
           children: [
             TextSpan(
               text: '$label: ',
@@ -491,7 +490,9 @@ class _DecisionButtons extends StatelessWidget {
       children: [
         OutlinedButton(
           onPressed: isDeciding ? null : onReject,
-          style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: context.colors.danger,
+          ),
           child: const Text('Recusar'),
         ),
         FilledButton(
@@ -553,7 +554,7 @@ class _ApproveVendorDialogState extends State<_ApproveVendorDialog> {
                       ? 'Publicar também o anúncio "${listings.single.title}"'
                       : 'Publicar também os ${listings.length} anúncios em '
                             'análise',
-                  style: AppTypography.body,
+                  style: context.text.body,
                 ),
               ),
             ],
@@ -650,7 +651,7 @@ class _RejectDialogState extends State<_RejectDialog> {
         ),
         TextButton(
           onPressed: _submit,
-          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+          style: TextButton.styleFrom(foregroundColor: context.colors.danger),
           child: const Text('Recusar'),
         ),
       ],

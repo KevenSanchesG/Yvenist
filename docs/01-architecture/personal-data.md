@@ -53,7 +53,8 @@ não recebem e-mail nem telefone de ninguém pela fila (`AdminVendorResponse`).
 | Dado | Onde |
 |---|---|
 | Tokens da sessão | cofre do sistema: Keystore no Android, Keychain no iOS (`lib/core/storage/token_storage.dart`). Na web, `localStorage` ([KI-30](../07-known-issues/README.md)) |
-| Mais nada | o app não tem banco local, cache em disco nem preferências gravadas (dependências em `pubspec.yaml`: `http`, `flutter_secure_storage`, `provider`, `intl`) |
+| A escolha de tema (`system`, `light` ou `dark`) | no mesmo lugar, pela chave `yvenist.theme_mode` (`lib/core/storage/theme_preference_storage.dart`). É do aparelho, e não da conta: **não vai para o servidor**, não é apagada ao sair nem ao excluir a conta, e vale para quem não entrou. Não identifica ninguém |
+| Mais nada | o app não tem banco local nem cache em disco (dependências em `pubspec.yaml`: `http`, `flutter_secure_storage`, `provider`, `intl`) |
 
 O backup do Google está desligado no Android (`android:allowBackup="false"`).
 No iOS, se os tokens entram em um backup do aparelho não foi conferido
@@ -106,6 +107,7 @@ nos próprios textos, sempre mantendo o rótulo de versão preliminar:
 | Os dois dizem "18 anos ou mais", e o app não pergunta nem confere a idade | acrescentado ao colchete que já pedia confirmação |
 | Não havia como pedir a exclusão sem o app, que a Play Store exige | frase na seção 7 da política e a página `deploy/site/exclusao-de-conta.md` |
 | "A sessão fica no cofre seguro do aparelho" não vale para a versão web | mantido: a versão web não é publicada. Rever junto com o KI-30 |
+| O app passou a guardar a escolha de tema no aparelho | frase acrescentada à seção 2 da política, no mesmo dia em que a função entrou |
 
 ## Perguntas que o levantamento deixa
 
@@ -144,3 +146,5 @@ donos.
   ([legal](../03-features/legal.md)).
 - O endereço IP fica um minuto em memória para limitar tentativas. Se isso é
   "coleta" na definição da ficha é uma decisão de quem a preenche.
+- A escolha de tema fica só no aparelho. `[INFERÊNCIA]` Pela definição da
+  ficha, o que não sai do aparelho não é dado coletado.

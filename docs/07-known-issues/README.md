@@ -20,7 +20,6 @@ gatilho, não é para agora.
 | KI-01 | Textos legais são preliminares, com lacunas entre colchetes | revisão jurídica e os dados da empresa ([legal](../03-features/legal.md)) | donos |
 | KI-02 | A política de privacidade e a página de exclusão de conta não têm endereço público | escolher onde hospedar as páginas, que já são geradas por `tools/build_legal_site.py` ([legal](../03-features/legal.md)); a Play Store exige as duas | donos |
 | KI-03 | A API não está hospedada | escolher e contratar a hospedagem e apontar o endereço da API para ela; a receita com HTTPS está pronta em `deploy/` ([deployment](../09-guides/deployment.md)) | donos |
-| KI-04 | Não há chave de envio do Android | criar e guardar fora do repositório; o resto do caminho de assinatura está pronto e é conferido pelo CI ([android-release](../09-guides/android-release.md)) | donos |
 | KI-05 | iOS nunca foi compilado | um Mac com Xcode; a lista do que fazer nele está em [ios-build](../09-guides/ios-build.md) | donos |
 | KI-06 | A branch não foi mesclada na `main` | decisão | donos |
 
@@ -35,7 +34,6 @@ gatilho, não é para agora.
 | KI-14 | Não há como editar, despublicar ou apagar um anúncio | o primeiro fornecedor que errar um dado |
 | KI-15 | Notas dos anúncios não têm quem as alimente | os cards mostram nota só nos dados de demonstração |
 | KI-16 | Sem recuperar senha nem confirmar e-mail | a primeira pessoa que esquecer a senha |
-| KI-17 | O laranja da marca (`#FF6600`) não tem contraste para texto | decisão do tom ([ADR-008](../05-decisions/ADR-008-acessibilidade-e-cores.md)) |
 | KI-19 | Telefone e data de nascimento são pedidos em Dados Pessoais e nenhuma função os usa | a revisão jurídica: a LGPD pede finalidade para cada dado ([personal-data](../01-architecture/personal-data.md)) |
 
 ## Técnicos
@@ -72,6 +70,7 @@ tratada como produto.
 | KI-41 | Leitores de tela reais (TalkBack, VoiceOver): só as verificações de semântica dos testes |
 | KI-42 | Build de release contra uma API em `https` de verdade; a receita de `deploy/` em um servidor, com certificado emitido de verdade |
 | KI-43 | Carga: nenhum teste de desempenho |
+| KI-44 | O tema escuro em um aparelho de verdade: foi visto nas capturas geradas pelos testes e em um emulador Android 13 |
 
 ## Ambiente de desenvolvimento
 
@@ -82,6 +81,7 @@ tratada como produto.
 | KI-52 | `flutter test --platform chrome` trava no Windows | roda no CI ([flutter-web-testing](../06-research/flutter-web-testing.md)) |
 | KI-53 | Sem a ferramenta `gh` | a situação do CI é lida pela API pública do GitHub; o log pede autenticação ([ci](../09-guides/ci.md)) |
 | KI-54 | Abrir o Claude Code acima da pasta do repositório não carrega o `CLAUDE.md` na largada | abrir dentro de `Yvenist\` ([claude-code-memory](../06-research/claude-code-memory.md)) |
+| KI-55 | A chave de envio do Android existe em uma máquina só, e as senhas dela só em `android/key.properties`, que não é versionado. Apagar a pasta do projeto, ou perder a máquina, leva as senhas junto | **dos donos:** guardar uma cópia do arquivo `.jks` e das duas senhas em um gerenciador de senhas ([android-release](../09-guides/android-release.md)). Antes do primeiro envio à loja, perder a chave só custa criar outra; depois, é preciso pedir a troca ao Google |
 
 ## Como registrar um problema
 

@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:yvenist/features/client/shared/listing_results_view.dart';
@@ -100,10 +99,10 @@ class _SearchViewState extends State<_SearchView> {
           textInputAction: TextInputAction.search,
           onChanged: _onChanged,
           onSubmitted: _search,
-          style: AppTypography.body.copyWith(fontSize: 16),
-          decoration: const InputDecoration(
+          style: context.text.body.copyWith(fontSize: 16),
+          decoration: InputDecoration(
             hintText: 'Buscar salões, brinquedos, buffet...',
-            hintStyle: TextStyle(color: AppColors.searchPlaceholder),
+            hintStyle: TextStyle(color: context.colors.textTertiary),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -152,7 +151,7 @@ class _Suggestions extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Sugestões', style: AppTypography.sectionTitle),
+              Text('Sugestões', style: context.text.sectionTitle),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

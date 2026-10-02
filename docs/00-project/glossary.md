@@ -48,5 +48,6 @@ código. Na API os nomes são os mesmos do app, em `snake_case`.
 | Token de renovação | credencial longa que troca o par de tokens | tabela `refresh_tokens` (só o hash) |
 | Família | os tokens de renovação nascidos do mesmo login | `refresh_tokens.family_id` |
 | Cofre do sistema | onde o aparelho guarda segredos | `flutter_secure_storage` (Keystore, Keychain) |
-| Token de design | cor, espaçamento ou estilo com nome | `AppColors`, `AppSpacing`, `AppTypography` |
+| Token de design | cor, espaçamento ou estilo com nome | `AppPalette` (por `context.colors`), `AppColors`, `AppSpacing`, `AppTypography` (por `context.text`) |
+| Tema | o conjunto de cores em uso: claro ou escuro | `AppTheme.light()`, `AppTheme.dark()`; a escolha fica em `ThemeModeController` |
 | Knowledge Base, cofre | esta pasta `docs/`, que o Obsidian abre como cofre | [memory-system](memory-system.md) |

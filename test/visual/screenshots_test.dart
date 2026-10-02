@@ -9,6 +9,23 @@ import '../support/app_harness.dart';
 import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
+/// As telas que também têm captura no tema escuro em `docs/screenshots`
+/// (`<nome>-escuro.png`). As outras só são geradas no escuro com
+/// `--dart-define=ALL_DARK=true`, em `build/screenshots-escuro/`, para
+/// conferir à mão sem pôr tudo no repositório.
+const Set<String> _darkInDocs = {
+  'home',
+  'explorar',
+  'party-maker',
+  'perfil',
+  'entrar',
+  'fornecedor-validacao',
+  'admin-fornecedores',
+  'aparencia',
+};
+
+const bool _allDark = bool.fromEnvironment('ALL_DARK');
+
 /// Gera as imagens de `docs/screenshots` a partir das telas reais do app, em
 /// modo demonstração. Veja `dart_test.yaml` para o comando.
 void main() {
@@ -17,12 +34,27 @@ void main() {
     await prepareNetworkImages();
   });
 
+  group('tema claro', () => _screens(ThemeMode.light));
+  group('tema escuro', () => _screens(ThemeMode.dark));
+}
+
+void _screens(ThemeMode mode) {
+  final isDark = mode == ThemeMode.dark;
+
   Future<void> capture(WidgetTester tester, String name) async {
+    final String path;
+    if (!isDark) {
+      path = '../../docs/screenshots/$name.png';
+    } else if (_darkInDocs.contains(name)) {
+      path = '../../docs/screenshots/$name-escuro.png';
+    } else if (_allDark) {
+      path = '../../build/screenshots-escuro/$name.png';
+    } else {
+      return;
+    }
+
     await settleWithImages(tester);
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile('../../docs/screenshots/$name.png'),
-    );
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile(path));
   }
 
   /// Um teste que sobe o app em um celular e tira fotos das telas.
@@ -36,11 +68,15 @@ void main() {
       return withFakeNetworkImages(() {
         return withRealShadows(() async {
           usePhoneScreen(tester);
-          await pumpYvenistApp(
+          final app = await pumpYvenistApp(
             tester,
             signedIn: signedIn,
             dependencies: dependencies?.call(),
           );
+          if (isDark) {
+            await app.state.theme.select(ThemeMode.dark);
+            await tester.pumpAndSettle();
+          }
           await body(tester);
         });
       });
@@ -114,6 +150,13 @@ void main() {
     await tester.tap(find.text('Dados Pessoais'));
     await tester.pumpAndSettle();
     await capture(tester, 'dados-pessoais');
+  });
+
+  screenshots('aparência', (tester) async {
+    await openTab(tester, 'Perfil');
+    await scrollToAndTap(tester, find.text('Aparência'));
+
+    await capture(tester, 'aparencia');
   });
 
   screenshots('termos de uso', (tester) async {

@@ -28,9 +28,9 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 | `app/` | raiz de composição, estado do app inteiro, as cinco abas |
 | `core/config` | `AppConfig`: URL da API, modo demonstração, versão |
 | `core/network` | `ApiClient` |
-| `core/storage` | `TokenStorage` (cofre do sistema ou memória) |
+| `core/storage` | `TokenStorage` (cofre do sistema ou memória) e `ThemePreferenceStorage` (a escolha de tema, guardada no aparelho) |
 | `core/error`, `core/state` | `AppFailure`, `LoadState<T>` |
-| `core/theme`, `core/widgets` | tokens de design e widgets compartilhados ([design system](../04-ux/design-system.md)) |
+| `core/theme`, `core/widgets` | os dois temas, as cores e os estilos de texto (`context.colors`, `context.text`) e widgets compartilhados ([design system](../04-ux/design-system.md)) |
 | `core/utils` | dinheiro, CPF/CNPJ, ids |
 | `features/auth` | sessão, entrar, criar conta |
 | `features/catalog` | anúncios, categorias, busca (só domínio e dados) |
@@ -38,7 +38,7 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 | `features/party_maker` | [Party Maker](../03-features/party-maker/architecture.md) |
 | `features/vendor` | cadastro de fornecedor e do salão |
 | `features/admin` | fila de análise |
-| `features/shared_features` | `legal`, `security`, e as telas "Em breve": `chat`, `notifications`, `payments` |
+| `features/shared_features` | `appearance`, `legal`, `security`, e as telas "Em breve": `chat`, `notifications`, `payments` |
 
 ## Raiz de composição
 
@@ -46,7 +46,7 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 |---|---|
 | `app/app_dependencies.dart` | escolhe as implementações: `AppDependencies.api` ou `.demo` |
 | `app/app_state.dart` | cria os controllers do app inteiro e os liga à sessão |
-| `app/yvenist_app.dart` | publica tudo via `Provider`; tema e idioma (`pt_BR`) |
+| `app/yvenist_app.dart` | publica tudo via `Provider`; os temas claro e escuro, qual deles vale, e o idioma (`pt_BR`) |
 | `app/app_shell.dart` | as cinco abas, a barra inferior, o bloqueio "esta aba exige conta" |
 
 Contratos disponíveis: `AuthRepository`, `CatalogRepository`,
@@ -59,6 +59,7 @@ Contratos disponíveis: `AuthRepository`, `CatalogRepository`,
 | Tipo | Quais | Vida |
 |---|---|---|
 | Do app inteiro | `SessionController`, `FavoritesController`, `PartyMakerController`, `VendorController`, `AppTabController` | criados em `AppState`; quando a sessão muda, cada um troca de conta e recarrega |
+| Do aparelho | `ThemeModeController` | criado em `AppState`; **não** depende da sessão. É lido antes do `runApp` (`main.dart`) |
 | De uma tela | `HomeController`, `ListingSearchController`, `ExploreController`, `ReviewQueueController` | nascem e morrem com a tela (`ChangeNotifierProvider(create:)`) |
 
 Regras comuns: operação devolve `bool`/valor e guarda a falha; dado que demora

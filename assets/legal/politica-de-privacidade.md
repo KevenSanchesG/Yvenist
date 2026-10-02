@@ -18,6 +18,7 @@ Coletamos apenas o que o aplicativo precisa para funcionar.
 - Sessão: quando cada sessão foi aberta e até quando vale, e a identificação do aplicativo ou navegador usado.
 - Datas: quando a conta, as festas, o cadastro de fornecedor e os anúncios foram criados e alterados.
 - Segurança: o endereço IP de quem cria conta, entra, renova a sessão, troca a senha ou exclui a conta é mantido por cerca de um minuto, só na memória do servidor, para limitar tentativas em excesso.
+- Preferências do aplicativo: o tema que você escolheu (claro, escuro ou o do aparelho) fica guardado só no seu aparelho e não é enviado para nós.
 
 Não coletamos sua localização, seus contatos, suas fotos nem dados de pagamento. O aplicativo não usa ferramentas de publicidade nem de rastreamento.
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/features/auth/presentation/auth_gate.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/client/favorites/presentation/pages/favorites_page.dart';
@@ -94,19 +94,20 @@ class _HomeHeaderState extends State<HomeHeader> {
     final statusBarHeight = MediaQuery.paddingOf(context).top;
     final hasShortcuts =
         widget.categories.isNotEmpty || widget.eventTypes.isNotEmpty;
+    final colors = context.colors;
 
     return Container(
       padding: EdgeInsets.only(
         top: statusBarHeight + 16,
         bottom: AppSpacing.headerVerticalPadding,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.headerBackground,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+      decoration: BoxDecoration(
+        color: colors.headerBand,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.cardShadow,
-            offset: Offset(0, 4),
+            color: colors.shadow,
+            offset: const Offset(0, 4),
             blurRadius: 4,
           ),
         ],
@@ -180,12 +181,15 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   Widget _dot(int index) {
     final isActive = index == _activeDot;
+    final colors = context.colors;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       width: isActive ? 6 : 4,
       height: isActive ? 6 : 4,
       decoration: BoxDecoration(
-        color: isActive ? Colors.black : Colors.grey.withValues(alpha: 0.5),
+        color: isActive
+            ? colors.textPrimary
+            : colors.textTertiary.withValues(alpha: 0.5),
         shape: BoxShape.circle,
       ),
     );
@@ -199,28 +203,30 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Semantics(
       button: true,
       label: 'Buscar salões, atrações e serviços',
       child: Material(
-        color: AppColors.searchFieldBackground,
+        color: colors.raisedSurface,
         borderRadius: BorderRadius.circular(24),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: const SizedBox(
+          child: SizedBox(
             height: 48,
             child: ExcludeSemantics(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: AppColors.searchPlaceholder),
-                    SizedBox(width: 10),
+                    Icon(Icons.search, color: colors.textTertiary),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'O que vamos comemorar?',
-                        style: AppTypography.headerSearch,
+                        style: context.text.headerSearch,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -254,8 +260,8 @@ class _HeaderIconButton extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onPressed,
       style: IconButton.styleFrom(
-        backgroundColor: AppColors.iconBackground,
-        foregroundColor: AppColors.primary,
+        backgroundColor: context.colors.raisedSurface,
+        foregroundColor: context.colors.primary,
         fixedSize: const Size(48, 48),
       ),
     );
@@ -280,7 +286,7 @@ class _Shortcut extends StatelessWidget {
       button: true,
       label: 'Ver $label',
       child: Material(
-        color: AppColors.categoryBackground,
+        color: context.colors.raisedSurface,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -294,13 +300,9 @@ class _Shortcut extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 30, color: AppColors.primary),
+                    Icon(icon, size: 30, color: context.colors.primary),
                     const SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: AppTypography.categoryLabel,
-                      maxLines: 1,
-                    ),
+                    Text(label, style: context.text.categoryLabel, maxLines: 1),
                   ],
                 ),
               ),

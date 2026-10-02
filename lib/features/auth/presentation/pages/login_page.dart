@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/config/app_config.dart';
-import 'package:yvenist/core/theme/app_colors.dart';
-import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/auth/domain/auth_validators.dart';
@@ -83,14 +82,18 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const ExcludeSemantics(
-                    child: Icon(Icons.cake, size: 56, color: AppColors.primary),
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.cake,
+                      size: 56,
+                      color: context.colors.primary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     widget.reason ?? 'Entre para planejar a sua festa.',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textSecondary,
+                    style: context.text.body.copyWith(
+                      color: context.colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -148,14 +151,14 @@ class _DemoHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.headerBackground,
+        color: context.colors.surfaceMuted,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         'Modo demonstração: os dados ficam só neste aparelho.\n'
         'Conta de teste: ${InMemoryAuthRepository.demoEmail} · '
         'senha ${InMemoryAuthRepository.demoPassword}',
-        style: AppTypography.caption,
+        style: context.text.caption,
         textAlign: TextAlign.center,
       ),
     );
