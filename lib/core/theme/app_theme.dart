@@ -13,6 +13,17 @@ abstract final class AppTheme {
     systemNavigationBarIconBrightness: Brightness.dark,
   );
 
+  /// Para telas cujo topo é escuro (o cabeçalho do perfil): relógio e ícones
+  /// da barra de status em branco.
+  static const SystemUiOverlayStyle systemUiOnDarkHeader = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light, // Android
+    statusBarBrightness: Brightness.dark, // iOS
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary);
     final fieldBorder = OutlineInputBorder(
@@ -81,6 +92,25 @@ abstract final class AppTheme {
       ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+      ),
+      // Diálogos, folhas e menus em branco, como os cards: o padrão do
+      // Material 3 tinge essas superfícies com a cor da marca e elas saíam
+      // rosadas, destoando do resto do app.
+      dialogTheme: const DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: AppTypography.sectionTitle,
+        contentTextStyle: AppTypography.body,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: Colors.white,
+        modalBackgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: Colors.grey.shade400,
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.primary,

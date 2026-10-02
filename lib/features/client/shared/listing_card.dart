@@ -58,10 +58,19 @@ class ListingCard extends StatelessWidget {
                 width: width,
                 height: imageHeight,
               ),
+              // Limitado à largura do card: com letras grandes o selo encolhe
+              // para caber, em vez de ter o preço cortado pela borda.
               Positioned(
                 left: 8,
+                right: 8,
                 bottom: 8,
-                child: ExcludeSemantics(child: PriceBadge(listing: listing)),
+                child: ExcludeSemantics(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: PriceBadge(listing: listing),
+                  ),
+                ),
               ),
               Positioned(
                 top: 0,

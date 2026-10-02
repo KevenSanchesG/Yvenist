@@ -209,6 +209,47 @@ void main() {
   });
 
   group('criar conta', () {
+    appTest('o "próximo" do teclado percorre os campos, um a um', (
+      tester,
+      app,
+    ) async {
+      // Regressão vista em um aparelho: depois da senha, o "próximo" parava
+      // no botão do olho, o teclado fechava e a confirmação ficava por digitar.
+      await openRegister(tester);
+      String typedIn(String label) {
+        return tester
+            .widget<EditableText>(
+              find.descendant(
+                of: find.widgetWithText(TextFormField, label),
+                matching: find.byType(EditableText),
+              ),
+            )
+            .controller
+            .text;
+      }
+
+      await tester.showKeyboard(
+        find.widgetWithText(TextFormField, 'Nome completo'),
+      );
+      for (final text in [
+        'Ana Souza',
+        'ana@example.com',
+        'senha-segura-123',
+        'senha-segura-123',
+      ]) {
+        // Digita no campo que estiver com o foco e pede o próximo.
+        tester.testTextInput.enterText(text);
+        await tester.pump();
+        await tester.testTextInput.receiveAction(TextInputAction.next);
+        await tester.pump();
+      }
+
+      expect(typedIn('Nome completo'), 'Ana Souza');
+      expect(typedIn('E-mail'), 'ana@example.com');
+      expect(typedIn('Senha'), 'senha-segura-123');
+      expect(typedIn('Repita a senha'), 'senha-segura-123');
+    }, signedIn: false);
+
     appTest('valida todos os campos e o aceite dos termos', (
       tester,
       app,
@@ -314,6 +355,32 @@ void main() {
       expect(find.text('Dados salvos.'), findsOneWidget);
       expect(find.text('Maria Clara Souza'), findsOneWidget);
       expect(app.state.session.user!.phone, '21999998888');
+    });
+
+    appTest('o e-mail aparece, mas não é editável nem prende o teclado', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Perfil');
+      await tapAndSettle(tester, find.text('Dados Pessoais'));
+      expect(find.text(InMemoryAuthRepository.demoEmail), findsOneWidget);
+
+      // Do nome, o "próximo" vai direto para o telefone.
+      await tester.showKeyboard(
+        find.widgetWithText(TextFormField, 'Nome completo'),
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.next);
+      await tester.pump();
+      tester.testTextInput.enterText('21999998888');
+      await tester.pump();
+
+      final phone = tester.widget<EditableText>(
+        find.descendant(
+          of: find.widgetWithText(TextFormField, 'Telefone (opcional)'),
+          matching: find.byType(EditableText),
+        ),
+      );
+      expect(phone.controller.text, '21999998888');
     });
 
     appTest('telefone sem DDD é recusado', (tester, app) async {

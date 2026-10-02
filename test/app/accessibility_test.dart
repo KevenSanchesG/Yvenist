@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
+import 'package:yvenist/features/client/shared/listing_card.dart';
 
 import '../support/app_harness.dart';
 import '../support/visual_harness.dart';
@@ -264,6 +266,28 @@ void main() {
       await tapAndSettle(tester, filledButton('Solicitar orçamento'));
       expect(find.text('Orçamento solicitado'), findsOneWidget);
     }, textScale: scale);
+
+    appTest('com letras 50% maiores o card mostra nome e preço inteiros', (
+      tester,
+      app,
+    ) async {
+      // Visto em um aparelho: o card tinha largura fixa, o nome virava
+      // "Salão Glam…" e o selo de preço era cortado pela borda.
+      final title = tester.renderObject<RenderParagraph>(
+        find.text('Salão Glamour 8'),
+      );
+      expect(title.didExceedMaxLines, isFalse);
+
+      final card = tester.getRect(
+        find.ancestor(
+          of: find.text('Salão Glamour 8'),
+          matching: find.byType(ListingCard),
+        ),
+      );
+      final badge = tester.getRect(find.text('A partir de R\$ 1.700'));
+      expect(badge.left, greaterThanOrEqualTo(card.left));
+      expect(badge.right, lessThanOrEqualTo(card.right));
+    }, textScale: 1.5);
 
     appTest('busca e favoritos', (tester, app) async {
       await tapAndSettle(

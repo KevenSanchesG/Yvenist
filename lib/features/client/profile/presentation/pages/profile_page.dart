@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/theme/app_typography.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/auth/domain/entities/app_user.dart';
@@ -97,11 +99,17 @@ class _ProfilePageState extends State<ProfilePage> {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _Header(
-              user: user,
-              vendorMode: vendorMode,
-              onClientMode: () => setState(() => _vendorMode = false),
-              onVendorMode: _selectVendorMode,
+            // Enquanto o cabeçalho escuro está no topo, o relógio e os ícones
+            // da barra de status ficam brancos; rolando a tela, voltam a ser
+            // escuros sobre o fundo claro.
+            AnnotatedRegion<SystemUiOverlayStyle>(
+              value: AppTheme.systemUiOnDarkHeader,
+              child: _Header(
+                user: user,
+                vendorMode: vendorMode,
+                onClientMode: () => setState(() => _vendorMode = false),
+                onVendorMode: _selectVendorMode,
+              ),
             ),
             const SizedBox(height: 22),
             Padding(

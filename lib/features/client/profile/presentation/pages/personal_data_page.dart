@@ -145,10 +145,9 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: user.email,
-                    readOnly: true,
-                    enableInteractiveSelection: false,
+                  // Só exibe: não é um campo de texto, para o "próximo" do
+                  // teclado ir do nome direto para o telefone.
+                  InputDecorator(
                     decoration: const InputDecoration(
                       labelText: 'E-mail',
                       helperText:
@@ -157,6 +156,7 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
                       helperMaxLines: 2,
                       suffixIcon: Icon(Icons.lock_outline),
                     ),
+                    child: Text(user.email),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

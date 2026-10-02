@@ -11,10 +11,12 @@ class HorizontalCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A altura acompanha o tamanho de fonte escolhido no sistema: com letras
-    // maiores os cards crescem, em vez de cortar o texto.
+    // Os cards acompanham o tamanho de fonte escolhido no sistema: com letras
+    // maiores eles crescem (na altura e, até certo ponto, na largura), em vez
+    // de cortar o nome e o bairro do anúncio.
     final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
     final height = ListingCard.imageHeight + 40 + 58 * textScale;
+    final cardWidth = ListingCard.cardWidth * textScale.clamp(1.0, 1.4);
 
     return SizedBox(
       height: height,
@@ -31,7 +33,8 @@ class HorizontalCardList extends StatelessWidget {
         itemCount: listings.length,
         separatorBuilder: (_, _) =>
             const SizedBox(width: AppSpacing.cardSpacing),
-        itemBuilder: (_, index) => ListingCard(listing: listings[index]),
+        itemBuilder: (_, index) =>
+            ListingCard(listing: listings[index], width: cardWidth),
       ),
     );
   }
