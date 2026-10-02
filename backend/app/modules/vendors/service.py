@@ -33,6 +33,11 @@ class DocumentAlreadyRegisteredError(ConflictError):
     message = "Este CPF/CNPJ já está vinculado a outro cadastro."
 
 
+class OnboardingInProgressError(ConflictError):
+    code = "onboarding_in_progress"
+    message = "Seu cadastro já foi recebido. Atualize a tela para acompanhar a análise."
+
+
 class UnknownCategoryError(UnprocessableError):
     code = "unknown_category"
     message = "Categoria inválida."
@@ -87,21 +92,29 @@ class VendorService:
         self, user: User, data: OnboardingRequest
     ) -> tuple[VendorProfile, Listing]:
         """Cria o cadastro (se ainda não existe) e o anúncio, numa só transação."""
-        profile = self._profile_of(user)
-        if profile is None:
-            if data.vendor is None:
-                raise VendorDataRequiredError
-            profile = self._create_profile(user, data.vendor)
-        elif profile.status is VendorStatus.REJECTED and data.vendor is not None:
-            # Cadastro recusado pode ser corrigido e volta para a fila.
-            self._resubmit_profile(profile, data.vendor)
-
-        listing = self._create_listing(profile, data.listing)
+        existing = self._profile_of(user)
         try:
+            if existing is None:
+                if data.vendor is None:
+                    raise VendorDataRequiredError
+                profile = self._create_profile(user, data.vendor)
+            else:
+                profile = existing
+                if profile.status is VendorStatus.REJECTED and data.vendor is not None:
+                    # Cadastro recusado pode ser corrigido e volta para a fila.
+                    self._resubmit_profile(profile, data.vendor)
+
+            listing = self._create_listing(profile, data.listing)
             self._db.commit()
         except IntegrityError as exc:
-            # Corrida entre dois cadastros com o mesmo documento ou do mesmo usuário.
+            # As consultas "o documento está livre?" e "a conta já tem cadastro?"
+            # não bastam: entre elas e a gravação, outra requisição pode ter
+            # passado na frente. Quem decide é o índice único, e a violação pode
+            # aparecer em qualquer gravação deste bloco, não só no commit.
             self._db.rollback()
+            if existing is None and self._profile_of(user) is not None:
+                # A mesma conta enviou duas vezes ao mesmo tempo: a outra venceu.
+                raise OnboardingInProgressError from exc
             raise DocumentAlreadyRegisteredError from exc
         return profile, listing
 
