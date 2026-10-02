@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/shared_features/legal/domain/legal_document.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/pages/legal_document_page.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/widgets/draft_notice.dart';
@@ -25,7 +26,7 @@ class LegalPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Termos e Política')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(20)),
         children: [
           const DraftNotice(),
           const SizedBox(height: 16),

@@ -32,6 +32,10 @@ Contexto completo: `docs/04-ux/design-system.md` e `docs/04-ux/accessibility.md`
 - A tela não pode estourar com a fonte do sistema em 200%: use `OverflowBar`
   ou `Wrap` para botões lado a lado, e rolagem onde o conteúdo pode não caber.
 - Um widget desenhado fora dos limites do pai não recebe toque.
+- O app desenha por baixo das barras do sistema. Lista que vai até a borda de
+  baixo: `padding: context.withSystemBottomInset(...)`. Rodapé fixo: vai até
+  a borda e guarda o espaço dentro dele. Os testes comuns não veem um último
+  item escondido: inclua a tela em `test/app/system_bars_test.dart`.
 - Botão que não pode agir fica desabilitado, em vez de responder com erro.
 - Ação destrutiva pede confirmação.
 - Tela nova ou alterada → inclua em `test/app/accessibility_test.dart` (grupo

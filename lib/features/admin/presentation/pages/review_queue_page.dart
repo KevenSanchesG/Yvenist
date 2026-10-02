@@ -6,6 +6,7 @@ import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/admin/domain/review_models.dart';
 import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/admin/presentation/controllers/review_queue_controller.dart';
@@ -245,7 +246,7 @@ class _QueueList extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(16)),
         itemCount: children.length + 1,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {

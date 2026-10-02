@@ -21,6 +21,7 @@ Motivos: [ADR-017](../05-decisions/ADR-017-um-laranja-e-tema-escuro.md).
 | Semântica de botões e títulos | contadores do perfil são botões acionáveis; títulos de seção são cabeçalhos | grupo "leitores de tela" |
 | Tema escuro | os fluxos principais de novo, com as mesmas conferências; nenhuma tela estoura | grupo "tema escuro", mesmo arquivo |
 | Cor só pelo tema | nenhuma cor escrita à mão fora de `lib/core/theme/` | `test/core/theme_usage_test.dart` |
+| Nada escondido pelas barras do sistema | o último item de uma lista e os botões de um rodapé ficam acima da barra de navegação; no perfil, o conteúdo não passa por baixo do relógio | `test/app/system_bars_test.dart` |
 
 Telas cobertas: início, explorar, busca, escolha da festa, montagem, minhas
 festas, favoritos, perfil (com conta e de visitante), dados pessoais,
@@ -56,7 +57,12 @@ teste.
 9. Acrescente a tela ao `accessibility_test.dart`: uma vez nas diretrizes, uma
    vez no grupo de letras grandes e, se ela tiver cartões, bordas ou sombras
    próprias, uma vez no grupo do tema escuro.
-10. No tema escuro uma borda substitui a sombra. Em um cartão de altura fixa,
+10. A tela vai até a borda de baixo, por baixo da barra de navegação do
+    sistema. Uma lista soma esse espaço à margem
+    (`context.withSystemBottomInset`); um rodapé fixo vai até a borda e guarda
+    o espaço dentro dele. Tela nova que vai até a borda entra em
+    `test/app/system_bars_test.dart`.
+11. No tema escuro uma borda substitui a sombra. Em um cartão de altura fixa,
     desenhe a borda por cima (`foregroundDecoration`): como borda do fundo ela
     tira espaço do conteúdo, e o card de anúncio estourava por um pixel.
 

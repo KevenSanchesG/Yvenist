@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 
 /// Indicador de carregamento centralizado, anunciado por leitores de tela.
 class LoadingView extends StatelessWidget {
@@ -47,7 +48,7 @@ class EmptyStateView extends StatelessWidget {
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(32)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

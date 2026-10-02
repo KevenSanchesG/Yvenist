@@ -24,6 +24,7 @@ separa o que já está pronto, conferido lendo os arquivos em 2 de outubro de
 | Rede | sem exceção de segurança de transporte: só `https`, como no release do Android | `ios/Runner/Info.plist` (não há `NSAppTransportSecurity`) |
 | Fonte, textos legais, tema | são arquivos e código do Flutter, iguais em todas as plataformas | `pubspec.yaml`, `lib/` |
 | Relógio da barra de status, nos dois temas e sobre os topos escuros (perfil, convite ao fornecedor) | já tem o valor do iOS (`statusBarBrightness`) | `lib/core/theme/app_theme.dart` |
+| Espaço do indicador de início, na borda de baixo | as listas e os rodapés já guardam o espaço que o sistema informa, o mesmo mecanismo da barra de navegação do Android | `lib/core/widgets/system_insets.dart` |
 | Código sem `dart:io` em `lib/` | nada do app depende de uma plataforma | regra em `.claude/rules/flutter-app.md` |
 | Exclusão de conta dentro do app | existe (Perfil → Segurança). A App Store a exige de todo app que cria conta, desde 30 de junho de 2022 | `security_page.dart` |
 

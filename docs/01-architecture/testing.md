@@ -16,6 +16,7 @@ O que o CI roda: [ci](../09-guides/ci.md).
 | `test/features/**` | regras de domínio, controllers e repositórios. Os da API são testados contra uma camada HTTP de mentira (`support/fake_api.dart`): caminho, corpo e tradução de erros |
 | `test/core/**` | `ApiClient` (renovação da sessão), cofre de tokens, utilitários, **contraste das cores nos dois temas** (`theme_contrast_test.dart`), nenhuma cor escrita à mão nas telas (`theme_usage_test.dart`), a escolha de tema e onde ela é guardada (`theme_mode_test.dart`), arquivos embutidos (`bundled_assets_test.dart`) |
 | `test/app/*_flow_test.dart` | o app inteiro em modo demonstração, na tela de um celular (360×780): navegar, buscar, entrar, montar festa, anunciar, analisar |
+| `test/app/system_bars_test.dart` | com as barras de um aparelho (os outros testes rodam sem elas): o conteúdo não passa por baixo do relógio no perfil, o último item das listas e os botões dos rodapés ficam acima da barra de navegação, e a barra é transparente nos dois temas |
 | `test/app/accessibility_test.dart` | área de toque de 48×48, rótulos, leitores de tela, cada fluxo de novo com a fonte do sistema em 200% e os fluxos principais de novo **no tema escuro** |
 | `test/integration/` | o código real do app contra uma API no ar. Pulado sem `YVENIST_API_URL`. Roda na máquina e **dentro do Chrome** |
 | `test/visual/screenshots_test.dart` | gera `docs/screenshots/` a partir das telas reais, nos dois temas (etiqueta `screenshots`, fora da suíte normal) |
@@ -68,6 +69,7 @@ nada.
 | Web contra a API | Chrome controlado por script: vitrine, login, sessão recuperada ao recarregar, fila de análise | 2026-10-02 |
 | API em modo de produção | o processo de verdade, com a configuração de produção ([deployment](../09-guides/deployment.md)) | 2026-10-02 |
 | Tema escuro em um Android | emulador Pixel 6 (Android 13), modo demonstração: escolher "Escuro" em Aparência muda na hora; depois de encerrar o app à força e abrir de novo, ele abre no tema escuro | 2026-10-02 |
+| Barras do sistema em um Android | mesmo emulador, com a barra de gestos e com os três botões, nos dois temas: início, perfil rolado, Termos de Uso até o fim, convite ao fornecedor, cadastro do salão com e sem teclado | 2026-10-02 |
 
 Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios-build.md)).
 

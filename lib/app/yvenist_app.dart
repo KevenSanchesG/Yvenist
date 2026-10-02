@@ -51,6 +51,7 @@ class YvenistApp extends StatelessWidget {
           locale: const Locale('pt', 'BR'),
           supportedLocales: const [Locale('pt', 'BR')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          builder: AppTheme.systemBars,
           home: child,
         ),
         child: const AppShell(),

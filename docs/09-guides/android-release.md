@@ -130,6 +130,7 @@ outubro de 2026.
 |---|---|
 | Mirar o Android 16 (API 36) ou mais novo, desde 31 de agosto de 2026 | atendida: o build de release mira a API 36 (é o padrão do Flutter 3.41) |
 | Bibliotecas de 64 bits alinhadas em 16 KB | atendida: as seis do pacote de release foram conferidas uma a uma |
+| Tela de borda a borda, que o Android 15 impõe a quem mira a API 35 ou mais nova | atendida: o app desenha por baixo das barras do sistema em todas as versões que permitem ([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)). Visto em um emulador com Android 13; não em um aparelho com Android 15 ou mais novo |
 | Política de privacidade em um endereço público | **falta publicar** ([legal](../03-features/legal.md)) |
 | Página pública para pedir a exclusão da conta | **falta publicar**; a página já é gerada |
 | Ficha "Segurança dos dados" | o levantamento está pronto em [personal-data](../01-architecture/personal-data.md); quem preenche são os donos |

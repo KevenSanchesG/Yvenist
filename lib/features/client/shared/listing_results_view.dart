@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:yvenist/core/state/load_state.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/client/shared/listing_search_controller.dart';
 import 'package:yvenist/features/client/shared/listing_tile.dart';
 
@@ -67,7 +68,7 @@ class _ResultsList extends StatelessWidget {
       child: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
         child: ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: context.withSystemBottomInset(const EdgeInsets.all(16)),
           itemCount: items.length + (hasFooter ? 1 : 0),
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {

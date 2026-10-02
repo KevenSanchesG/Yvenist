@@ -24,24 +24,79 @@ abstract final class AppTheme {
 
   /// Barra de status e de navegação do sistema para uma tela comum: ícones
   /// escuros no tema claro, claros no escuro.
-  static SystemUiOverlayStyle systemUi(AppPalette colors) {
-    final icons = colors.isDark ? Brightness.light : Brightness.dark;
-    return SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: icons, // Android
-      statusBarBrightness: colors.brightness, // iOS
-      systemNavigationBarColor: colors.surface,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarIconBrightness: icons,
-    );
+  ///
+  /// O app desenha a tela inteira, inclusive por baixo das duas barras
+  /// (`lib/main.dart` pede isso ao Android; a partir do Android 15 é o próprio
+  /// sistema que impõe). Com a tela por baixo dela, a barra de navegação é
+  /// transparente, e cada tela cuida do que fica ali. Onde a tela não chega
+  /// até lá (Android 9 ou mais antigo), a barra fica na cor das superfícies do
+  /// app: transparente, ela mostraria o fundo da janela, que não acompanha o
+  /// tema escolhido.
+  static SystemUiOverlayStyle systemUi(BuildContext context) {
+    return _systemUi(context);
   }
 
   /// Para telas cujo topo é escuro nos dois temas (o cabeçalho do perfil):
   /// relógio e ícones da barra de status em branco.
-  static SystemUiOverlayStyle systemUiOnDarkHeader(AppPalette colors) {
-    return systemUi(colors).copyWith(
+  static SystemUiOverlayStyle systemUiOnDarkHeader(BuildContext context) {
+    return _systemUi(context).copyWith(
       statusBarIconBrightness: Brightness.light, // Android
       statusBarBrightness: Brightness.dark, // iOS
+    );
+  }
+
+  /// Para telas inteiras que são escuras nos dois temas (o convite ao
+  /// fornecedor, sobre uma foto): as duas barras com ícones brancos.
+  static SystemUiOverlayStyle systemUiOnDarkScreen(BuildContext context) {
+    return _systemUi(
+      context,
+      opaqueNavigationBar: AppColors.vendorGradient.first,
+    ).copyWith(
+      statusBarIconBrightness: Brightness.light, // Android
+      statusBarBrightness: Brightness.dark, // iOS
+      systemNavigationBarIconBrightness: Brightness.light,
+    );
+  }
+
+  /// Para o `builder` do `MaterialApp`: aplica [systemUi] em volta do app
+  /// inteiro. Uma tela que precise de outra coisa (a barra do topo, um
+  /// cabeçalho escuro) pede por cima, só para a parte dela.
+  static Widget systemBars(BuildContext context, Widget? child) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemUi(context),
+      child: child!,
+    );
+  }
+
+  static SystemUiOverlayStyle _systemUi(
+    BuildContext context, {
+    Color? opaqueNavigationBar,
+  }) {
+    final colors = context.colors;
+    // A tela vai por baixo da barra de navegação quando o sistema reserva
+    // espaço para ela dentro da tela.
+    final behindNavigationBar = MediaQuery.viewPaddingOf(context).bottom > 0;
+
+    return _statusBar(colors).copyWith(
+      systemNavigationBarColor: behindNavigationBar
+          ? Colors.transparent
+          : opaqueNavigationBar ?? colors.surface,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: colors.isDark
+          ? Brightness.light
+          : Brightness.dark,
+    );
+  }
+
+  /// Só a barra de status. É o que a barra do topo de uma tela (`AppBar`)
+  /// pede; a barra de navegação fica com [systemBars].
+  static SystemUiOverlayStyle _statusBar(AppPalette colors) {
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: colors.isDark
+          ? Brightness.light
+          : Brightness.dark, // Android
+      statusBarBrightness: colors.brightness, // iOS
     );
   }
 
@@ -109,7 +164,7 @@ abstract final class AppTheme {
         centerTitle: true,
         titleTextStyle: text.sectionTitle,
         iconTheme: IconThemeData(color: colors.primary),
-        systemOverlayStyle: systemUi(colors),
+        systemOverlayStyle: _statusBar(colors),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

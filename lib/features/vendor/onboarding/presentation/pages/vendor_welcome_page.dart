@@ -25,9 +25,9 @@ class VendorWelcomePage extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // A tela é escura nos dois temas: o relógio e os ícones da barra de
-      // status ficam brancos.
-      value: AppTheme.systemUiOnDarkHeader(context.colors),
+      // A tela é escura nos dois temas: o relógio e os ícones das barras do
+      // sistema ficam brancos.
+      value: AppTheme.systemUiOnDarkScreen(context),
       child: Scaffold(
         // Fundo escuro mesmo que a foto não carregue: o texto branco continua
         // legível.

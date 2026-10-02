@@ -21,6 +21,7 @@ class ConfigErrorApp extends StatelessWidget {
       theme: AppTheme.light(),
       // Sem escolha guardada para ler: segue o tema do aparelho.
       darkTheme: AppTheme.dark(),
+      builder: AppTheme.systemBars,
       home: Scaffold(
         body: SafeArea(
           child: EmptyStateView(

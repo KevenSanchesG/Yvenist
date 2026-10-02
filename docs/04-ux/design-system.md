@@ -119,9 +119,28 @@ em análise.
 - Campos: fundo `surface`, borda `divider`, raio 12; em foco, borda de 2 em
   `primary`; erro em `danger`.
 - Diálogos, folhas, menus e calendário: `surface`.
-- Barra de status: ícones escuros no tema claro e claros no escuro
-  (`AppTheme.systemUi`). Onde o topo da tela é escuro nos dois temas (o
-  cabeçalho do perfil, o convite ao fornecedor), `AppTheme.systemUiOnDarkHeader`.
+- Barras do sistema: seção própria, abaixo.
+
+## Barras do sistema
+
+`[DECISÃO]` O app desenha a tela inteira, por baixo da barra de status e da
+barra de navegação do sistema, em qualquer Android que permita
+([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)).
+
+| O quê | Como |
+|---|---|
+| Ícones das duas barras | escuros no tema claro, claros no escuro. `AppTheme.systemUi`, aplicado em volta do app inteiro por `AppTheme.systemBars` (`lib/app/yvenist_app.dart`) |
+| Barra de navegação | transparente: aparece o que a tela desenha ali |
+| Topo escuro nos dois temas (cabeçalho do perfil) | `AppTheme.systemUiOnDarkHeader`: relógio em branco |
+| Tela inteira escura nos dois temas (convite ao fornecedor) | `AppTheme.systemUiOnDarkScreen`: ícones brancos nas duas barras |
+| Barra inferior do app e rodapés fixos | vão até a borda de baixo e guardam, dentro deles, o espaço da barra do sistema (`app_bottom_nav_bar.dart`, o rodapé de `hall_creation_flow_page.dart`) |
+| Lista que vai até a borda de baixo | soma o espaço da barra do sistema à margem: `context.withSystemBottomInset(...)`, de `lib/core/widgets/system_insets.dart` |
+| Perfil rolado | um fundo na cor da tela cobre a barra de status quando o cabeçalho sai de baixo dela, para o conteúdo não passar por baixo do relógio |
+
+Uma tela com `AppBar` não precisa fazer nada pela barra de status. Pela borda
+de baixo, toda tela precisa: os testes comuns rodam sem barras do sistema e
+não acusam um último item escondido. `test/app/system_bars_test.dart` confere
+as telas que vão até a borda, com as barras de um aparelho.
 
 ## Escolha do tema
 
@@ -226,4 +245,7 @@ com um salto:
 - No iOS a tela de abertura é branca fixa
   ([ios-build](../09-guides/ios-build.md)).
 - As capturas do tema escuro foram conferidas em imagem, geradas pelos
-  testes. O tema escuro não foi visto em um aparelho de verdade.
+  testes, e o app foi visto em um emulador com Android 13. O tema escuro não
+  foi visto em um aparelho de verdade.
+- No Android 9 ou mais antigo o app não desenha por baixo da barra de
+  navegação: ela fica na cor `surface`. Não foi visto nessas versões.

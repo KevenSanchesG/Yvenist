@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,38 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _vendorMode = false;
+
+  final ScrollController _scroll = ScrollController();
+  final GlobalKey _headerKey = GlobalKey();
+
+  /// O cabeçalho já saiu de baixo da barra de status? A partir daí o resto da
+  /// tela passaria por baixo do relógio.
+  final ValueNotifier<bool> _headerLeftStatusBar = ValueNotifier(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    _headerLeftStatusBar.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final header = _headerKey.currentContext?.findRenderObject();
+    if (header is! RenderBox || !header.hasSize) return;
+
+    // Onde termina a parte reta do degradê: sem a metade do seletor de modo,
+    // que fica abaixo dele, e sem os cantos arredondados.
+    final gradientEnd =
+        header.size.height - _ModeToggle.height / 2 - _Header.cornerRadius;
+    final statusBar = MediaQuery.paddingOf(context).top;
+    _headerLeftStatusBar.value = _scroll.offset > gradientEnd - statusBar;
+  }
 
   void _push(Widget page) {
     Navigator.push<void>(context, MaterialPageRoute(builder: (_) => page));
@@ -97,41 +130,53 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       backgroundColor: colors.backgroundMuted,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            // Enquanto o cabeçalho escuro está no topo, o relógio e os ícones
-            // da barra de status ficam brancos; rolando a tela, voltam a ser
-            // os do tema.
-            AnnotatedRegion<SystemUiOverlayStyle>(
-              value: AppTheme.systemUiOnDarkHeader(colors),
-              child: _Header(
-                user: user,
-                vendorMode: vendorMode,
-                onClientMode: () => setState(() => _vendorMode = false),
-                onVendorMode: _selectVendorMode,
-              ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            controller: _scroll,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // Enquanto o cabeçalho escuro está no topo, o relógio e os
+                // ícones da barra de status ficam brancos; rolando a tela,
+                // voltam a ser os do tema.
+                AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: AppTheme.systemUiOnDarkHeader(context),
+                  child: _Header(
+                    key: _headerKey,
+                    user: user,
+                    vendorMode: vendorMode,
+                    onClientMode: () => setState(() => _vendorMode = false),
+                    onVendorMode: _selectVendorMode,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (vendorMode)
+                        ..._vendorContent(vendor)
+                      else
+                        ..._clientContent(vendor),
+                      const SizedBox(height: 20),
+                      if (user.isAdmin) ..._adminContent(),
+                      ..._commonFooter(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
-            const SizedBox(height: 22),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (vendorMode)
-                    ..._vendorContent(vendor)
-                  else
-                    ..._clientContent(vendor),
-                  const SizedBox(height: 20),
-                  if (user.isAdmin) ..._adminContent(),
-                  ..._commonFooter(),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _StatusBarBackdrop(visible: _headerLeftStatusBar),
+          ),
+        ],
       ),
     );
   }
@@ -334,13 +379,55 @@ class _ProfilePageState extends State<ProfilePage> {
 // Cabeçalho com o seletor de modo
 // ---------------------------------------------------------
 
+/// O fundo da barra de status depois que o cabeçalho sai de baixo dela.
+///
+/// O cabeçalho do perfil vai por baixo da barra de status, e o resto da tela
+/// rola atrás dele: sem este fundo, os títulos e os itens passariam por baixo
+/// do relógio.
+class _StatusBarBackdrop extends StatelessWidget {
+  const _StatusBarBackdrop({required this.visible});
+
+  final ValueListenable<bool> visible;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return IgnorePointer(
+      child: ValueListenableBuilder<bool>(
+        valueListenable: visible,
+        builder: (context, isVisible, child) => AnimatedOpacity(
+          key: const ValueKey('status-bar-backdrop'),
+          opacity: isVisible ? 1 : 0,
+          duration: const Duration(milliseconds: 150),
+          child: child,
+        ),
+        // Sobre o fundo da tela, o relógio volta a ter a cor do tema.
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.systemUi(context),
+          child: ColoredBox(
+            color: colors.backgroundMuted,
+            child: SizedBox(
+              width: double.infinity,
+              height: MediaQuery.paddingOf(context).top,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({
+    super.key,
     required this.user,
     required this.vendorMode,
     required this.onClientMode,
     required this.onVendorMode,
   });
+
+  static const double cornerRadius = 30;
 
   final AppUser user;
   final bool vendorMode;
@@ -374,7 +461,7 @@ class _Header extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
             borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(30),
+              bottom: Radius.circular(cornerRadius),
             ),
           ),
           child: Column(

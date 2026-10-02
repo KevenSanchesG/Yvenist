@@ -71,6 +71,7 @@ tratada como produto.
 | KI-42 | Build de release contra uma API em `https` de verdade; a receita de `deploy/` em um servidor, com certificado emitido de verdade |
 | KI-43 | Carga: nenhum teste de desempenho |
 | KI-44 | O tema escuro em um aparelho de verdade: foi visto nas capturas geradas pelos testes e em um emulador Android 13 |
+| KI-45 | As barras do sistema fora do Android 13: o leiaute de borda a borda foi visto só no emulador dessa versão, que é a única imagem instalada. Do Android 15 em diante o sistema impõe o mesmo leiaute; no 9 ou mais antigo vale o clássico ([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)) |
 
 ## Ambiente de desenvolvimento
 

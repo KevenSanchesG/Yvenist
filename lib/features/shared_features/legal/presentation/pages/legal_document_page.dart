@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/shared_features/legal/domain/legal_document.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/widgets/draft_notice.dart';
 
@@ -51,7 +52,9 @@ class _LegalDocumentPageState extends State<LegalDocumentPage> {
           if (blocks == null) return const LoadingView();
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            padding: context.withSystemBottomInset(
+              const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            ),
             children: [
               const DraftNotice(),
               // O título já está na barra do topo.

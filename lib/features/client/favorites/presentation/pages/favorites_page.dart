@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
 import 'package:yvenist/features/client/shared/listing_tile.dart';
 
@@ -33,7 +34,7 @@ class FavoritesPage extends StatelessWidget {
       body = RefreshIndicator(
         onRefresh: favorites.load,
         child: ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: context.withSystemBottomInset(const EdgeInsets.all(16)),
           itemCount: items.length,
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (_, index) => ListingTile(

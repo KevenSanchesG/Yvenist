@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/auth/domain/auth_validators.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
 import 'package:yvenist/features/client/profile/presentation/widgets/profile_widgets.dart';
@@ -16,7 +17,7 @@ class SecurityPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Segurança')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(20)),
         children: [
           const ProfileSectionTitle('Acesso'),
           ProfileActionTile(

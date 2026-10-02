@@ -29,6 +29,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [015](ADR-015-paginas-legais-publicas.md) | Páginas legais públicas geradas dos mesmos arquivos do app | aceita |
 | [016](ADR-016-identificador-br-com-yvenist-app.md) | Identificador `br.com.yvenist.app`, seguindo o domínio dos donos | aceita (decisão dos donos) |
 | [017](ADR-017-um-laranja-e-tema-escuro.md) | Um laranja por tema (`#C2410C`), tema escuro e a escolha em Aparência | aceita (decisão dos donos) |
+| [018](ADR-018-tela-inteira-em-qualquer-android.md) | O app desenha a tela inteira (borda a borda) em qualquer Android | aceita |
 
 ## Quando criar um ADR
 

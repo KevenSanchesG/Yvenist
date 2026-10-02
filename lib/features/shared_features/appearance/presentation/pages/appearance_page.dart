@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/theme/theme_mode_controller.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/client/profile/presentation/widgets/profile_widgets.dart';
 
 /// Aparência: tema claro, escuro ou o do aparelho.
@@ -44,7 +45,7 @@ class AppearancePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Aparência')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(20)),
         children: [
           const ProfileSectionTitle('Tema'),
           Card(

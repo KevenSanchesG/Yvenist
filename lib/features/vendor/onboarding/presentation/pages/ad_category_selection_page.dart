@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/vendor/onboarding/presentation/pages/hall_creation_flow_page.dart';
 
 /// Escolha do que anunciar. Por enquanto só o fluxo de salão existe; as
@@ -12,7 +13,7 @@ class AdCategorySelectionPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('O que você vai anunciar?')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: context.withSystemBottomInset(const EdgeInsets.all(20)),
         children: [
           _CategoryCard(
             icon: Icons.home_work_outlined,

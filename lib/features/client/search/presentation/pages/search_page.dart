@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:yvenist/features/client/shared/listing_results_view.dart';
@@ -147,7 +148,7 @@ class _Suggestions extends StatelessWidget {
         if (categories.isEmpty) return const SizedBox.shrink();
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: context.withSystemBottomInset(const EdgeInsets.all(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -6,6 +6,7 @@ import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
+import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:yvenist/features/client/shared/catalog_presentation.dart';
@@ -291,7 +292,10 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
             ),
           ),
         ),
+        // O rodapé vai até a borda de baixo da tela e guarda, dentro dele, o
+        // espaço da barra de navegação do sistema.
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               Expanded(
@@ -724,7 +728,7 @@ class _BottomBar extends StatelessWidget {
     final colors = context.colors;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: context.withSystemBottomInset(const EdgeInsets.all(16)),
       decoration: BoxDecoration(
         color: colors.surface,
         // No tema escuro a sombra não se vê: uma linha separa a barra.

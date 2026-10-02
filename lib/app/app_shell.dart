@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/app/widgets/app_bottom_nav_bar.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
-import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/auth/presentation/auth_gate.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
@@ -50,38 +48,32 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
     final current = tabs.current;
     _visited.add(current);
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.systemUi(context.colors),
-      child: PopScope(
-        // O "voltar" do sistema, fora da Home, leva à Home em vez de fechar o
-        // app: é o mesmo destino das setas de voltar das abas.
-        canPop: current == AppTab.home,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) tabs.goTo(AppTab.home);
-        },
-        child: Scaffold(
-          body: IndexedStack(
-            index: current.index,
-            children: [
-              for (final tab in AppTab.values)
-                _visited.contains(tab)
-                    ? _tabRoot(tab)
-                    : const SizedBox.shrink(),
-            ],
-          ),
-          bottomNavigationBar: AppBottomNavBar(
-            current: current,
-            onSelected: tabs.goTo,
-          ),
-          floatingActionButton: PartyTabButton(
-            isSelected: current == AppTab.partyMaker,
-            onPressed: () => tabs.goTo(AppTab.partyMaker),
-          ),
-          floatingActionButtonLocation: const PartyTabButtonLocation(),
-          // O botão faz parte da barra: não entra nem sai com animação.
-          floatingActionButtonAnimator:
-              FloatingActionButtonAnimator.noAnimation,
+    return PopScope(
+      // O "voltar" do sistema, fora da Home, leva à Home em vez de fechar o
+      // app: é o mesmo destino das setas de voltar das abas.
+      canPop: current == AppTab.home,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) tabs.goTo(AppTab.home);
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: current.index,
+          children: [
+            for (final tab in AppTab.values)
+              _visited.contains(tab) ? _tabRoot(tab) : const SizedBox.shrink(),
+          ],
         ),
+        bottomNavigationBar: AppBottomNavBar(
+          current: current,
+          onSelected: tabs.goTo,
+        ),
+        floatingActionButton: PartyTabButton(
+          isSelected: current == AppTab.partyMaker,
+          onPressed: () => tabs.goTo(AppTab.partyMaker),
+        ),
+        floatingActionButtonLocation: const PartyTabButtonLocation(),
+        // O botão faz parte da barra: não entra nem sai com animação.
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       ),
     );
   }
