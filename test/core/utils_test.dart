@@ -116,6 +116,23 @@ void main() {
     });
   });
 
+  group('formatDocument', () {
+    test('pontua CPF e CNPJ, inclusive o alfanumérico', () {
+      expect(formatDocument('52998224725'), '529.982.247-25');
+      expect(formatDocument('11222333000181'), '11.222.333/0001-81');
+      expect(formatDocument('12abc34501de35'), '12.ABC.345/01DE-35');
+    });
+
+    test('aceita o que já veio pontuado', () {
+      expect(formatDocument('529.982.247-25'), '529.982.247-25');
+    });
+
+    test('devolve como veio o que não tem tamanho de documento', () {
+      expect(formatDocument('12345'), '12345');
+      expect(formatDocument(''), '');
+    });
+  });
+
   group('UuidGenerator', () {
     final uuidV4 = RegExp(
       r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',

@@ -17,6 +17,21 @@ String normalizeDocument(String value) {
   return value.replaceAll(_nonAlphanumeric, '').toUpperCase();
 }
 
+/// Escreve um CPF (`529.982.247-25`) ou CNPJ (`11.222.333/0001-81`) com a
+/// pontuação usual. O que não tiver o tamanho de um dos dois volta como veio.
+String formatDocument(String value) {
+  final d = normalizeDocument(value);
+  return switch (d.length) {
+    11 =>
+      '${d.substring(0, 3)}.${d.substring(3, 6)}.${d.substring(6, 9)}'
+          '-${d.substring(9)}',
+    14 =>
+      '${d.substring(0, 2)}.${d.substring(2, 5)}.${d.substring(5, 8)}'
+          '/${d.substring(8, 12)}-${d.substring(12)}',
+    _ => value,
+  };
+}
+
 bool _allSame(String value) => value.split('').toSet().length == 1;
 
 bool isValidCpf(String value) {

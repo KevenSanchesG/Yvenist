@@ -1,5 +1,6 @@
 import 'package:yvenist/core/error/app_failure.dart';
 import 'package:yvenist/core/network/api_client.dart';
+import 'package:yvenist/features/vendor/data/vendor_api_mapping.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 import 'package:yvenist/features/vendor/domain/vendor_repository.dart';
 
@@ -41,7 +42,7 @@ class ApiVendorRepository implements VendorRepository {
               authenticated: true,
               body: {
                 'vendor': {
-                  'person_type': _personTypes[draft.personType],
+                  'person_type': personTypeToApi[draft.personType],
                   'document': draft.document,
                   'legal_name': draft.legalName,
                 },
@@ -65,17 +66,6 @@ class ApiVendorRepository implements VendorRepository {
     return _profileFromJson(json['vendor'] as Json);
   }
 
-  static const Map<PersonType, String> _personTypes = {
-    PersonType.individual: 'pf',
-    PersonType.company: 'pj',
-  };
-
-  static const Map<String, VendorStatus> _statuses = {
-    'pending_review': VendorStatus.pendingReview,
-    'approved': VendorStatus.approved,
-    'rejected': VendorStatus.rejected,
-  };
-
   static const Map<String, VendorListingStatus> _listingStatuses = {
     'draft': VendorListingStatus.draft,
     'pending_review': VendorListingStatus.pendingReview,
@@ -86,9 +76,7 @@ class ApiVendorRepository implements VendorRepository {
 
   static VendorProfile _profileFromJson(Json json) {
     return VendorProfile(
-      // Um status que o app ainda não conhece é tratado como "em análise":
-      // não libera nada indevidamente.
-      status: _statuses[json['status']] ?? VendorStatus.pendingReview,
+      status: vendorStatusFromApi(json['status']),
       legalName: json['legal_name'] as String,
       documentMasked: json['document_masked'] as String,
       rejectionReason: json['rejection_reason'] as String?,

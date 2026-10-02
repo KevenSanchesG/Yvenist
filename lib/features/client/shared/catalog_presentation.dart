@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
+import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 
 /// Como os conceitos do catálogo aparecem na tela: ícones e rótulos.
 
@@ -23,6 +24,38 @@ const Map<String, IconData> _eventTypeIcons = {
   'barbecue': Icons.outdoor_grill,
   'graduation': Icons.school,
 };
+
+/// Comodidades que um anúncio pode declarar: chave enviada à API, rótulo e
+/// ícone. A API só valida a chave; o nome que a pessoa lê está aqui.
+const List<({String slug, String label, IconData icon})> amenityOptions = [
+  (slug: 'kitchen', label: 'Cozinha equipada', icon: Icons.kitchen),
+  (slug: 'air_conditioning', label: 'Ar-condicionado', icon: Icons.ac_unit),
+  (slug: 'parking', label: 'Estacionamento', icon: Icons.local_parking),
+  (slug: 'kids_area', label: 'Área kids', icon: Icons.child_care),
+  (slug: 'wifi', label: 'Wi-Fi', icon: Icons.wifi),
+  (slug: 'accessibility', label: 'Acessibilidade', icon: Icons.accessible),
+];
+
+/// Rótulo de uma comodidade; uma chave que o app ainda não conhece aparece
+/// como veio.
+String amenityLabel(String slug) {
+  for (final option in amenityOptions) {
+    if (option.slug == slug) return option.label;
+  }
+  return slug;
+}
+
+extension CancellationPolicyPresentation on CancellationPolicy {
+  String get label => switch (this) {
+    CancellationPolicy.flexible => 'Flexível',
+    CancellationPolicy.moderate => 'Moderada',
+  };
+
+  String get summary => switch (this) {
+    CancellationPolicy.flexible => 'Reembolso total até 48h antes.',
+    CancellationPolicy.moderate => 'Reembolso de 50% até 7 dias antes.',
+  };
+}
 
 /// Ícone de uma categoria; chaves desconhecidas (uma categoria nova criada no
 /// servidor) recebem um ícone genérico em vez de quebrar a tela.

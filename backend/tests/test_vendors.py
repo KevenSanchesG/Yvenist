@@ -415,6 +415,97 @@ class TestReview:
         assert stored.status is VendorStatus.PENDING_REVIEW
         assert stored.reviewed_by is None
 
+    def test_rejecting_a_vendor_rejects_the_listings_waiting_with_it(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        vendor_id = onboarding(client, user).json()["vendor"]["id"]
+
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "Documento ilegível."},
+        )
+
+        (listing,) = client.get(MY_LISTINGS, headers=user.headers).json()["items"]
+        assert listing["status"] == "rejected"
+        assert listing["rejection_reason"] == "Documento ilegível."
+        # Sem o cadastro o anúncio não tem como ser publicado: não fica na fila.
+        assert client.get(ADMIN_LISTINGS, headers=admin.headers).json()["items"] == []
+
+    def test_resubmission_does_not_publish_the_listing_rejected_with_the_vendor(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        # Regressão: o anúncio do primeiro envio continuava "em análise" depois
+        # da recusa do cadastro; ao corrigir e reenviar, a aprovação publicava
+        # os dois, e o mesmo salão aparecia duas vezes no catálogo.
+        vendor_id = onboarding(client, user).json()["vendor"]["id"]
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "Documento ilegível."},
+        )
+        resubmitted = onboarding(client, user).json()
+
+        client.post(f"{ADMIN_VENDORS}/{vendor_id}/approve", headers=admin.headers)
+
+        catalog = client.get(CATALOG).json()["items"]
+        assert [listing["id"] for listing in catalog] == [resubmitted["listing"]["id"]]
+
+    def test_rejecting_a_vendor_leaves_the_listings_of_other_vendors_alone(
+        self,
+        client: TestClient,
+        user: AuthenticatedUser,
+        other_user: AuthenticatedUser,
+        admin: AuthenticatedUser,
+    ) -> None:
+        other_vendor = onboarding(
+            client, other_user, vendor=vendor_data(document=VALID_CPFS[2])
+        ).json()["vendor"]
+        vendor_id = onboarding(client, user).json()["vendor"]["id"]
+
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "Documento ilegível."},
+        )
+
+        # Só os anúncios do cadastro recusado saem da fila.
+        (still_pending,) = client.get(ADMIN_LISTINGS, headers=admin.headers).json()["items"]
+        assert still_pending["vendor_id"] == other_vendor["id"]
+
+    def test_listing_queue_says_whose_listing_it_is(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        created = onboarding(client, user).json()
+
+        (pending,) = client.get(ADMIN_LISTINGS, headers=admin.headers).json()["items"]
+
+        assert pending["id"] == created["listing"]["id"]
+        assert pending["vendor_id"] == created["vendor"]["id"]
+        assert pending["vendor_legal_name"] == "Maria Oliveira"
+        assert pending["vendor_status"] == "pending_review"
+        assert pending["created_at"] is not None
+        # O documento do fornecedor fica só na fila de cadastros.
+        assert "document" not in pending
+
+    def test_a_listing_decision_answers_with_the_vendor_too(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        created = onboarding(client, user).json()
+        client.post(
+            f"{ADMIN_VENDORS}/{created['vendor']['id']}/approve",
+            headers=admin.headers,
+            json={"publish_pending_listings": False},
+        )
+
+        approved = client.post(
+            f"{ADMIN_LISTINGS}/{created['listing']['id']}/approve", headers=admin.headers
+        ).json()
+
+        assert approved["status"] == "published"
+        assert approved["vendor_status"] == "approved"
+        assert approved["vendor_legal_name"] == "Maria Oliveira"
+
     def test_a_decision_cannot_be_made_twice(
         self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
     ) -> None:

@@ -9,18 +9,9 @@ import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:yvenist/features/client/shared/catalog_presentation.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 import 'package:yvenist/features/vendor/presentation/controllers/vendor_controller.dart';
-
-/// Comodidades que um salão pode declarar: chave enviada à API, rótulo e ícone.
-const List<({String slug, String label, IconData icon})> _amenityOptions = [
-  (slug: 'kitchen', label: 'Cozinha equipada', icon: Icons.kitchen),
-  (slug: 'air_conditioning', label: 'Ar-condicionado', icon: Icons.ac_unit),
-  (slug: 'parking', label: 'Estacionamento', icon: Icons.local_parking),
-  (slug: 'kids_area', label: 'Área kids', icon: Icons.child_care),
-  (slug: 'wifi', label: 'Wi-Fi', icon: Icons.wifi),
-  (slug: 'accessibility', label: 'Acessibilidade', icon: Icons.accessible),
-];
 
 const int _maxPriceCents = 100000000; // R$ 1 milhão, o teto aceito pela API.
 const int _descriptionMinLength = 20;
@@ -547,7 +538,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
       title: 'O que o espaço oferece?',
       subtitle: 'Opcional. Marque o que estiver disponível.',
       children: [
-        for (final option in _amenityOptions)
+        for (final option in amenityOptions)
           CheckboxListTile(
             title: Text(option.label),
             secondary: Icon(option.icon),
@@ -589,20 +580,15 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         RadioGroup<CancellationPolicy>(
           groupValue: _policy,
           onChanged: (value) => setState(() => _policy = value ?? _policy),
-          child: const Column(
+          child: Column(
             children: [
-              RadioListTile(
-                value: CancellationPolicy.flexible,
-                contentPadding: EdgeInsets.zero,
-                title: Text('Flexível'),
-                subtitle: Text('Reembolso total até 48h antes.'),
-              ),
-              RadioListTile(
-                value: CancellationPolicy.moderate,
-                contentPadding: EdgeInsets.zero,
-                title: Text('Moderada'),
-                subtitle: Text('Reembolso de 50% até 7 dias antes.'),
-              ),
+              for (final policy in CancellationPolicy.values)
+                RadioListTile(
+                  value: policy,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(policy.label),
+                  subtitle: Text(policy.summary),
+                ),
             ],
           ),
         ),
@@ -623,7 +609,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         if (_eventTypes.contains(type.slug)) type.name,
     ];
     final amenityNames = [
-      for (final option in _amenityOptions)
+      for (final option in amenityOptions)
         if (_amenities.contains(option.slug)) option.label,
     ];
 
@@ -665,12 +651,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
                 label: 'Preço a partir de',
                 value: priceCents == null ? '' : formatBrl(priceCents),
               ),
-              _ReviewRow(
-                label: 'Cancelamento',
-                value: _policy == CancellationPolicy.flexible
-                    ? 'Flexível'
-                    : 'Moderada',
-              ),
+              _ReviewRow(label: 'Cancelamento', value: _policy.label),
             ],
           ),
         ),

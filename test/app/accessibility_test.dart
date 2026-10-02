@@ -5,6 +5,7 @@ import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/client/shared/listing_card.dart';
 
 import '../support/app_harness.dart';
+import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
 /// Verificações de acessibilidade nas telas principais.
@@ -130,6 +131,39 @@ void main() {
       await tapAndSettle(tester, filledButton('Avançar'));
       await expectAccessible(tester);
     });
+
+    appTest('termos e política', (tester, app) async {
+      await openTab(tester, 'Perfil');
+      await scrollToAndTap(tester, find.text('Termos e Política'));
+      await expectAccessible(tester);
+
+      await tapAndSettle(tester, find.text('Termos de Uso'));
+      await expectAccessible(tester);
+    });
+
+    appTest(
+      'fila de análise, com os diálogos de decisão',
+      (tester, app) async {
+        await openTab(tester, 'Perfil');
+        await expectAccessible(tester);
+
+        await scrollToAndTap(tester, find.text('Fila de análise'));
+        await expectAccessible(tester);
+
+        await tapAndSettle(tester, find.text('Aprovar'));
+        await expectAccessible(tester);
+        await tapAndSettle(tester, find.text('Cancelar'));
+
+        await tapAndSettle(tester, find.text('Recusar'));
+        await expectAccessible(tester);
+        await tapAndSettle(tester, find.text('Cancelar'));
+
+        await tapAndSettle(tester, find.text('Anúncios (2)'));
+        await tapAndSettle(tester, find.text('Ver detalhes').first);
+        await expectAccessible(tester);
+      },
+      dependencies: () => adminDependencies(sampleReviewQueue()),
+    );
   });
 
   group('leitores de tela', () {
@@ -332,6 +366,31 @@ void main() {
         expect(find.text('Informe seu nome.'), findsOneWidget);
       },
       signedIn: false,
+      textScale: scale,
+    );
+
+    appTest(
+      'fila de análise, diálogos e detalhes do anúncio',
+      (tester, app) async {
+        await openTab(tester, 'Perfil');
+        await scrollToAndTap(tester, find.text('Fila de análise'));
+
+        await tapAndSettle(tester, find.text('Aprovar'));
+        await tapAndSettle(tester, find.text('Cancelar'));
+        await tapAndSettle(tester, find.text('Recusar'));
+        await tapAndSettle(tester, find.text('Recusar').last);
+        expect(find.text('Explique o motivo da recusa.'), findsOneWidget);
+        await tapAndSettle(tester, find.text('Cancelar'));
+
+        await tapAndSettle(tester, find.textContaining('Anúncios'));
+        await tapAndSettle(tester, find.text('Ver detalhes').first);
+
+        expect(
+          find.textContaining('Capacidade', findRichText: true),
+          findsOneWidget,
+        );
+      },
+      dependencies: () => adminDependencies(sampleReviewQueue()),
       textScale: scale,
     );
 

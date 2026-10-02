@@ -2,6 +2,9 @@ import 'package:http/http.dart' as http;
 import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/network/api_client.dart';
 import 'package:yvenist/core/storage/token_storage.dart';
+import 'package:yvenist/features/admin/data/api_review_repository.dart';
+import 'package:yvenist/features/admin/data/in_memory_review_repository.dart';
+import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/auth/data/api_auth_repository.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/auth/domain/repositories/auth_repository.dart';
@@ -31,6 +34,7 @@ class AppDependencies {
     required this.favorites,
     required this.parties,
     required this.vendors,
+    required this.reviews,
     this.apiClient,
   });
 
@@ -60,6 +64,7 @@ class AppDependencies {
       favorites: ApiFavoritesRepository(api),
       parties: ApiPartyRepository(api),
       vendors: ApiVendorRepository(api),
+      reviews: ApiReviewRepository(api),
     );
   }
 
@@ -80,6 +85,7 @@ class AppDependencies {
       vendors: InMemoryVendorRepository(
         currentUserId: () => auth.currentUserId,
       ),
+      reviews: InMemoryReviewRepository(),
     );
   }
 
@@ -89,6 +95,7 @@ class AppDependencies {
   final FavoritesRepository favorites;
   final PartyRepository parties;
   final VendorRepository vendors;
+  final ReviewRepository reviews;
 
   /// Presente só quando o app fala com a API.
   final ApiClient? apiClient;

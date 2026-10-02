@@ -162,21 +162,36 @@ class VendorService:
         profile.rejection_reason = reason
         profile.reviewed_at = utcnow()
         profile.reviewed_by = admin.id
+
+        # Os anúncios que aguardavam junto com o cadastro não têm como ser
+        # publicados sem ele: saem da fila com o mesmo motivo. Quem corrige e
+        # reenvia manda um anúncio novo; se o antigo continuasse em análise, a
+        # aprovação do reenvio publicaria os dois.
+        pending = self._db.scalars(
+            select(Listing).where(
+                Listing.vendor_id == profile.id,
+                Listing.status == ListingStatus.PENDING_REVIEW,
+            )
+        )
+        for listing in pending:
+            listing.status = ListingStatus.REJECTED
+            listing.rejection_reason = reason
         self._db.commit()
         return profile
 
-    def list_listings_by_status(self, status: ListingStatus) -> list[Listing]:
-        return list(
-            self._db.scalars(
-                select(Listing)
-                .where(Listing.status == status)
-                .options(selectinload(Listing.event_types))
-                .order_by(Listing.created_at, Listing.id)
-                .limit(_REVIEW_QUEUE_PAGE_SIZE)
-            )
+    def list_listings_by_status(self, status: ListingStatus) -> list[tuple[Listing, VendorProfile]]:
+        """Cada anúncio com o cadastro de quem anuncia: a análise precisa dos dois."""
+        rows = self._db.execute(
+            select(Listing, VendorProfile)
+            .join(VendorProfile, VendorProfile.id == Listing.vendor_id)
+            .where(Listing.status == status)
+            .options(selectinload(Listing.event_types))
+            .order_by(Listing.created_at, Listing.id)
+            .limit(_REVIEW_QUEUE_PAGE_SIZE)
         )
+        return [(listing, vendor) for listing, vendor in rows]
 
-    def approve_listing(self, listing_id: uuid.UUID) -> Listing:
+    def approve_listing(self, listing_id: uuid.UUID) -> tuple[Listing, VendorProfile]:
         listing = self._pending_listing(listing_id)
         vendor = self._db.get(VendorProfile, listing.vendor_id)
         if vendor is None or vendor.status is not VendorStatus.APPROVED:
@@ -185,14 +200,17 @@ class VendorService:
         listing.rejection_reason = None
         listing.published_at = utcnow()
         self._db.commit()
-        return listing
+        return listing, vendor
 
-    def reject_listing(self, listing_id: uuid.UUID, *, reason: str) -> Listing:
+    def reject_listing(
+        self, listing_id: uuid.UUID, *, reason: str
+    ) -> tuple[Listing, VendorProfile]:
         listing = self._pending_listing(listing_id)
+        vendor = self._db.get_one(VendorProfile, listing.vendor_id)
         listing.status = ListingStatus.REJECTED
         listing.rejection_reason = reason
         self._db.commit()
-        return listing
+        return listing, vendor
 
     # ------------------------------------------------------------------
     # Internos

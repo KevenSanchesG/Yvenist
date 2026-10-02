@@ -6,6 +6,7 @@ import 'package:yvenist/app/app_shell.dart';
 import 'package:yvenist/app/app_state.dart';
 import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
+import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 
 /// Raiz do app: disponibiliza as dependências para as telas e define tema,
@@ -26,6 +27,7 @@ class YvenistApp extends StatelessWidget {
       providers: [
         Provider<AppConfig>.value(value: dependencies.config),
         Provider<CatalogRepository>.value(value: dependencies.catalog),
+        Provider<ReviewRepository>.value(value: dependencies.reviews),
         // .value: os controllers pertencem ao AppState, que os descarta.
         ChangeNotifierProvider.value(value: state.session),
         ChangeNotifierProvider.value(value: state.tabs),

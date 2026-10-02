@@ -3,8 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yvenist/app/app_dependencies.dart';
 
 import '../support/app_harness.dart';
+import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
 /// Gera as imagens de `docs/screenshots` a partir das telas reais do app, em
@@ -28,11 +30,16 @@ void main() {
     String description,
     Future<void> Function(WidgetTester tester) body, {
     bool signedIn = true,
+    AppDependencies Function()? dependencies,
   }) {
     testWidgets(description, (tester) {
       return withFakeNetworkImages(() async {
         usePhoneScreen(tester);
-        await pumpYvenistApp(tester, signedIn: signedIn);
+        await pumpYvenistApp(
+          tester,
+          signedIn: signedIn,
+          dependencies: dependencies?.call(),
+        );
         await body(tester);
       });
     });
@@ -114,6 +121,19 @@ void main() {
 
     await capture(tester, 'termos-de-uso');
   });
+
+  screenshots(
+    'fila de análise (administração)',
+    (tester) async {
+      await openTab(tester, 'Perfil');
+      await scrollToAndTap(tester, find.text('Fila de análise'));
+      await capture(tester, 'admin-fornecedores');
+
+      await tapAndSettle(tester, find.text('Anúncios (2)'));
+      await capture(tester, 'admin-anuncios');
+    },
+    dependencies: () => adminDependencies(sampleReviewQueue()),
+  );
 
   screenshots('entrar', signedIn: false, (tester) async {
     await openTab(tester, 'Perfil');

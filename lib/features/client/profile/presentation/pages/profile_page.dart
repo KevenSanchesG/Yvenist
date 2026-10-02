@@ -7,6 +7,7 @@ import 'package:yvenist/core/theme/app_colors.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/theme/app_typography.dart';
 import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/features/admin/presentation/pages/review_queue_page.dart';
 import 'package:yvenist/features/auth/domain/entities/app_user.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
 import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
@@ -122,6 +123,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   else
                     ..._clientContent(vendor),
                   const SizedBox(height: 20),
+                  if (user.isAdmin) ..._adminContent(),
                   ..._commonFooter(),
                 ],
               ),
@@ -257,6 +259,25 @@ class _ProfilePageState extends State<ProfilePage> {
           _MenuItem(icon: Icons.account_balance, title: 'Dados Bancários'),
         ],
       ),
+    ];
+  }
+
+  // ---------------------------------------------------------
+  // Administração (só para contas de administração)
+  // ---------------------------------------------------------
+  List<Widget> _adminContent() {
+    return [
+      const _SectionTitle('Administração'),
+      _MenuCard(
+        children: [
+          _MenuItem(
+            icon: Icons.fact_check_outlined,
+            title: 'Fila de análise',
+            onTap: () => _push(const ReviewQueuePage()),
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
     ];
   }
 

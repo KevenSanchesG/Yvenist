@@ -112,6 +112,14 @@ abstract final class AppTheme {
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
       ),
+      // Abas com as cores de texto do app: o laranja da marca, sozinho, não
+      // tem contraste suficiente para o rótulo.
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.primaryStrong,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primaryStrong,
+        dividerColor: AppColors.divider,
+      ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.primary,
       ),

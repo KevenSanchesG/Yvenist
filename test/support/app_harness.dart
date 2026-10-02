@@ -5,6 +5,8 @@ import 'package:yvenist/app/app_state.dart';
 import 'package:yvenist/app/widgets/app_bottom_nav_bar.dart';
 import 'package:yvenist/app/yvenist_app.dart';
 import 'package:yvenist/core/config/app_config.dart';
+import 'package:yvenist/features/admin/data/in_memory_review_repository.dart';
+import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/auth/domain/repositories/auth_repository.dart';
 import 'package:yvenist/features/catalog/data/in_memory_catalog_repository.dart';
@@ -69,11 +71,13 @@ void appTest(
 }
 
 /// As dependências do modo demonstração, com a possibilidade de trocar o
-/// catálogo ou a autenticação por uma versão que falha.
+/// catálogo, a autenticação ou a fila de análise por outra versão (uma que
+/// falha, ou uma já com itens).
 AppDependencies demoDependencies({
   InMemoryAuthRepository? auth,
   AuthRepository? authOverride,
   CatalogRepository? catalog,
+  ReviewRepository? reviews,
 }) {
   final accounts = auth ?? InMemoryAuthRepository();
   return AppDependencies(
@@ -87,6 +91,7 @@ AppDependencies demoDependencies({
     vendors: InMemoryVendorRepository(
       currentUserId: () => accounts.currentUserId,
     ),
+    reviews: reviews ?? InMemoryReviewRepository(),
   );
 }
 

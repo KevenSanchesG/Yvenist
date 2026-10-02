@@ -173,6 +173,31 @@ class AdminVendorsResponse(BaseModel):
     items: list[AdminVendorResponse]
 
 
+class AdminListingResponse(VendorListingResponse):
+    """Para quem analisa o anúncio: diz de quem ele é e desde quando espera."""
+
+    created_at: datetime
+    vendor_id: uuid.UUID
+    vendor_legal_name: str
+    # Um anúncio só pode ser publicado se o fornecedor já foi aprovado.
+    vendor_status: VendorStatus
+
+    @classmethod
+    def from_review(cls, listing: Listing, vendor: VendorProfile) -> Self:
+        base = VendorListingResponse.from_listing(listing)
+        return cls(
+            **base.model_dump(),
+            created_at=listing.created_at,
+            vendor_id=vendor.id,
+            vendor_legal_name=vendor.legal_name,
+            vendor_status=vendor.status,
+        )
+
+
+class AdminListingsResponse(BaseModel):
+    items: list[AdminListingResponse]
+
+
 class ApproveVendorRequest(BaseModel):
     # Publica junto os anúncios do fornecedor que aguardam análise.
     publish_pending_listings: bool = True

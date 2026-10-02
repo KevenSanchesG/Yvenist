@@ -7,6 +7,8 @@ from app.api.deps import AdminUser, CurrentUser, DbSession, get_admin_user
 from app.modules.catalog.models import ListingStatus
 from app.modules.vendors.models import VendorStatus
 from app.modules.vendors.schemas import (
+    AdminListingResponse,
+    AdminListingsResponse,
     AdminVendorResponse,
     AdminVendorsResponse,
     ApproveVendorRequest,
@@ -94,7 +96,10 @@ def approve_vendor(
     return AdminVendorResponse.from_profile(profile)
 
 
-@admin_router.post("/vendors/{vendor_id}/reject", summary="Recusa um cadastro de fornecedor")
+@admin_router.post(
+    "/vendors/{vendor_id}/reject",
+    summary="Recusa um cadastro de fornecedor e os anúncios que aguardavam com ele",
+)
 def reject_vendor(
     vendor_id: uuid.UUID,
     data: RejectRequest,
@@ -106,22 +111,22 @@ def reject_vendor(
     )
 
 
-@admin_router.get("/listings", summary="Anúncios por status")
+@admin_router.get("/listings", summary="Anúncios por status, com o fornecedor de cada um")
 def list_listings(
     service: VendorServiceDep,
     listing_status: Annotated[ListingStatus, Query(alias="status")] = ListingStatus.PENDING_REVIEW,
-) -> VendorListingsResponse:
-    return VendorListingsResponse(
+) -> AdminListingsResponse:
+    return AdminListingsResponse(
         items=[
-            VendorListingResponse.from_listing(listing)
-            for listing in service.list_listings_by_status(listing_status)
+            AdminListingResponse.from_review(listing, vendor)
+            for listing, vendor in service.list_listings_by_status(listing_status)
         ]
     )
 
 
 @admin_router.post("/listings/{listing_id}/approve", summary="Publica um anúncio")
-def approve_listing(listing_id: uuid.UUID, service: VendorServiceDep) -> VendorListingResponse:
-    return VendorListingResponse.from_listing(service.approve_listing(listing_id))
+def approve_listing(listing_id: uuid.UUID, service: VendorServiceDep) -> AdminListingResponse:
+    return AdminListingResponse.from_review(*service.approve_listing(listing_id))
 
 
 @admin_router.post("/listings/{listing_id}/reject", summary="Recusa um anúncio")
@@ -129,7 +134,5 @@ def reject_listing(
     listing_id: uuid.UUID,
     data: RejectRequest,
     service: VendorServiceDep,
-) -> VendorListingResponse:
-    return VendorListingResponse.from_listing(
-        service.reject_listing(listing_id, reason=data.reason)
-    )
+) -> AdminListingResponse:
+    return AdminListingResponse.from_review(*service.reject_listing(listing_id, reason=data.reason))

@@ -1,7 +1,6 @@
 @Tags(['integration'])
 library;
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +12,7 @@ import 'package:yvenist/core/network/api_client.dart';
 import 'package:yvenist/core/storage/token_storage.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/id_generator.dart';
+import 'package:yvenist/features/admin/domain/review_models.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
@@ -23,6 +23,8 @@ import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.d
 import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
+
+import '../support/test_environment.dart';
 
 /// O app de verdade contra a API de verdade.
 ///
@@ -42,15 +44,24 @@ import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 /// - estar com o limite de requisições desligado
 ///   (`YVENIST_RATE_LIMIT_ENABLED=false`): os testes criam várias contas.
 ///
-/// O teste de aprovação pela administração só roda se `YVENIST_ADMIN_EMAIL` e
+/// Os testes da fila de análise só rodam se `YVENIST_ADMIN_EMAIL` e
 /// `YVENIST_ADMIN_PASSWORD` apontarem para uma conta criada com
 /// `python -m app.cli create-admin`.
+///
+/// Os mesmos testes rodam dentro do navegador, que é o que prova que o app
+/// web conversa com a API (CORS e o cliente HTTP do navegador). Lá os valores
+/// vão por `--dart-define`, e a API precisa autorizar a origem do teste:
+///
+/// ```
+/// flutter test --platform chrome --tags integration test/integration `
+///   --dart-define=YVENIST_API_URL=http://127.0.0.1:8000/api/v1
+/// ```
 void main() {
   final apiUrl = AppConfig.parseBaseUrl(
-    Platform.environment['YVENIST_API_URL'] ?? '',
+    testEnvironment('YVENIST_API_URL') ?? '',
   );
-  final adminEmail = Platform.environment['YVENIST_ADMIN_EMAIL'];
-  final adminPassword = Platform.environment['YVENIST_ADMIN_PASSWORD'];
+  final adminEmail = testEnvironment('YVENIST_ADMIN_EMAIL');
+  final adminPassword = testEnvironment('YVENIST_ADMIN_PASSWORD');
 
   final random = Random();
   final devices = <Device>[];
@@ -790,40 +801,104 @@ void main() {
           final (phone, _) = await signedUpDevice();
 
           await expectLater(
-            phone.api.get('/admin/vendors', authenticated: true),
+            phone.deps.reviews.pending(),
+            throwsA(isA<ForbiddenFailure>()),
+          );
+          await expectLater(
+            phone.deps.reviews.approveVendor(
+              '00000000-0000-4000-8000-000000000000',
+              publishListings: true,
+            ),
             throwsA(isA<ForbiddenFailure>()),
           );
         });
 
+        final adminSkip = adminEmail == null || adminPassword == null
+            ? 'Defina YVENIST_ADMIN_EMAIL e YVENIST_ADMIN_PASSWORD.'
+            : null;
+
+        /// Um aparelho com a conta de administração autenticada.
+        Future<Device> adminDevice() async {
+          final admin = await device();
+          await admin.signIn(
+            Account(
+              name: 'Administração',
+              email: adminEmail!,
+              password: adminPassword!,
+            ),
+          );
+          expect(admin.state.session.user!.isAdmin, isTrue);
+          return admin;
+        }
+
+        /// O anúncio com este título na fila de análise, ou `null`.
+        Future<ListingReview?> queued(Device admin, String title) async {
+          final queue = await admin.deps.reviews.pending();
+          return queue.listings.where((l) => l.title == title).firstOrNull;
+        }
+
         test(
           'aprovado pela administração, o anúncio chega até a festa',
-          skip: adminEmail == null || adminPassword == null
-              ? 'Defina YVENIST_ADMIN_EMAIL e YVENIST_ADMIN_PASSWORD.'
-              : null,
+          skip: adminSkip,
           () async {
             final (vendorPhone, _) = await signedUpDevice();
-            final draft = hall(document: randomCpf(random));
+            final cpf = randomCpf(random);
+            final draft = hall(document: cpf);
             expect(await vendorPhone.state.vendor.submitHall(draft), isTrue);
 
-            // A administração encontra o cadastro na fila e aprova.
-            final admin = await device();
-            await admin.signIn(
-              Account(
-                name: 'Administração',
-                email: adminEmail!,
-                password: adminPassword!,
+            // A administração encontra o anúncio na fila, com o cadastro de
+            // quem anuncia, e vê o documento completo para conferir.
+            final admin = await adminDevice();
+            final queue = await admin.deps.reviews.pending();
+            final pendingListing = queue.listings.singleWhere(
+              (l) => l.title == draft.title,
+            );
+            expect(pendingListing.vendorName, 'Maria Oliveira');
+            expect(pendingListing.location, 'Pituba, Salvador, BA');
+            expect(pendingListing.priceFromCents, 250000);
+            expect(pendingListing.eventTypes, ['wedding', 'debutante']);
+            expect(
+              pendingListing.cancellationPolicy,
+              CancellationPolicy.moderate,
+            );
+            expect(pendingListing.canBePublished, isFalse);
+            final pendingVendor = queue.vendors.singleWhere(
+              (v) => v.id == pendingListing.vendorId,
+            );
+            expect(pendingVendor.document, cpf);
+            expect(pendingVendor.personType, PersonType.individual);
+            expect(queue.listingsOf(pendingVendor.id), hasLength(1));
+
+            // Antes do cadastro, o anúncio não pode ser publicado.
+            await expectLater(
+              admin.deps.reviews.approveListing(pendingListing.id),
+              throwsA(
+                isA<ConflictFailure>().having(
+                  (f) => f.code,
+                  'code',
+                  'vendor_not_approved',
+                ),
               ),
             );
-            expect(admin.state.session.user!.isAdmin, isTrue);
-            final queue =
-                await admin.api.get('/admin/vendors', authenticated: true)
-                    as Json;
-            final pending = (queue['items'] as List).cast<Json>().firstWhere(
-              (item) => item['user_id'] == vendorPhone.state.session.user!.id,
+
+            await admin.deps.reviews.approveVendor(
+              pendingVendor.id,
+              publishListings: true,
             );
-            await admin.api.post(
-              '/admin/vendors/${pending['id']}/approve',
-              authenticated: true,
+            expect(await queued(admin, draft.title), isNull);
+            // A mesma decisão duas vezes é recusada.
+            await expectLater(
+              admin.deps.reviews.approveVendor(
+                pendingVendor.id,
+                publishListings: true,
+              ),
+              throwsA(
+                isA<ConflictFailure>().having(
+                  (f) => f.code,
+                  'code',
+                  'already_reviewed',
+                ),
+              ),
             );
 
             await vendorPhone.state.vendor.load();
@@ -852,6 +927,133 @@ void main() {
               reason: client.state.parties.error,
             );
             expect(client.state.parties.activePartyTotalCents, 250000);
+          },
+        );
+
+        test(
+          'recusado pela administração: o fornecedor vê o motivo, corrige e '
+          'só o anúncio novo é publicado',
+          skip: adminSkip,
+          () async {
+            final (vendorPhone, _) = await signedUpDevice();
+            final vendor = vendorPhone.state.vendor;
+            final cpf = randomCpf(random);
+            final first = hall(document: cpf);
+            expect(await vendor.submitHall(first), isTrue);
+
+            final admin = await adminDevice();
+            final rejectedListing = (await queued(admin, first.title))!;
+
+            // Recusa sem motivo não passa.
+            await expectLater(
+              admin.deps.reviews.rejectVendor(
+                rejectedListing.vendorId,
+                reason: '  ',
+              ),
+              throwsA(
+                isA<ValidationFailure>().having(
+                  (f) => f.message,
+                  'message',
+                  'Explique o motivo da recusa.',
+                ),
+              ),
+            );
+            await admin.deps.reviews.rejectVendor(
+              rejectedListing.vendorId,
+              reason: 'Documento ilegível.',
+            );
+
+            // O anúncio que veio com o cadastro sai da fila junto.
+            expect(await queued(admin, first.title), isNull);
+            await vendor.load();
+            expect(vendor.status, VendorStatus.rejected);
+            expect(vendor.profile!.rejectionReason, 'Documento ilegível.');
+            expect(vendor.listings.single.status, VendorListingStatus.rejected);
+            expect(
+              vendor.listings.single.rejectionReason,
+              'Documento ilegível.',
+            );
+
+            // Corrige e reenvia: volta para a fila com um anúncio novo.
+            final second = hall(document: cpf);
+            expect(await vendor.submitHall(second), isTrue);
+            expect(vendor.status, VendorStatus.pendingReview);
+            final resubmitted = (await queued(admin, second.title))!;
+            await admin.deps.reviews.approveVendor(
+              resubmitted.vendorId,
+              publishListings: true,
+            );
+
+            final catalog = vendorPhone.deps.catalog;
+            expect(
+              (await catalog.search(ListingQuery(text: second.title))).items,
+              hasLength(1),
+            );
+            // O anúncio recusado com o primeiro envio não é publicado.
+            expect(
+              (await catalog.search(ListingQuery(text: first.title))).items,
+              isEmpty,
+            );
+          },
+        );
+
+        test(
+          'anúncios novos de um fornecedor aprovado são publicados ou '
+          'recusados um a um',
+          skip: adminSkip,
+          () async {
+            final (vendorPhone, _) = await signedUpDevice();
+            final vendor = vendorPhone.state.vendor;
+            final cpf = randomCpf(random);
+            final first = hall(document: cpf);
+            expect(await vendor.submitHall(first), isTrue);
+
+            // Aprova o cadastro sem publicar: o anúncio fica na fila, liberado.
+            final admin = await adminDevice();
+            final waiting = (await queued(admin, first.title))!;
+            await admin.deps.reviews.approveVendor(
+              waiting.vendorId,
+              publishListings: false,
+            );
+            final released = (await queued(admin, first.title))!;
+            expect(released.canBePublished, isTrue);
+
+            final second = hall(document: cpf);
+            expect(await vendor.submitHall(second), isTrue);
+            final another = (await queued(admin, second.title))!;
+
+            await admin.deps.reviews.approveListing(released.id);
+            await admin.deps.reviews.rejectListing(
+              another.id,
+              reason: 'Fotos insuficientes.',
+            );
+
+            expect(await queued(admin, first.title), isNull);
+            expect(await queued(admin, second.title), isNull);
+            await vendor.load();
+            expect(vendor.isApproved, isTrue);
+            expect(
+              {for (final l in vendor.listings) l.title: l.status},
+              {
+                first.title: VendorListingStatus.published,
+                second.title: VendorListingStatus.rejected,
+              },
+            );
+            expect(
+              vendor.listings
+                  .singleWhere((l) => l.title == second.title)
+                  .rejectionReason,
+              'Fotos insuficientes.',
+            );
+            final catalog = vendorPhone.deps.catalog;
+            expect(
+              (await catalog.search(ListingQuery(text: first.title))).items,
+              hasLength(1),
+            );
+            expect(
+              (await catalog.search(ListingQuery(text: second.title))).items,
+              isEmpty,
+            );
           },
         );
       });
