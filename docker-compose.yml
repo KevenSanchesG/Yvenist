@@ -1,0 +1,43 @@
+# Ambiente local completo da API: PostgreSQL + migrações + servidor.
+#
+#   docker compose up --build
+#
+# As credenciais abaixo são só para desenvolvimento. Em produção, defina
+# YVENIST_ENV=production, um YVENIST_JWT_SECRET forte e a URL do banco real.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: yvenist
+      POSTGRES_PASSWORD: yvenist
+      POSTGRES_DB: yvenist
+    volumes:
+      - yvenist-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yvenist -d yvenist"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment: &api-env
+      YVENIST_ENV: development
+      YVENIST_DATABASE_URL: postgresql+psycopg://yvenist:yvenist@db:5432/yvenist
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    environment: *api-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  yvenist-db:

@@ -1,0 +1,1 @@
+"""Favoritos do usuário."""

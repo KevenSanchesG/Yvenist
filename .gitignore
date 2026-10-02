@@ -43,3 +43,23 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Chaves de assinatura do Android: nunca versionar.
+*.jks
+*.keystore
+/android/key.properties
+
+# Backend (Python)
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+backend/*.db
+
+# Configuração local e segredos: só o exemplo é versionado.
+.env
+.env.*
+!.env.example
