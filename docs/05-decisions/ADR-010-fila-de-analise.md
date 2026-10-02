@@ -7,9 +7,10 @@ date: 2026-10-02
 
 # ADR-010: Recusar um cadastro recusa os anúncios dele; a tela só publica o que mostrou
 
-**Status:** aceita, **aguardando confirmação dos donos** (é regra de negócio) ·
+**Status:** aceita, **confirmada pelos donos** em 2026-10-02 ·
 **Data:** 2026-10-02 · **Decidida por:** evolução técnica, ao construir a tela
-de administração (commit `bcece5c`)
+de administração (commit `bcece5c`); a regra de negócio foi confirmada pelos
+donos no mesmo dia ([confirmação](#confirmação))
 
 ## Contexto
 
@@ -63,3 +64,21 @@ Ao construir a tela da fila apareceram dois defeitos da regra antiga:
   enviou e não veria o motivo.
 - **Aprovar sempre sem publicar** e exigir uma decisão por anúncio: mais
   seguro e mais lento; no caso comum (um cadastro, um anúncio) dobra o trabalho.
+
+## Confirmação
+
+A regra de negócio deste ADR foi adotada pela evolução técnica e ficou
+aguardando os donos. Em 2 de outubro de 2026 a pergunta foi feita a eles, com
+estas palavras: "Você confirma que, quando um fornecedor for recusado, os
+anúncios que estavam aguardando análise desse fornecedor também devem ser
+recusados automaticamente?" A resposta foi **"Sim, confirmo"**.
+
+A confirmação cobre a regra da recusa. O restante da decisão (o que a fila
+mostra, "Publicar" desabilitado, a aprovação só publicar o que apareceu na
+tela) é escolha de tela e de segurança, e não dependia dos donos.
+
+Nada mudou no código com a confirmação: a regra já estava implementada em
+`reject_vendor` (`backend/app/modules/vendors/service.py`). Foram acrescentados
+dois testes para os limites dela, em `backend/tests/test_vendors.py`: todos os
+anúncios que aguardam com o cadastro são recusados, e um anúncio que já tinha
+sido recusado antes mantém o motivo daquela vez.

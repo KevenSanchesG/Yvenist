@@ -473,6 +473,52 @@ class TestReview:
         (still_pending,) = client.get(ADMIN_LISTINGS, headers=admin.headers).json()["items"]
         assert still_pending["vendor_id"] == other_vendor["id"]
 
+    def test_rejecting_a_vendor_rejects_every_listing_waiting_with_it(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        vendor_id = onboarding(client, user).json()["vendor"]["id"]
+        # Quem ainda aguarda a análise pode enviar outro anúncio.
+        onboarding(client, user, include_vendor=False, listing=listing_data(title="Segundo espaço"))
+
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "Documento ilegível."},
+        )
+
+        listings = client.get(MY_LISTINGS, headers=user.headers).json()["items"]
+        assert [(listing["status"], listing["rejection_reason"]) for listing in listings] == [
+            ("rejected", "Documento ilegível."),
+            ("rejected", "Documento ilegível."),
+        ]
+        assert client.get(ADMIN_LISTINGS, headers=admin.headers).json()["items"] == []
+
+    def test_a_second_rejection_keeps_the_reason_of_listings_rejected_before(
+        self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
+    ) -> None:
+        # Só os anúncios que aguardam mudam: o do primeiro envio já tinha sido
+        # recusado, e continua com o motivo daquela vez.
+        first = onboarding(client, user).json()
+        vendor_id = first["vendor"]["id"]
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "Documento ilegível."},
+        )
+        second = onboarding(client, user).json()["listing"]
+
+        client.post(
+            f"{ADMIN_VENDORS}/{vendor_id}/reject",
+            headers=admin.headers,
+            json={"reason": "O nome não confere com o documento."},
+        )
+
+        listings = client.get(MY_LISTINGS, headers=user.headers).json()["items"]
+        assert {listing["id"]: listing["rejection_reason"] for listing in listings} == {
+            first["listing"]["id"]: "Documento ilegível.",
+            second["id"]: "O nome não confere com o documento.",
+        }
+
     def test_listing_queue_says_whose_listing_it_is(
         self, client: TestClient, user: AuthenticatedUser, admin: AuthenticatedUser
     ) -> None:

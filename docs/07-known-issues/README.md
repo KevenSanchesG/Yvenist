@@ -36,7 +36,6 @@ gatilho, não é para agora.
 | KI-15 | Notas dos anúncios não têm quem as alimente | os cards mostram nota só nos dados de demonstração |
 | KI-16 | Sem recuperar senha nem confirmar e-mail | a primeira pessoa que esquecer a senha |
 | KI-17 | O laranja da marca (`#FF6600`) não tem contraste para texto | decisão do tom ([ADR-008](../05-decisions/ADR-008-acessibilidade-e-cores.md)) |
-| KI-18 | A regra "recusar o cadastro recusa os anúncios" aguarda confirmação | [ADR-010](../05-decisions/ADR-010-fila-de-analise.md) |
 
 ## Técnicos
 

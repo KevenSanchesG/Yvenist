@@ -21,7 +21,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [007](ADR-007-dinheiro-e-snapshots.md) | Dinheiro em centavos; item guarda cópia de nome e preço | aceita |
 | [008](ADR-008-acessibilidade-e-cores.md) | Dois laranjas; contraste testado pelos tokens | aceita, com pendência dos donos |
 | [009](ADR-009-erros-uniformes.md) | Um formato de erro, em português, com código estável | aceita |
-| [010](ADR-010-fila-de-analise.md) | Recusar um cadastro recusa os anúncios dele; a tela só publica o que mostrou | aceita, aguardando confirmação dos donos |
+| [010](ADR-010-fila-de-analise.md) | Recusar um cadastro recusa os anúncios dele; a tela só publica o que mostrou | aceita (confirmada pelos donos) |
 | [011](ADR-011-knowledge-base-em-docs.md) | Knowledge Base em `docs/`, aberta pelo Obsidian, sem MCP | aceita |
 | [012](ADR-012-ci-a-cada-envio.md) | CI a cada envio, em cinco jobs | aceita |
 | [013](ADR-013-identificador-do-app.md) | Identificador `com.yvenist.app` | aceita (decisão dos donos) |

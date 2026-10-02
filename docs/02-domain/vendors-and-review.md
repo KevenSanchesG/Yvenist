@@ -42,7 +42,7 @@ Anúncio:   em análise ──publica──▶ publicado
 | Anúncio só é publicado se o fornecedor estiver aprovado | `approve_listing` → 409 `vendor_not_approved` |
 | Aprovar um cadastro pode publicar junto os anúncios dele que aguardam | `publish_pending_listings` (padrão: sim) |
 | Recusar exige um motivo de 5 a 500 caracteres, que o fornecedor lê | `RejectRequest` |
-| Recusar um cadastro recusa junto os anúncios que aguardavam com ele, com o mesmo motivo | `reject_vendor` ([ADR-010](../05-decisions/ADR-010-fila-de-analise.md)) |
+| Recusar um cadastro recusa junto **todos** os anúncios que aguardavam com ele, com o mesmo motivo. Só os que aguardam: um anúncio já recusado antes mantém o motivo dele, e os de outros fornecedores não mudam. Regra confirmada pelos donos | `reject_vendor` ([ADR-010](../05-decisions/ADR-010-fila-de-analise.md)); `backend/tests/test_vendors.py` |
 | Cadastro recusado pode ser corrigido e volta para a fila; o reenvio cria um anúncio novo | `_resubmit_profile` |
 | Uma decisão não pode ser tomada duas vezes | 409 `already_reviewed`, com trava de linha |
 | O documento completo só sai para administradores | `AdminVendorResponse`; os demais recebem `document_masked` |
