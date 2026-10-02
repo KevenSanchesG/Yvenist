@@ -50,6 +50,7 @@ class PartyMakerController extends ChangeNotifier {
   bool _hasLoaded = false;
   String? _error;
   String? _loadError;
+  Future<void>? _loading;
   bool _disposed = false;
 
   // ============================================================
@@ -143,7 +144,11 @@ class PartyMakerController extends ChangeNotifier {
   }
 
   /// Busca as festas do dono no repositório.
-  Future<void> load() async {
+  Future<void> load() {
+    return _loading = _load().whenComplete(() => _loading = null);
+  }
+
+  Future<void> _load() async {
     final ownerId = _ownerId;
     if (ownerId == null) {
       _parties.clear();
@@ -304,6 +309,9 @@ class PartyMakerController extends ChangeNotifier {
     _error = null;
     _setBusy(true);
     try {
+      // Espera uma carga em andamento (ex.: logo após o login) para que o
+      // resultado dela não sobrescreva o que esta operação gravar.
+      await _loading;
       return await action();
     } catch (error) {
       _error = _describe(error);

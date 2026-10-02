@@ -1,0 +1,12 @@
+# Configuração do `flutter test`.
+
+tags:
+  # Gera as imagens de docs/screenshots a partir das telas reais. Fica fora da
+  # suíte normal: o resultado depende das fontes da máquina. Para regenerar:
+  #   flutter test --update-goldens --run-skipped --tags screenshots
+  screenshots:
+    skip: "Geração de screenshots: rode com --update-goldens --run-skipped --tags screenshots"
+
+  # Exercita os repositórios contra uma API de verdade. Só roda quando
+  # YVENIST_API_URL está definido (veja test/integration).
+  integration:

@@ -94,6 +94,7 @@ class PartySnapshotResponse(BaseModel):
 
 class PartyResponse(BaseModel):
     id: uuid.UUID
+    owner_id: uuid.UUID
     title: str
     event_at: datetime | None
     guest_count: int | None
@@ -124,6 +125,7 @@ class PartyResponse(BaseModel):
         ]
         return cls(
             id=party.id,
+            owner_id=party.owner_id,
             title=party.title,
             event_at=party.event_at,
             guest_count=party.guest_count,

@@ -1,33 +1,55 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_typography.dart';
+import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_typography.dart';
 
-
+/// Título de uma faixa da Home. A linha inteira leva a "ver todos".
 class SectionHeader extends StatelessWidget {
+  const SectionHeader({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.onSeeAll,
+  });
+
   final String title;
   final String subtitle;
-
-  const SectionHeader({super.key, required this.title, required this.subtitle});
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      // Nota: Certifique-se que AppSpacing está importado corretamente
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenMargin),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      button: true,
+      header: true,
+      label: '$title. $subtitle. Ver todos',
+      child: InkWell(
+        onTap: onSeeAll,
+        child: ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenMargin,
+              vertical: 8,
+            ),
+            child: Row(
               children: [
-                Text(title, style: AppTypography.sectionTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(subtitle, style: AppTypography.sectionSubtitle),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.sectionTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(subtitle, style: AppTypography.sectionSubtitle),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.primary),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.primary, size: 24),
-        ],
+        ),
       ),
     );
   }

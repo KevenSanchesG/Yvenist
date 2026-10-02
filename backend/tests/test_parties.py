@@ -108,6 +108,8 @@ class TestCreate:
         assert response.status_code == 201
         body = response.json()
         assert body["id"] == party_id
+        # O dono é sempre quem está autenticado, nunca um valor enviado.
+        assert body["owner_id"] == str(user.id)
         assert body["title"] == "15 anos da Maria"
         assert body["status"] == "planning"
         assert body["version"] == 1

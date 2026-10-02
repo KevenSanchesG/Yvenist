@@ -1,55 +1,122 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../auth/domain/vendor_session.dart';
-import '../../../../vendor/onboarding/pages/vendor_welcome_page.dart';
+import 'package:provider/provider.dart';
+import 'package:yvenist/core/config/app_config.dart';
+import 'package:yvenist/core/navigation/app_tab_controller.dart';
+import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_typography.dart';
+import 'package:yvenist/core/widgets/status_views.dart';
+import 'package:yvenist/features/auth/domain/entities/app_user.dart';
+import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
+import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
+import 'package:yvenist/features/client/favorites/presentation/pages/favorites_page.dart';
+import 'package:yvenist/features/client/profile/presentation/pages/personal_data_page.dart';
+import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
+import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+import 'package:yvenist/features/shared_features/legal/presentation/pages/legal_page.dart';
+import 'package:yvenist/features/shared_features/payments/presentation/pages/payment_methods_page.dart';
+import 'package:yvenist/features/shared_features/security/presentation/pages/security_page.dart';
+import 'package:yvenist/features/vendor/domain/vendor_models.dart';
+import 'package:yvenist/features/vendor/onboarding/presentation/pages/vendor_welcome_page.dart';
+import 'package:yvenist/features/vendor/presentation/controllers/vendor_controller.dart';
 
-// --- IMPORTS DAS TELAS INTERNAS (NÍVEL 2) ---
-import 'personal_data_page.dart';
-import '../../../events/presentation/pages/my_bookings_pages.dart';
-import '../../../../shared_features/payments/payment_methods_pages.dart';
-import '../../../../shared_features/security/presentation/pages/security_pages.dart';
-import '../../../../shared_features/legal/presentation/pages/legal_page.dart';
-
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+/// Aba Perfil. Mostra a conta em dois modos: cliente e, para quem foi
+/// aprovado como fornecedor, o modo fornecedor.
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isVendorMode = false;
+class _ProfilePageState extends State<ProfilePage> {
+  bool _vendorMode = false;
 
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Funcionalidade em desenvolvimento 🛠️")),
+  void _push(Widget page) {
+    Navigator.push<void>(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  void _openParties() {
+    context.read<PartyMakerController>().clearActiveParty();
+    context.read<AppTabController>().goTo(AppTab.partyMaker);
+  }
+
+  void _selectVendorMode() {
+    if (context.read<VendorController>().isApproved) {
+      setState(() => _vendorMode = true);
+      return;
+    }
+    showAppSnackBar(
+      context,
+      'O modo fornecedor fica disponível depois que o seu anúncio é aprovado.',
     );
+  }
+
+  Future<void> _confirmSignOut() async {
+    final session = context.read<SessionController>();
+    final tabs = context.read<AppTabController>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sair da conta?'),
+        content: const Text('Você vai precisar entrar de novo para ver suas '
+            'festas e favoritos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await session.signOut();
+    tabs.goTo(AppTab.home);
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<SessionController>().user;
+    final vendor = context.watch<VendorController>();
+    // A sessão pode terminar com a aba aberta; o shell troca a tela em seguida.
+    if (user == null) return const SizedBox.shrink();
+
+    // Se a aprovação for retirada, o modo fornecedor deixa de valer.
+    final vendorMode = _vendorMode && vendor.isApproved;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey.shade50,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // --- CABEÇALHO ---
-            _buildHeader(context),
-
-            const SizedBox(height: 24),
-
-            // --- CONTEÚDO DINÂMICO ---
-            if (_isVendorMode) 
-              _buildVendorContent()
-            else 
-              _buildClientContent(),
-            
-            const SizedBox(height: 40),
-            
-            _buildCommonFooter(),
-            
-            const SizedBox(height: 100), 
+            _Header(
+              user: user,
+              vendorMode: vendorMode,
+              onClientMode: () => setState(() => _vendorMode = false),
+              onVendorMode: _selectVendorMode,
+            ),
+            const SizedBox(height: 48),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (vendorMode)
+                    ..._vendorContent(vendor)
+                  else
+                    ..._clientContent(vendor),
+                  const SizedBox(height: 20),
+                  ..._commonFooter(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -57,444 +124,457 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ---------------------------------------------------------
-  // 1. CABEÇALHO
+  // Modo cliente
   // ---------------------------------------------------------
-  Widget _buildHeader(BuildContext context) {
-    final double toggleWidth = MediaQuery.of(context).size.width * 0.85;
+  List<Widget> _clientContent(VendorController vendor) {
+    final parties = context.watch<PartyMakerController>().parties;
+    final favorites = context.watch<FavoritesController>().count;
+    final planning = parties
+        .where(
+          (p) =>
+              p.status == PartyStatus.draft || p.status == PartyStatus.planning,
+        )
+        .length;
+    final quoted = parties.where((p) => p.status == PartyStatus.locked).length;
+
+    return [
+      _DashboardCard(
+        items: [
+          _StatItem(
+            value: '$planning',
+            label: 'Festas em\nplanejamento',
+            onTap: _openParties,
+          ),
+          _StatItem(
+            value: '$favorites',
+            label: 'Favoritos\nsalvos',
+            onTap: () => _push(const FavoritesPage()),
+          ),
+          _StatItem(
+            value: '$quoted',
+            label: 'Orçamentos\nsolicitados',
+            onTap: _openParties,
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+      _VendorBanner(
+        vendor: vendor,
+        onStart: () => _push(const VendorWelcomePage()),
+        onOpenVendorMode: () => setState(() => _vendorMode = true),
+      ),
+      const SizedBox(height: 24),
+      const _SectionTitle('Minha conta'),
+      _MenuCard(
+        children: [
+          _MenuItem(
+            icon: Icons.person_outline,
+            title: 'Dados Pessoais',
+            onTap: () => _push(const PersonalDataPage()),
+          ),
+          const _MenuItem(
+            icon: Icons.location_on_outlined,
+            title: 'Endereços de Eventos',
+          ),
+          _MenuItem(
+            icon: Icons.credit_card,
+            title: 'Formas de Pagamento',
+            onTap: () => _push(const PaymentMethodsPage()),
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+      const _SectionTitle('Gestão'),
+      _MenuCard(
+        children: [
+          _MenuItem(
+            icon: Icons.event_note,
+            title: 'Minhas Festas',
+            onTap: _openParties,
+          ),
+          const _MenuItem(
+            icon: Icons.receipt_long,
+            title: 'Histórico de Pagamentos',
+          ),
+          const _MenuItem(icon: Icons.star_border, title: 'Minhas Avaliações'),
+        ],
+      ),
+    ];
+  }
+
+  // ---------------------------------------------------------
+  // Modo fornecedor
+  // ---------------------------------------------------------
+  List<Widget> _vendorContent(VendorController vendor) {
+    return [
+      _DashboardCard(
+        items: [
+          _StatItem(value: '${vendor.listings.length}', label: 'Anúncios\nenviados'),
+          _StatItem(
+            value: '${vendor.countListings(VendorListingStatus.published)}',
+            label: 'Anúncios\npublicados',
+          ),
+          _StatItem(
+            value: '${vendor.countListings(VendorListingStatus.pendingReview)}',
+            label: 'Em\nanálise',
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+      const _SectionTitle('Meu negócio'),
+      _MenuCard(
+        children: [
+          _MenuItem(
+            icon: Icons.add_business_outlined,
+            title: 'Anunciar outro espaço',
+            onTap: () => _push(const VendorWelcomePage()),
+          ),
+          const _MenuItem(icon: Icons.campaign, title: 'Meus Anúncios'),
+          const _MenuItem(
+            icon: Icons.calendar_month,
+            title: 'Agenda e Disponibilidade',
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+      const _SectionTitle('Financeiro'),
+      const _MenuCard(
+        children: [
+          _MenuItem(icon: Icons.attach_money, title: 'Extrato e Saques'),
+          _MenuItem(icon: Icons.account_balance, title: 'Dados Bancários'),
+        ],
+      ),
+    ];
+  }
+
+  // ---------------------------------------------------------
+  // Rodapé comum
+  // ---------------------------------------------------------
+  List<Widget> _commonFooter() {
+    return [
+      const _SectionTitle('Configurações e suporte'),
+      _MenuCard(
+        children: [
+          _MenuItem(
+            icon: Icons.lock_outline,
+            title: 'Segurança',
+            onTap: () => _push(const SecurityPage()),
+          ),
+          const _MenuItem(icon: Icons.help_outline, title: 'Central de Ajuda'),
+          _MenuItem(
+            icon: Icons.description_outlined,
+            title: 'Termos e Política',
+            onTap: () => _push(const LegalPage()),
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Center(
+        child: TextButton.icon(
+          onPressed: _confirmSignOut,
+          icon: const Icon(Icons.logout),
+          label: const Text('Sair da conta'),
+          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Center(
+        child: Text('Versão ${AppConfig.appVersion}', style: AppTypography.caption),
+      ),
+    ];
+  }
+}
+
+// ---------------------------------------------------------
+// Cabeçalho com o seletor de modo
+// ---------------------------------------------------------
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.user,
+    required this.vendorMode,
+    required this.onClientMode,
+    required this.onVendorMode,
+  });
+
+  final AppUser user;
+  final bool vendorMode;
+  final VoidCallback onClientMode;
+  final VoidCallback onVendorMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.paddingOf(context).top;
+    // No modo cliente o fundo usa o laranja escurecido: o nome e o e-mail, em
+    // branco, precisam de contraste.
+    final colors = vendorMode
+        ? const [AppColors.vendor, AppColors.vendorAccent]
+        : const [AppColors.primaryStrong, AppColors.primary];
 
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
       children: [
-        // Fundo Colorido
         Container(
-          height: 280, 
           width: double.infinity,
+          padding: EdgeInsets.fromLTRB(20, topPadding + 32, 20, 56),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: _isVendorMode 
-                  ? [const Color(0xFF2C3E50), const Color(0xFF4CA1AF)] 
-                  : [AppColors.primary, AppColors.primary.withOpacity(0.8)], 
+              colors: colors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(30),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (_isVendorMode ? Colors.black : AppColors.primary).withOpacity(0.3), 
-                blurRadius: 20, 
-                offset: const Offset(0, 10)
+          ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white,
+                child: ExcludeSemantics(
+                  child: Text(
+                    user.initials,
+                    style: AppTypography.sectionTitle.copyWith(
+                      fontSize: 28,
+                      color: colors.first,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                user.fullName,
+                style: AppTypography.sectionTitle.copyWith(
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                vendorMode ? 'Fornecedor aprovado' : user.email,
+                style: AppTypography.caption.copyWith(color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60, right: 20, left: 20),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                ),
-                
-                const CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage('https://br.pinterest.com/pin/606086062341398019/'),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  "Keven Sanches",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isVendorMode ? "Fornecedora Verificada ✅" : "Festeira Iniciante 🎉",
-                  style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9)),
-                ),
-              ],
-            ),
-          ),
         ),
-
-        // O TOGGLE (Alternador de Modo)
         Positioned(
-          bottom: -25,
-          child: Container(
-            width: toggleWidth,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Lado Cliente
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isVendorMode = false),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: !_isVendorMode ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
-                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(25)),
-                      ),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "Modo Cliente",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: !_isVendorMode ? AppColors.primary : Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Lado Fornecedor
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                        setState(() => _isVendorMode = true);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _isVendorMode ? const Color(0xFF2C3E50).withOpacity(0.1) : Colors.transparent,
-                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(25)),
-                      ),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "Modo Fornecedor",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: _isVendorMode ? const Color(0xFF2C3E50) : Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          bottom: -26,
+          left: 24,
+          right: 24,
+          child: _ModeToggle(
+            vendorMode: vendorMode,
+            onClientMode: onClientMode,
+            onVendorMode: onVendorMode,
           ),
         ),
       ],
     );
   }
+}
 
-  // ---------------------------------------------------------
-  // 2. CONTEÚDO MODO CLIENTE (COM NAVEGAÇÃO ATUALIZADA)
-  // ---------------------------------------------------------
-  Widget _buildClientContent() {
-    final vendorStatus = VendorSession().status;
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle({
+    required this.vendorMode,
+    required this.onClientMode,
+    required this.onVendorMode,
+  });
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
-          
-          _DashboardCard(
-            items: [
-              _StatItem(count: "2", label: "Próximas\nFestas", onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyBookingsScreen()))),
-              _VerticalDivider(),
-              _StatItem(count: "15", label: "Favoritos\nSalvos", onTap: () => _showComingSoon(context)),
-              _VerticalDivider(),
-              _StatItem(count: "3", label: "Orçamentos\nAbertos", onTap: () => _showComingSoon(context)),
-            ],
-          ),
+  final bool vendorMode;
+  final VoidCallback onClientMode;
+  final VoidCallback onVendorMode;
 
-          const SizedBox(height: 24),
-
-          // --- ÁREA DE BANNER DINÂMICO ---
-          if (vendorStatus == VendorStatus.none)
-            _PromoBanner(
-              title: "Tem um salão ou serviço?",
-              subtitle: "Mude para o modo fornecedor e anuncie grátis.",
-              color1: const Color(0xFF2C3E50),
-              color2: const Color(0xFF4CA1AF),
-              icon: Icons.storefront,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const VendorWelcomeScreen()),
-                ).then((_) => setState((){}));
-              },
-            )
-          else if (vendorStatus == VendorStatus.review)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                border: Border.all(color: Colors.amber.shade200),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.hourglass_top, color: Colors.amber),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Análise em andamento", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
-                        Text("Estamos verificando seus dados.", style: TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      VendorSession().approveVendor();
-                      setState((){});
-                    },
-                    child: const Text("Aprovar (Dev)"),
-                  )
-                ],
-              ),
-            )
-          else if (vendorStatus == VendorStatus.approved)
-            _PromoBanner(
-              title: "Você é um fornecedor!",
-              subtitle: "Mude para o Modo Fornecedor no topo para gerenciar.",
-              color1: Colors.green.shade700,
-              color2: Colors.green.shade400,
-              icon: Icons.check_circle,
-              onTap: () => setState(() => _isVendorMode = true),
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 4,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(26),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 52,
+        child: Row(
+          children: [
+            _ModeOption(
+              label: 'Modo Cliente',
+              selected: !vendorMode,
+              color: AppColors.primaryStrong,
+              onTap: onClientMode,
             ),
-          // -------------------------------
-
-          const SizedBox(height: 24),
-
-          const _SectionHeader(title: "MINHA CONTA"),
-          _MenuContainer(children: [
-            _MenuItem(
-              icon: Icons.person_outline, 
-              title: "Dados Pessoais", 
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalDataScreen())),
+            _ModeOption(
+              label: 'Modo Fornecedor',
+              selected: vendorMode,
+              color: AppColors.vendor,
+              onTap: onVendorMode,
             ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.location_on_outlined, 
-              title: "Endereços de Eventos", 
-              onTap: () => _showComingSoon(context), // Placeholder
-            ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.credit_card, 
-              title: "Formas de Pagamento", 
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen())),
-            ),
-          ]),
-
-          const SizedBox(height: 20),
-
-          const _SectionHeader(title: "GESTÃO"),
-          _MenuContainer(children: [
-            _MenuItem(
-              icon: Icons.event_note, 
-              title: "Minhas Festas", 
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyBookingsScreen())),
-            ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.receipt_long, 
-              title: "Histórico de Pagamentos", 
-              onTap: () => _showComingSoon(context), // Placeholder
-            ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.star_border, 
-              title: "Minhas Avaliações", 
-              onTap: () => _showComingSoon(context), // Placeholder
-            ),
-          ]),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
 
-  // ---------------------------------------------------------
-  // 3. CONTEÚDO MODO FORNECEDOR
-  // ---------------------------------------------------------
-  Widget _buildVendorContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
+class _ModeOption extends StatelessWidget {
+  const _ModeOption({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
 
-          _DashboardCard(
-            items: [
-              _StatItem(count: "R\$ 2.5k", label: "Saldo\nDisponível", onTap: () {}, isMoney: true),
-              _VerticalDivider(),
-              _StatItem(count: "4.9", label: "Nota\nMédia", onTap: () {}, isStar: true),
-              _VerticalDivider(),
-              _StatItem(count: "8", label: "Novos\nPedidos", onTap: () {}),
-            ],
-          ),
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
 
-          const SizedBox(height: 24),
-
-          _PromoBanner(
-            title: "Impulsione seus anúncios",
-            subtitle: "Aumente suas reservas em até 3x hoje.",
-            color1: Colors.orange.shade800,
-            color2: Colors.orange.shade400,
-            icon: Icons.rocket_launch,
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 24),
-
-          const _SectionHeader(title: "MEU NEGÓCIO"),
-          _MenuContainer(children: [
-            _MenuItem(icon: Icons.store, title: "Dados do Negócio", onTap: () => _showComingSoon(context)),
-            _Divider(),
-            _MenuItem(icon: Icons.campaign, title: "Meus Anúncios", onTap: () => _showComingSoon(context)),
-            _Divider(),
-            _MenuItem(icon: Icons.calendar_month, title: "Agenda & Disponibilidade", onTap: () => _showComingSoon(context)),
-          ]),
-
-          const SizedBox(height: 20),
-
-          const _SectionHeader(title: "FINANCEIRO"),
-          _MenuContainer(children: [
-            _MenuItem(icon: Icons.attach_money, title: "Extrato e Saques", onTap: () => _showComingSoon(context)),
-            _Divider(),
-            _MenuItem(icon: Icons.account_balance, title: "Dados Bancários", onTap: () => _showComingSoon(context)),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------
-  // 4. RODAPÉ COMUM (COM NAVEGAÇÃO ATUALIZADA)
-  // ---------------------------------------------------------
-  Widget _buildCommonFooter() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(title: "CONFIGURAÇÕES E SUPORTE"),
-          _MenuContainer(children: [
-            _MenuItem(
-              icon: Icons.lock_outline, 
-              title: "Segurança e Senha", 
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityScreen())),
-            ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.help_outline, 
-              title: "Central de Ajuda", 
-              onTap: () => _showComingSoon(context), // Placeholder
-            ),
-            _Divider(),
-            _MenuItem(
-              icon: Icons.description_outlined, 
-              title: "Termos e Política", 
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalScreen())),
-            ),
-          ]),
-
-          const SizedBox(height: 24),
-
-          Center(
-            child: TextButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text("Sair da conta", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            color: selected ? color.withValues(alpha: 0.1) : null,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: selected ? color : AppColors.textSecondary,
+                ),
+              ),
             ),
           ),
-          
-          const SizedBox(height: 10),
-          const Center(child: Text("Versão 1.0.4", style: TextStyle(color: Colors.grey, fontSize: 12))),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------
-// WIDGETS AUXILIARES
+// Situação como fornecedor
 // ---------------------------------------------------------
 
-class _DashboardCard extends StatelessWidget {
-  final List<Widget> items;
-  const _DashboardCard({required this.items});
+class _VendorBanner extends StatelessWidget {
+  const _VendorBanner({
+    required this.vendor,
+    required this.onStart,
+    required this.onOpenVendorMode,
+  });
+
+  final VendorController vendor;
+  final VoidCallback onStart;
+  final VoidCallback onOpenVendorMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (vendor.status) {
+      VendorStatus.none => _PromoBanner(
+          title: 'Tem um salão ou serviço?',
+          subtitle: 'Anuncie no Yvenist sem pagar nada por isso.',
+          colors: const [AppColors.vendor, AppColors.vendorAccent],
+          icon: Icons.storefront,
+          onTap: onStart,
+        ),
+      VendorStatus.pendingReview => _StatusNotice(
+          icon: Icons.hourglass_top,
+          color: AppColors.warning,
+          title: 'Análise em andamento',
+          message: 'Estamos verificando os dados do seu anúncio.',
+          // Só existe no modo demonstração, onde não há quem aprove.
+          actionLabel:
+              vendor.canSimulateApproval ? 'Simular aprovação (demo)' : null,
+          onAction: vendor.isBusy ? null : vendor.simulateApproval,
+        ),
+      VendorStatus.rejected => _StatusNotice(
+          icon: Icons.error_outline,
+          color: AppColors.danger,
+          title: 'Cadastro não aprovado',
+          message: vendor.profile?.rejectionReason ??
+              'Revise os dados e envie de novo.',
+          actionLabel: 'Corrigir e reenviar',
+          onAction: onStart,
+        ),
+      VendorStatus.approved => _PromoBanner(
+          title: 'Você é um fornecedor!',
+          subtitle: 'Abra o Modo Fornecedor para acompanhar seus anúncios.',
+          colors: const [AppColors.success, Color(0xFF16A34A)],
+          icon: Icons.check_circle,
+          onTap: onOpenVendorMode,
+        ),
+    };
+  }
+}
+
+class _StatusNotice extends StatelessWidget {
+  const _StatusNotice({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: items),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String count;
-  final String label;
-  final VoidCallback onTap;
-  final bool isMoney;
-  final bool isStar;
-
-  const _StatItem({
-    required this.count, 
-    required this.label, 
-    required this.onTap, 
-    this.isMoney = false,
-    this.isStar = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                count,
-                style: TextStyle(
-                  fontSize: 18, 
-                  fontWeight: FontWeight.bold, 
-                  color: isMoney ? Colors.green[700] : (isStar ? Colors.amber[700] : AppColors.primary)
+              ExcludeSemantics(child: Icon(icon, color: color)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(message, style: AppTypography.caption),
+                  ],
                 ),
               ),
-              if (isStar) Icon(Icons.star, size: 16, color: Colors.amber[700]),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey[600], height: 1.2),
-          ),
+          if (actionLabel != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: onAction, child: Text(actionLabel!)),
+            ),
         ],
       ),
     );
@@ -502,45 +582,94 @@ class _StatItem extends StatelessWidget {
 }
 
 class _PromoBanner extends StatelessWidget {
+  const _PromoBanner({
+    required this.title,
+    required this.subtitle,
+    required this.colors,
+    required this.icon,
+    required this.onTap,
+  });
+
   final String title;
   final String subtitle;
-  final Color color1, color2;
+  final List<Color> colors;
   final IconData icon;
   final VoidCallback onTap;
 
-  const _PromoBanner({
-    required this.title, required this.subtitle, required this.color1, required this.color2, required this.icon, required this.onTap
-  });
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color1, color2]),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: color1.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      button: true,
+      child: Material(
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(gradient: LinearGradient(colors: colors)),
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTypography.body.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: AppTypography.caption.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ExcludeSemantics(child: Icon(icon, color: Colors.white)),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white),
-            )
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------
+// Peças de layout
+// ---------------------------------------------------------
+
+class _DashboardCard extends StatelessWidget {
+  const _DashboardCard({required this.items});
+
+  final List<_StatItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 1,
+      shadowColor: Colors.black12,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            for (final (index, item) in items.indexed) ...[
+              if (index > 0)
+                const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+              Expanded(child: item),
+            ],
           ],
         ),
       ),
@@ -548,64 +677,118 @@ class _PromoBanner extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.value, required this.label, this.onTap});
+
+  final String value;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            style: AppTypography.sectionTitle.copyWith(
+              color: AppColors.primaryStrong,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.caption.copyWith(height: 1.2),
+          ),
+        ],
+      ),
+    );
+
+    return Semantics(
+      button: onTap != null,
+      label: '$value ${label.replaceAll('\n', ' ')}',
+      child: ExcludeSemantics(
+        child: onTap == null ? content : InkWell(onTap: onTap, child: content),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title);
+
   final String title;
-  const _SectionHeader({required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title.toUpperCase(),
+          style: AppTypography.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _MenuContainer extends StatelessWidget {
+class _MenuCard extends StatelessWidget {
+  const _MenuCard({required this.children});
+
   final List<Widget> children;
-  const _MenuContainer({required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (final (index, child) in children.indexed) ...[
+            if (index > 0) const Divider(height: 1, indent: 56),
+            child,
+          ],
+        ],
       ),
-      child: Column(children: children),
     );
   }
 }
 
+/// Item de menu. Sem [onTap] é uma função prevista e ainda não disponível:
+/// aparece como "Em breve" e não responde ao toque.
 class _MenuItem extends StatelessWidget {
+  const _MenuItem({required this.icon, required this.title, this.onTap});
+
   final IconData icon;
   final String title;
-  final VoidCallback onTap;
-
-  const _MenuItem({required this.icon, required this.title, required this.onTap});
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isAvailable = onTap != null;
+
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: Colors.grey[700], size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+      leading: Icon(icon, color: AppColors.textSecondary, size: 22),
+      title: Text(
+        title,
+        style: AppTypography.body.copyWith(
+          fontWeight: FontWeight.w500,
+          color: isAvailable ? AppColors.textPrimary : AppColors.textSecondary,
+        ),
+      ),
+      trailing: isAvailable
+          ? const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary)
+          : const Text('Em breve', style: AppTypography.caption),
     );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Divider(height: 1, color: Colors.grey[100], indent: 56);
-  }
-}
-
-class _VerticalDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 24, width: 1, color: Colors.grey[200]);
   }
 }

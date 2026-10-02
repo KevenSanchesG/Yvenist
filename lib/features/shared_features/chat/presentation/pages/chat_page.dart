@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_typography.dart';
-import '../../../../../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:yvenist/core/navigation/app_tab_controller.dart';
+import 'package:yvenist/core/widgets/status_views.dart';
 
-class ChatScreen extends StatelessWidget {
-  final VoidCallback onBack;
-
-  const ChatScreen({
-    super.key,
-    required this.onBack,
-  });
+/// Aba de conversas. A troca de mensagens com fornecedores ainda não existe:
+/// a tela diz isso com clareza, em vez de parecer uma caixa de entrada vazia.
+class ChatPage extends StatelessWidget {
+  const ChatPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Mensagens", style: AppTypography.sectionTitle),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('Mensagens'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
-          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back_ios),
+          tooltip: 'Voltar ao início',
+          onPressed: () => context.read<AppTabController>().goTo(AppTab.home),
         ),
       ),
-      body: const Center(
-        child: Text("Suas conversas aparecerão aqui", style: TextStyle(color: Colors.grey)),
+      body: const EmptyStateView(
+        icon: Icons.chat_bubble_outline,
+        title: 'Conversas em breve',
+        message: 'Aqui você vai falar direto com os fornecedores da sua festa.',
       ),
     );
   }

@@ -1,99 +1,90 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_colors.dart';
+import 'package:yvenist/core/theme/app_typography.dart';
 
-// 1. Campo de Texto Padrão para Formulários
-class ProfileTextField extends StatelessWidget {
-  final String label;
-  final String initialValue;
-  final bool isReadOnly;
-  final bool isVerified;
-  final TextInputType keyboardType;
-
-  const ProfileTextField({
-    super.key,
-    required this.label,
-    required this.initialValue,
-    this.isReadOnly = false,
-    this.isVerified = false,
-    this.keyboardType = TextInputType.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        initialValue: initialValue,
-        readOnly: isReadOnly,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: isReadOnly ? Colors.grey[100] : Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          suffixIcon: isVerified 
-            ? const Icon(Icons.check_circle, color: Colors.green) 
-            : null,
-        ),
-      ),
-    );
-  }
-}
-
-// 2. Item de Lista Padrão (Settings / Ações)
+/// Item de lista das telas de conta (segurança, dados...).
+///
+/// Sem [onTap] o item aparece como "Em breve": fica visível que a função está
+/// prevista, mas não parece clicável.
 class ProfileActionTile extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color? iconColor;
-  final bool isDestructive;
-
   const ProfileActionTile({
     super.key,
     required this.title,
     required this.icon,
-    required this.onTap,
+    this.onTap,
     this.subtitle,
-    this.iconColor,
     this.isDestructive = false,
   });
 
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
   @override
   Widget build(BuildContext context) {
+    final isAvailable = onTap != null;
+    final color = !isAvailable
+        ? AppColors.textSecondary
+        : (isDestructive ? AppColors.danger : AppColors.primary);
+    final supportingText = subtitle ?? (isAvailable ? null : 'Em breve');
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: const BorderSide(color: AppColors.divider),
       ),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
         onTap: onTap,
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (isDestructive ? Colors.red : (iconColor ?? AppColors.primary)).withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: isDestructive ? Colors.red : (iconColor ?? AppColors.primary)),
+          child: Icon(icon, color: color),
         ),
         title: Text(
-          title, 
-          style: TextStyle(
+          title,
+          style: AppTypography.body.copyWith(
             fontWeight: FontWeight.w600,
-            color: isDestructive ? Colors.red : Colors.black87,
+            color: isDestructive && isAvailable
+                ? AppColors.danger
+                : AppColors.textPrimary,
           ),
         ),
-        subtitle: subtitle != null ? Text(subtitle!) : null,
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        subtitle: supportingText == null ? null : Text(supportingText),
+        trailing: isAvailable
+            ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+            : null,
+      ),
+    );
+  }
+}
+
+/// Título de um grupo de opções.
+class ProfileSectionTitle extends StatelessWidget {
+  const ProfileSectionTitle(this.title, {super.key});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title.toUpperCase(),
+          style: AppTypography.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
       ),
     );
   }
