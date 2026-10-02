@@ -6,7 +6,8 @@
 # O que cada job garante (e onde isso já foi conferido à mão):
 #   app          formatação, análise estática e testes do Flutter
 #   backend      lint, tipos e testes da API em SQLite e em PostgreSQL
-#   integration  o app de verdade falando com a API de verdade
+#   integration  o app de verdade falando com a API de verdade, na máquina e
+#                dentro do navegador
 #   android      o APK de debug compila
 #   docker       a imagem da API e o docker-compose sobem e respondem
 
@@ -135,6 +136,10 @@ jobs:
       # Conta de administrador criada só para este job (banco descartável).
       YVENIST_ADMIN_EMAIL: admin@example.com
       YVENIST_ADMIN_PASSWORD: senha-do-admin-de-ci
+      # Os testes no navegador saem de uma porta sorteada a cada execução.
+      # Qualquer origem só é aceita aqui porque o banco é descartável; em
+      # produção a API se recusa a subir assim.
+      YVENIST_CORS_ORIGINS: "*"
     steps:
       - uses: actions/checkout@v7
 
@@ -174,6 +179,15 @@ jobs:
         env:
           YVENIST_API_URL: http://127.0.0.1:8000/api/v1
         run: flutter test --tags integration test/integration
+
+      # Os mesmos cenários dentro do Chrome: é o que mostra que o app web
+      # conversa com a API (CORS e o cliente HTTP do navegador).
+      - name: Testes de integração no navegador
+        run: >
+          flutter test --platform chrome --tags integration test/integration
+          --dart-define=YVENIST_API_URL=http://127.0.0.1:8000/api/v1
+          --dart-define=YVENIST_ADMIN_EMAIL=$YVENIST_ADMIN_EMAIL
+          --dart-define=YVENIST_ADMIN_PASSWORD=$YVENIST_ADMIN_PASSWORD
 
       - name: Log da API (só se algo falhou)
         if: failure()

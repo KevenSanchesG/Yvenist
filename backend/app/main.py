@@ -66,6 +66,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             allow_credentials=False,
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
             allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+            # O navegador só mostra ao app os cabeçalhos de resposta listados
+            # aqui: o tempo de espera de um 429 e o id da requisição.
+            expose_headers=["Retry-After", "X-Request-ID"],
         )
     # Adicionado por último para ser o mais externo: também cobre as respostas
     # geradas pelo CORS e pelos tratadores de erro.
