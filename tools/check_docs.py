@@ -49,6 +49,21 @@ CLAUDE_MD_MAX_LINES = 200
 
 REQUIRED_KEYS = ("title", "type")
 DATE_KEYS = ("updated", "date")
+# Os tipos de documento do cofre (docs/09-guides/obsidian.md).
+DOCUMENT_TYPES = {
+    "index",
+    "project",
+    "architecture",
+    "domain",
+    "feature",
+    "ux",
+    "adr",
+    "research",
+    "known-issues",
+    "changelog",
+    "guide",
+    "meeting",
+}
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 LINK = re.compile(r"!?\[[^\]\n]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
@@ -187,6 +202,8 @@ def check_file(path: Path, problems: list[str], graph: dict[Path, set[Path]]) ->
         for key in REQUIRED_KEYS:
             if not fields.get(key):
                 problems.append(f"{name}: cabeçalho sem '{key}'")
+        if fields.get("type") and fields["type"] not in DOCUMENT_TYPES:
+            problems.append(f"{name}: tipo desconhecido '{fields['type']}'")
         dates = [fields[key] for key in DATE_KEYS if key in fields]
         if not dates:
             problems.append(f"{name}: cabeçalho sem 'updated' nem 'date'")

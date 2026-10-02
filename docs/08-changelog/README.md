@@ -1,6 +1,6 @@
 ---
 title: Changelog
-type: changelog-index
+type: index
 updated: 2026-10-02
 ---
 

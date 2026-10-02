@@ -1,6 +1,6 @@
 ---
 title: Pesquisas
-type: research-index
+type: index
 updated: 2026-10-02
 ---
 

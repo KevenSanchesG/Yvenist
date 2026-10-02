@@ -27,10 +27,9 @@ Esta pasta é a memória do projeto e um cofre do Obsidian. Comece pelo índice:
 
 ## Abrir no Obsidian
 
-*Abrir outro cofre → Abrir pasta como cofre* e escolha esta pasta (`docs`). A
-configuração do cofre vem junto no repositório (`.obsidian/`): links em
-Markdown com caminho relativo, modelos em `templates/`, nenhum plugin da
-comunidade.
+Abra **esta pasta** (`docs`) como cofre. A configuração vem junto no
+repositório: links em Markdown com caminho relativo, modelos em `templates/`,
+nenhum plugin da comunidade. Detalhes: [obsidian](09-guides/obsidian.md).
 
 ## Conferir
 

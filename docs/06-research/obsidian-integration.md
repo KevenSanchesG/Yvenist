@@ -41,12 +41,23 @@ qual caminho o Claude Code deve alcançar as notas?
 
 ## O que foi encontrado nesta máquina
 
-| Item | Situação |
+| Item | Situação antes |
 |---|---|
 | Obsidian | instalado, versão 1.13.7 |
 | Cofre registrado | `Documentos\Obsidian Vault`, **vazio**: só a configuração padrão |
 | CLI | disponível nesta versão, **não ativada** (`obsidian` não está no `PATH`) |
 | Plugins da comunidade | nenhum |
+
+## O que foi feito
+
+- A pasta `docs/` do repositório foi registrada como cofre e passou a ser o que
+  abre por padrão. O cofre vazio continua registrado, intacto.
+- A configuração do cofre (`docs/.obsidian/`) partiu da configuração padrão
+  que o Obsidian tinha criado no cofre vazio, com os ajustes descritos em
+  [obsidian](../09-guides/obsidian.md).
+- Conferência: o aplicativo foi aberto no cofre, na nota do índice (título da
+  janela: "memory-system - docs - Obsidian 1.13.7"), e ao gravar a
+  configuração manteve as chaves de link e de modelos.
 
 ## Servidores MCP
 

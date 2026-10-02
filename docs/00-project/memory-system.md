@@ -58,7 +58,9 @@ O que mudou e quando: [changelog](../08-changelog/README.md). O que falta:
 | o que foi pesquisado antes de decidir | [06-research](../06-research/README.md) |
 | o que está quebrado, limitado ou pendente | [07-known-issues](../07-known-issues/README.md) |
 | o que mudou, por data | [08-changelog](../08-changelog/README.md) |
-| como rodar, testar, publicar | [09-guides](../09-guides/development.md) |
+| como rodar e testar | [development](../09-guides/development.md), [ci](../09-guides/ci.md), [web](../09-guides/web.md) |
+| como publicar no Android | [android-release](../09-guides/android-release.md) |
+| como usar este cofre no Obsidian | [obsidian](../09-guides/obsidian.md) |
 
 ## Como a memória funciona
 

@@ -1,6 +1,6 @@
 ---
 title: Decisões (ADRs)
-type: adr-index
+type: index
 updated: 2026-10-02
 ---
 
