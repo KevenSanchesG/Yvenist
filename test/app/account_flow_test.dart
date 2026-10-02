@@ -4,6 +4,7 @@ import 'package:yvenist/core/error/app_failure.dart';
 import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/auth/domain/entities/app_user.dart';
+import 'package:yvenist/features/shared_features/legal/presentation/widgets/draft_notice.dart';
 
 import '../support/app_harness.dart';
 
@@ -487,20 +488,57 @@ void main() {
       expect(find.text('Conta Demonstração'), findsOneWidget);
     });
 
-    appTest('formas de pagamento e termos dizem o que existe hoje', (
-      tester,
-      app,
-    ) async {
+    appTest('formas de pagamento dizem o que existe hoje', (tester, app) async {
       await openTab(tester, 'Perfil');
 
       await scrollToAndTap(tester, find.text('Formas de Pagamento'));
       expect(find.text('Pagamento pelo app em breve'), findsOneWidget);
+    });
+
+    appTest('termos e política abrem o texto, avisando que é preliminar', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Perfil');
+      await scrollToAndTap(tester, find.text('Termos e Política'));
+
+      expect(find.text(DraftNotice.message), findsOneWidget);
+      // O contrato do fornecedor ainda não foi escrito: aparece, mas não abre.
+      final vendorContract = tester.widget<ListTile>(
+        find.widgetWithText(ListTile, 'Contrato do Fornecedor'),
+      );
+      expect(vendorContract.onTap, isNull);
+      expect(find.text('Em elaboração'), findsOneWidget);
+
+      await tapAndSettle(tester, find.text('Termos de Uso'));
+      expect(find.widgetWithText(AppBar, 'Termos de Uso'), findsOneWidget);
+      expect(find.text(DraftNotice.message), findsOneWidget);
+      expect(find.text('1. O que é o Yvenist'), findsOneWidget);
       await tapAndSettle(tester, find.byType(BackButton));
 
-      await scrollToAndTap(tester, find.text('Termos e Política'));
-      expect(find.text('Termos de Uso'), findsOneWidget);
-      expect(find.text('Em elaboração'), findsWidgets);
+      await tapAndSettle(tester, find.text('Política de Privacidade'));
+      expect(find.text('1. Quem cuida dos seus dados'), findsOneWidget);
     });
+
+    appTest('o cadastro deixa ler os termos antes de aceitar', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Perfil');
+      await tapAndSettle(tester, filledButton('Entrar ou criar conta'));
+      await scrollToAndTap(tester, find.text('Não tem conta? Criar conta'));
+
+      final terms = find.textContaining('Li e aceito os', findRichText: true);
+      await tester.ensureVisible(terms);
+      await tester.pumpAndSettle();
+      await tester.tapOnText(
+        find.textRange.ofSubstring('Termos de Uso e a Política de Privacidade'),
+      );
+      await tester.pumpAndSettle();
+
+      await tapAndSettle(tester, find.text('Termos de Uso'));
+      expect(find.text('1. O que é o Yvenist'), findsOneWidget);
+    }, signedIn: false);
 
     appTest('sair pede confirmação e volta ao início como visitante', (
       tester,

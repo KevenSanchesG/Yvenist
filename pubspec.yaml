@@ -41,6 +41,8 @@ flutter:
   assets:
     # Licença da fonte, exibida em "Licenças de código aberto".
     - assets/fonts/Inter-OFL.txt
+    # Termos de Uso e Política de Privacidade mostrados em "Termos e Política".
+    - assets/legal/
 
   # Inter 4.1 (https://rsms.me/inter), licença SIL Open Font License 1.1.
   # Só os quatro pesos que o app usa.

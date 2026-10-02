@@ -107,6 +107,14 @@ void main() {
     await capture(tester, 'dados-pessoais');
   });
 
+  screenshots('termos de uso', (tester) async {
+    await openTab(tester, 'Perfil');
+    await scrollToAndTap(tester, find.text('Termos e Política'));
+    await tapAndSettle(tester, find.text('Termos de Uso'));
+
+    await capture(tester, 'termos-de-uso');
+  });
+
   screenshots('entrar', signedIn: false, (tester) async {
     await openTab(tester, 'Perfil');
     await capture(tester, 'perfil-visitante');

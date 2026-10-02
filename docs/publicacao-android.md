@@ -101,8 +101,15 @@ configurada em `key.properties`, instalado e aberto, com o backup desligado.
 
 - A API precisa estar no ar em `https`, com `YVENIST_ENV=production` e um
   `YVENIST_JWT_SECRET` próprio (veja `backend/README.md`).
-- Os Termos de Uso e a Política de Privacidade ainda não foram escritos; a tela
-  "Termos e Política" diz isso. A loja exige a política de privacidade.
+- Os Termos de Uso e a Política de Privacidade existem como **versão
+  preliminar** (`assets/legal/`, mostrados na tela "Termos e Política" com um
+  aviso). Foram escritos a partir do que o app realmente coleta e faz, mas
+  falta: revisão por advogado, e preencher os trechos entre colchetes (razão
+  social e CNPJ, e-mail de contato e do encarregado, idade mínima, hospedagem,
+  foro). A loja exige a política de privacidade publicada em uma URL pública.
+- Ao mudar o texto, mude a versão nos dois lugares: a linha "Versão" de cada
+  documento e `terms_version` em `backend/app/core/config.py`, que é o que fica
+  registrado no aceite de cada conta (um teste confere se são iguais).
 - A ficha da loja pede a declaração de quais dados são coletados: nome, e-mail,
   telefone e data de nascimento (opcionais), e CPF/CNPJ de quem anuncia.
 - iOS não foi compilado neste projeto (exige um Mac).

@@ -312,6 +312,8 @@ void main() {
       await scrollToAndTap(tester, find.text('Formas de Pagamento'));
       await tapAndSettle(tester, find.byType(BackButton));
       await scrollToAndTap(tester, find.text('Termos e Política'));
+      await tapAndSettle(tester, find.text('Política de Privacidade'));
+      await tapAndSettle(tester, find.byType(BackButton));
       await tapAndSettle(tester, find.byType(BackButton));
       await scrollToAndTap(tester, find.text('Segurança'));
       await tapAndSettle(tester, find.text('Alterar senha'));
