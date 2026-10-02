@@ -23,7 +23,10 @@ A API fica em `http://127.0.0.1:8000` e a documentação interativa em
 `http://127.0.0.1:8000/docs` (desligada em produção).
 
 Com Docker, a partir da raiz do repositório: `docker compose up --build` sobe
-PostgreSQL, aplica as migrações e inicia a API na porta 8000.
+PostgreSQL, aplica as migrações e inicia a API na porta 8000. Atenção: a imagem
+e o compose **nunca foram executados** na máquina em que o projeto foi escrito
+(não havia Docker nela). Quem os constrói e testa é o job `docker` do CI; se
+ele falhar na primeira execução, é ali que está o ajuste a fazer.
 
 ### Windows com Controle Inteligente de Aplicativos
 
@@ -37,7 +40,7 @@ pip download --no-deps --only-binary=:all: --platform any --implementation py --
 pip install --force-reinstall --no-deps (Get-ChildItem wheels\*.whl).FullName
 ```
 
-O driver `psycopg[binary]` sofre o mesmo bloqueio; nesse caso use SQLite
+O driver `psycopg[binary]` pode sofrer o mesmo bloqueio; nesse caso use SQLite
 localmente e deixe o PostgreSQL para o Docker/CI.
 
 ## Configuração
@@ -56,6 +59,10 @@ Tudo por variáveis de ambiente com prefixo `YVENIST_` (ou arquivo `.env`; veja
 | `YVENIST_DOCS_ENABLED` | ligado fora de produção | Força ligar/desligar `/docs` |
 | `YVENIST_LOGIN_RATE_LIMIT_PER_MINUTE` | `10` | Tentativas de login por IP |
 | `YVENIST_REGISTER_RATE_LIMIT_PER_MINUTE` | `5` | Cadastros por IP |
+| `YVENIST_RATE_LIMIT_ENABLED` | `true` | Só desligue em testes |
+| `YVENIST_DB_POOL_SIZE` / `YVENIST_DB_MAX_OVERFLOW` | `10` / `20` | Conexões com o PostgreSQL por processo |
+| `YVENIST_LOG_LEVEL` | `INFO` | Nível dos logs |
+| `YVENIST_PASSWORD_HASH_PROFILE` | `recommended` | `test` usa um hash barato, só para a suíte; recusado em produção |
 
 Com `YVENIST_ENV=production` a aplicação **se recusa a subir** se o segredo JWT
 for o de desenvolvimento ou curto, se o CORS aceitar `*` ou se o perfil de hash
@@ -64,23 +71,56 @@ de senha for o de testes.
 ## Comandos
 
 ```bash
-pytest                     # testes (SQLite em memória)
+pytest                     # 339 testes (SQLite em memória)
 ruff check . && ruff format --check .
 mypy app tests             # app em modo estrito
 
 alembic upgrade head       # aplica migrações
 alembic revision --autogenerate -m "descricao"   # nova migração a partir dos modelos
 
-python -m app.cli create-admin --email voce@exemplo.com   # cria/promove administrador
+python -m app.cli create-admin --email voce@seudominio.com  # cria/promove administrador
 python -m app.cli seed-demo                                # dados de demonstração
 python -m app.cli purge-tokens --older-than-days 30        # limpa sessões antigas
 ```
 
-Para rodar a suíte contra PostgreSQL (é o que o CI faz):
+`create-admin` pede a senha sem mostrá-la (ou lê de `YVENIST_ADMIN_PASSWORD`,
+para uso automatizado). O e-mail e a senha passam pelas mesmas regras do
+cadastro pelo app: um endereço que o login recusaria, ou uma senha muito comum,
+não são aceitos.
+
+### Testes no PostgreSQL
+
+Por padrão a suíte usa SQLite em memória. Para rodá-la no banco de produção (é
+o que o CI faz), aponte para um banco **vazio e descartável**: os testes apagam
+e recriam as tabelas.
 
 ```bash
 YVENIST_TEST_DATABASE_URL=postgresql+psycopg://user:senha@localhost/yvenist_test pytest
 ```
+
+Nesse modo rodam também os testes que só fazem sentido em um banco de verdade:
+
+- `tests/test_concurrency.py`: requisições realmente simultâneas (dois cadastros
+  com o mesmo e-mail, o mesmo token de renovação usado em paralelo, dois
+  aparelhos gravando a mesma festa...). No SQLite eles são pulados.
+- `tests/test_migrations.py` aplica as migrações no próprio PostgreSQL e
+  confere que o resultado é idêntico ao que os modelos descrevem.
+
+Conferido em PostgreSQL 17.11 com `psycopg` 3.3.
+
+### Testes de integração com o app
+
+O app tem testes que exercitam o código dele contra esta API no ar (veja
+`test/integration` na raiz do repositório). Para servi-los localmente:
+
+```bash
+YVENIST_RATE_LIMIT_ENABLED=false YVENIST_PASSWORD_HASH_PROFILE=test \
+  uvicorn app.main:get_app --factory
+```
+
+O limite de requisições fica desligado porque os testes criam dezenas de contas
+em sequência; nunca use essas duas variáveis em produção (a segunda nem é
+aceita com `YVENIST_ENV=production`).
 
 As dependências ficam travadas em `requirements.txt` e `requirements-dev.txt`.
 Depois de mudar o `pyproject.toml`, regenere os dois:
@@ -117,7 +157,15 @@ entrada e saída. Onde há regra de negócio de verdade (festas), ela fica em um
 
 - **Erros** têm sempre o formato `{"error": {"code", "message", "request_id"}}`.
   `code` é estável para o app decidir o que fazer; `message` é o texto em
-  português para o usuário.
+  português para o usuário. Erros de validação trazem também
+  `details.fields`, com a mensagem de cada campo, também em português (a
+  tradução dos erros do Pydantic fica em `app/core/errors.py`).
+- **Senhas**: Argon2id, mínimo de 8 caracteres e recusa das senhas mais comuns
+  (`app/modules/accounts/passwords.py`), sem regras de composição, como
+  recomenda o NIST SP 800-63B.
+- **Concorrência**: onde "verificar e depois gravar" não basta, quem decide é o
+  banco (índices únicos, trava de linha, versão da festa). A violação vira 409,
+  nunca 500.
 - **Dinheiro** é sempre inteiro em centavos.
 - **Autenticação**: token de acesso JWT curto + token de renovação opaco com
   rotação. Reutilizar um token de renovação já trocado derruba a sessão inteira.
