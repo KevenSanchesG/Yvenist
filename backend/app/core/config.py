@@ -68,6 +68,12 @@ class Settings(BaseSettings):
             raise ValueError("YVENIST_PASSWORD_HASH_PROFILE=test não é permitido em produção.")
         if "*" in self.cors_origins:
             raise ValueError("CORS com origem '*' não é permitido em produção.")
+        # O app web manda senha e tokens para a API: servido em http, eles
+        # passariam em claro até o navegador.
+        if any(not origin.startswith("https://") for origin in self.cors_origins):
+            raise ValueError(
+                "Em produção toda origem de YVENIST_CORS_ORIGINS precisa começar com https://."
+            )
         return self
 
     @property

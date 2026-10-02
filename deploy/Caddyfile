@@ -1,0 +1,14 @@
+# Proxy reverso da API do Yvenist.
+#
+# Para o domínio abaixo o Caddy obtém e renova sozinho o certificado (Let's
+# Encrypt) e redireciona http para https. Para isso o domínio precisa apontar
+# para este servidor e as portas 80 e 443 precisam estar abertas.
+#
+# Com "localhost" (é o que o CI usa) o certificado vem de uma autoridade
+# interna do próprio Caddy, que só serve para teste.
+#
+# O Caddy descarta o X-Forwarded-For que vier do cliente e escreve o endereço
+# de quem se conectou: é esse o IP que a API usa no limite de tentativas.
+{$YVENIST_API_DOMAIN} {
+	reverse_proxy api:8000
+}

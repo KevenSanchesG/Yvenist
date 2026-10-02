@@ -10,7 +10,8 @@
 #   integration  o app de verdade falando com a API de verdade, na máquina e
 #                dentro do navegador
 #   android      o APK de debug compila
-#   docker       a imagem da API e o docker-compose sobem e respondem
+#   docker       a imagem da API e o docker-compose sobem e respondem; a
+#                receita de produção (deploy/) sobe com HTTPS e com as travas
 
 name: CI
 
@@ -242,10 +243,70 @@ jobs:
           curl --silent --show-error --fail \
             "http://127.0.0.1:8000/api/v1/catalog/listings?limit=1" | grep -q '"items"'
 
+      # A receita de produção (deploy/): a mesma imagem com
+      # YVENIST_ENV=production, atrás do proxy que termina o HTTPS. Com o
+      # domínio "localhost" o proxy usa um certificado de teste, e por isso o
+      # curl não confere quem o emitiu (--insecure). Os segredos são gerados
+      # aqui e somem com o executor.
+      - name: Receita de produção sobe com HTTPS
+        run: |
+          cat > deploy/.env <<EOF
+          YVENIST_API_DOMAIN=localhost
+          YVENIST_HTTP_PORT=8080
+          YVENIST_HTTPS_PORT=8443
+          POSTGRES_PASSWORD=$(openssl rand -hex 24)
+          YVENIST_JWT_SECRET=$(openssl rand -hex 32)
+          EOF
+          docker compose -f deploy/docker-compose.yml up --detach --build
+          curl --silent --show-error --fail --insecure --retry 40 --retry-delay 2 --retry-all-errors \
+            https://localhost:8443/health/ready
+
+      - name: Em produção, só HTTPS e com as travas ligadas
+        run: |
+          api=https://localhost:8443
+          status() { curl --silent --insecure --output /dev/null --write-out '%{http_code}' "$@"; }
+
+          # http é redirecionado para https.
+          test "$(status http://localhost:8080/health/live)" = "308"
+          # O navegador é avisado para nunca mais tentar http.
+          curl --silent --insecure --dump-header - --output /dev/null "$api/health/live" \
+            | grep --quiet --ignore-case '^strict-transport-security: max-age=31536000'
+          # A documentação interativa fica desligada.
+          test "$(status "$api/docs")" = "404"
+          # O catálogo responde a partir do banco migrado.
+          curl --silent --show-error --fail --insecure "$api/api/v1/catalog/categories" \
+            | grep --quiet '"slug"'
+          # Dados de demonstração são recusados.
+          if docker compose -f deploy/docker-compose.yml exec -T api python -m app.cli seed-demo; then
+            echo "seed-demo rodou em produção"
+            exit 1
+          fi
+
+      # O limite de tentativas usa o IP que o proxy informa. Inventar um
+      # X-Forwarded-For diferente a cada tentativa não pode zerar a contagem:
+      # o proxy descarta o cabeçalho que vem do cliente.
+      - name: Em produção, o limite de login vale atrás do proxy
+        run: |
+          attempt() {
+            curl --silent --insecure --output /dev/null --write-out '%{http_code}' \
+              --header 'Content-Type: application/json' \
+              --header "X-Forwarded-For: 203.0.113.$1" \
+              --data '{"email":"ninguem@example.com","password":"senha-que-nao-existe"}' \
+              https://localhost:8443/api/v1/auth/login
+          }
+          for n in $(seq 1 10); do
+            test "$(attempt "$n")" = "401"
+          done
+          test "$(attempt 11)" = "429"
+
       - name: Logs (só se algo falhou)
         if: failure()
-        run: docker compose logs --no-color
+        run: |
+          docker compose logs --no-color
+          docker compose -f deploy/docker-compose.yml logs --no-color || true
 
       - name: Derruba tudo
         if: always()
-        run: docker compose down --volumes
+        run: |
+          docker compose down --volumes
+          docker compose -f deploy/docker-compose.yml down --volumes || true

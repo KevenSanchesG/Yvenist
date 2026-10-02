@@ -1,0 +1,77 @@
+# Implantação da API em um servidor próprio, com HTTPS automático.
+#
+#   cp deploy/.env.example deploy/.env      # e preencha os valores
+#   docker compose -f deploy/docker-compose.yml up --detach --build
+#
+# Quem atende a internet é o proxy (Caddy): ele obtém e renova o certificado,
+# redireciona http para https e repassa as requisições à API. A API e o banco
+# não publicam porta nenhuma.
+#
+# Passo a passo, cópias de segurança e o que conferir depois de subir:
+# docs/09-guides/deployment.md
+
+name: yvenist-production
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yvenist
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD em deploy/.env}
+      POSTGRES_DB: yvenist
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yvenist -d yvenist"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ../backend
+    command: ["alembic", "upgrade", "head"]
+    environment: &api-env
+      YVENIST_ENV: production
+      YVENIST_DATABASE_URL: postgresql+psycopg://yvenist:${POSTGRES_PASSWORD}@db:5432/yvenist
+      YVENIST_JWT_SECRET: ${YVENIST_JWT_SECRET:?defina YVENIST_JWT_SECRET em deploy/.env}
+      YVENIST_CORS_ORIGINS: ${YVENIST_CORS_ORIGINS:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      # Só o proxy alcança a API (a porta dela não é publicada), então o
+      # endereço do cliente que ele informa é confiável. Sem isto todo mundo
+      # chegaria com o IP do proxy e dividiria o mesmo limite de tentativas de
+      # login.
+      FORWARDED_ALLOW_IPS: "*"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${YVENIST_HTTP_PORT:-80}:80"
+      - "${YVENIST_HTTPS_PORT:-443}:443"
+    environment:
+      YVENIST_API_DOMAIN: ${YVENIST_API_DOMAIN:?defina YVENIST_API_DOMAIN em deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificados e chaves do proxy: sem este volume, cada reinício pediria
+      # um certificado novo, e a autoridade limita quantos emite por semana.
+      - proxy-data:/data
+      - proxy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  proxy-data:
+  proxy-config:

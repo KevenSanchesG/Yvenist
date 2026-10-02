@@ -71,7 +71,8 @@ Busca (`GET /catalog/listings`): `q`, `category`, `event_type`,
 - **Busca** ignora acentos e maiúsculas por uma coluna de texto normalizado
   (`listings.search_text`).
 - Toda resposta leva `X-Request-ID`, `Cache-Control: no-store`,
-  `X-Content-Type-Options: nosniff`.
+  `X-Content-Type-Options: nosniff` e `Referrer-Policy: no-referrer`; em
+  produção, também `Strict-Transport-Security` (`core/logging.py`).
 
 ## Autenticação
 

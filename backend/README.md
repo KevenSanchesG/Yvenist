@@ -55,7 +55,7 @@ Tudo por variáveis de ambiente com prefixo `YVENIST_` (ou arquivo `.env`; veja
 | `YVENIST_JWT_SECRET` | segredo de desenvolvimento | Obrigatório em produção, 32+ caracteres |
 | `YVENIST_ACCESS_TOKEN_TTL_MINUTES` | `15` | Validade do token de acesso |
 | `YVENIST_REFRESH_TOKEN_TTL_DAYS` | `30` | Validade da sessão |
-| `YVENIST_CORS_ORIGINS` | vazio | Origens do app web, separadas por vírgula |
+| `YVENIST_CORS_ORIGINS` | vazio | Origens do app web, separadas por vírgula. Em produção, só `https://` |
 | `YVENIST_DOCS_ENABLED` | ligado fora de produção | Força ligar/desligar `/docs` |
 | `YVENIST_LOGIN_RATE_LIMIT_PER_MINUTE` | `10` | Tentativas de login por IP |
 | `YVENIST_REGISTER_RATE_LIMIT_PER_MINUTE` | `5` | Cadastros por IP |
@@ -65,8 +65,16 @@ Tudo por variáveis de ambiente com prefixo `YVENIST_` (ou arquivo `.env`; veja
 | `YVENIST_PASSWORD_HASH_PROFILE` | `recommended` | `test` usa um hash barato, só para a suíte; recusado em produção |
 
 Com `YVENIST_ENV=production` a aplicação **se recusa a subir** se o segredo JWT
-for o de desenvolvimento ou curto, se o CORS aceitar `*` ou se o perfil de hash
-de senha for o de testes.
+for o de desenvolvimento ou curto, se o CORS aceitar `*` ou uma origem em
+`http`, ou se o perfil de hash de senha for o de testes. Ela também passa a
+mandar `Strict-Transport-Security` e a esconder `/docs`.
+
+Atrás de um proxy (é o caso de qualquer produção com HTTPS), o servidor precisa
+saber em qual proxy confiar para enxergar o IP de cada cliente: é a variável
+`FORWARDED_ALLOW_IPS`, do uvicorn. Sem ela todos os clientes dividem o mesmo
+limite de tentativas de login. O passo a passo de produção, com a receita
+pronta em `deploy/`, está em
+[`docs/09-guides/deployment.md`](../docs/09-guides/deployment.md).
 
 ## Comandos
 
@@ -169,6 +177,7 @@ repositório. O que diz respeito à API:
 | Organização, rotas, contratos, limites | [`docs/01-architecture/backend.md`](../docs/01-architecture/backend.md) |
 | Tabelas e relações | [`docs/01-architecture/data-model.md`](../docs/01-architecture/data-model.md) |
 | Segurança e dados pessoais | [`docs/01-architecture/security.md`](../docs/01-architecture/security.md) |
+| Produção e HTTPS | [`docs/09-guides/deployment.md`](../docs/09-guides/deployment.md) |
 | O que cada teste prova | [`docs/01-architecture/testing.md`](../docs/01-architecture/testing.md) |
 | Por que cada escolha (formato de erro, autenticação, festas por estado, concorrência pelo banco, dinheiro em centavos) | [`docs/05-decisions/README.md`](../docs/05-decisions/README.md) |
 | Regras das festas | [`docs/03-features/party-maker/business-rules.md`](../docs/03-features/party-maker/business-rules.md) |

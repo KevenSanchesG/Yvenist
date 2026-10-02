@@ -87,6 +87,7 @@ REPO_PREFIXES = (
     "windows/",
     "web/",
     "tools/",
+    "deploy/",
     ".github/",
     ".claude/",
 )
@@ -104,8 +105,8 @@ ROOT_FILES = {
 NOT_A_LITERAL_PATH = re.compile(r"[<>*{}…\s$|]|\.\.\.")
 
 # Citados de propósito sem existir no repositório: arquivos que ficam só na
-# máquina de quem publica (estão no .gitignore).
-EXPECTED_ABSENT = {"android/key.properties"}
+# máquina de quem publica ou no servidor (estão no .gitignore).
+EXPECTED_ABSENT = {"android/key.properties", "deploy/.env"}
 
 # O changelog é história: cita os caminhos como eram no dia.
 CHANGELOG = DOCS / "08-changelog"

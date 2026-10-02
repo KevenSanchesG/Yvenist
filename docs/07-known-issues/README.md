@@ -19,7 +19,7 @@ gatilho, não é para agora.
 |---|---|---|---|
 | KI-01 | Textos legais são preliminares, com lacunas entre colchetes | revisão jurídica e os dados da empresa ([legal](../03-features/legal.md)) | donos |
 | KI-02 | A política de privacidade não tem URL pública | hospedar o texto; a Play Store exige | donos |
-| KI-03 | A API não está hospedada | servidor em `https`, PostgreSQL, `YVENIST_JWT_SECRET` próprio | donos |
+| KI-03 | A API não está hospedada | escolher e contratar a hospedagem e apontar o endereço da API para ela; a receita com HTTPS está pronta em `deploy/` ([deployment](../09-guides/deployment.md)) | donos |
 | KI-04 | Não há chave de publicação do Android | criar e guardar fora do repositório ([android-release](../09-guides/android-release.md)) | donos |
 | KI-05 | iOS nunca foi compilado | um Mac com Xcode | donos |
 | KI-06 | A branch não foi mesclada na `main` | decisão | donos |
@@ -69,7 +69,7 @@ tratada como produto.
 |---|---|
 | KI-40 | iOS: nem compilação, nem o comportamento do Keychain em cópias de segurança |
 | KI-41 | Leitores de tela reais (TalkBack, VoiceOver): só as verificações de semântica dos testes |
-| KI-42 | Build de release contra uma API em `https` de verdade |
+| KI-42 | Build de release contra uma API em `https` de verdade; a receita de `deploy/` em um servidor, com certificado emitido de verdade |
 | KI-43 | Carga: nenhum teste de desempenho |
 
 ## Ambiente de desenvolvimento

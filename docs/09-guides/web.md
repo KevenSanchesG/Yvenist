@@ -29,7 +29,7 @@ YVENIST_CORS_ORIGINS=http://127.0.0.1:8123
 ```
 
 Sem essa variável o CORS fica desligado e toda chamada do navegador falha. Em
-produção a API se recusa a subir com `*`.
+produção a API se recusa a subir com `*` ou com uma origem em `http`.
 
 O que a API responde ao navegador (`backend/app/main.py`): métodos `GET`,
 `POST`, `PUT`, `PATCH`, `DELETE`; cabeçalhos aceitos `Authorization`,

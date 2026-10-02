@@ -94,7 +94,7 @@ apagada depois), instalado e aberto, com o backup desligado.
 ## Antes de publicar de verdade
 
 - A API no ar em `https`, com `YVENIST_ENV=production` e um
-  `YVENIST_JWT_SECRET` próprio ([`backend/README.md`](../../backend/README.md)).
+  `YVENIST_JWT_SECRET` próprio ([deployment](deployment.md)).
 - Os textos legais fechados e a política de privacidade em uma URL pública
   ([legal](../03-features/legal.md)).
 - A ficha da loja pede a declaração de quais dados são coletados: nome, e-mail,

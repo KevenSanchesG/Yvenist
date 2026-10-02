@@ -27,6 +27,7 @@ microsserviços, fila nem cache distribuído ([ADR-003](../05-decisions/ADR-003-
 | Banco | `backend/migrations/` | [data-model](data-model.md) |
 | Testes | `test/`, `backend/tests/` | [testing](testing.md) |
 | Automação | `.github/workflows/ci.yml` | [CI](../09-guides/ci.md) |
+| Produção | `deploy/` (receita com proxy e HTTPS; nunca usada em um servidor) | [deployment](../09-guides/deployment.md) |
 | Memória do projeto | `CLAUDE.md`, `.claude/`, `docs/` | [memory-system](../00-project/memory-system.md) |
 
 ## Os dois modos do app

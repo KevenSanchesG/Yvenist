@@ -46,11 +46,26 @@ class TestSettings:
         with pytest.raises(ValidationError, match="CORS"):
             make_settings(env="production", password_hash_profile="recommended", cors_origins=["*"])
 
+    def test_production_refuses_a_cors_origin_without_https(self) -> None:
+        # O app web manda senha e tokens para a API: servido em http, eles
+        # passariam em claro até o navegador.
+        with pytest.raises(ValidationError, match="https"):
+            make_settings(
+                env="production",
+                password_hash_profile="recommended",
+                cors_origins=["https://app.exemplo", "http://app.exemplo"],
+            )
+
     def test_production_accepts_a_strong_configuration(self) -> None:
-        settings = make_settings(env="production", password_hash_profile="recommended")
+        settings = make_settings(
+            env="production",
+            password_hash_profile="recommended",
+            cors_origins=["https://app.exemplo"],
+        )
 
         assert settings.is_production
         assert not settings.show_docs
+        assert settings.cors_origins == ["https://app.exemplo"]
 
     def test_docs_are_on_outside_production_and_can_be_forced(self) -> None:
         assert make_settings().show_docs

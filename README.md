@@ -156,6 +156,7 @@ lib/
     admin/         review queue for administrators
     shared_features/  legal, security, and the "coming soon" screens
 backend/      the API (see backend/README.md)
+deploy/       production recipe: the API behind a reverse proxy with automatic HTTPS
 docs/         the project knowledge base (also an Obsidian vault)
 test/         unit, widget-flow, accessibility and integration tests
 tools/        check_docs.py, the knowledge base checker
@@ -170,6 +171,7 @@ Developer documentation is written in Portuguese, like the code comments. It liv
 - [`docs/03-features/party-maker/README.md`](docs/03-features/party-maker/README.md) — the Party Maker: domain, rules, flows
 - [`docs/05-decisions/README.md`](docs/05-decisions/README.md) — why each choice was made (ADRs)
 - [`docs/07-known-issues/README.md`](docs/07-known-issues/README.md) — what is missing, limited or not verified
+- [`docs/09-guides/deployment.md`](docs/09-guides/deployment.md) — putting the API in production, with HTTPS
 - [`docs/09-guides/android-release.md`](docs/09-guides/android-release.md) — signing and publishing checklist
 - [`backend/README.md`](backend/README.md) — running, configuring and testing the API
 

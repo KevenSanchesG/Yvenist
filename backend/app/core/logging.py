@@ -16,6 +16,10 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 REQUEST_ID_HEADER = "x-request-id"
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
+# Um ano, como recomenda a RFC 6797. Sem "preload": entrar na lista embutida dos
+# navegadores é um compromisso do domínio inteiro, difícil de desfazer.
+_HSTS_ONE_YEAR = b"max-age=31536000; includeSubDomains"
+
 access_logger = logging.getLogger("yvenist.access")
 
 
@@ -29,8 +33,12 @@ def configure_logging(level: str) -> None:
 class RequestContextMiddleware:
     """Atribui o id da requisição, mede a duração e aplica cabeçalhos de segurança."""
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, *, strict_transport_security: bool = False) -> None:
         self.app = app
+        # Só em produção, onde a API fica atrás de https: avisa o navegador para
+        # nunca mais tentar http neste endereço. Em desenvolvimento a API é
+        # servida em http e o cabeçalho não faria sentido.
+        self._strict_transport_security = strict_transport_security
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -53,6 +61,8 @@ class RequestContextMiddleware:
                 # Respostas da API são por usuário: nunca devem ir para cache
                 # compartilhado.
                 headers.append((b"cache-control", b"no-store"))
+                if self._strict_transport_security:
+                    headers.append((b"strict-transport-security", _HSTS_ONE_YEAR))
                 message["headers"] = headers
             await send(message)
 

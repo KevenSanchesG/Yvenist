@@ -23,7 +23,7 @@ branch.
 | `backend` | `ruff`, `mypy`, `pytest` em SQLite e depois em PostgreSQL 17 | a API, com os testes de concorrência e as migrações no banco de produção |
 | `integration` | migra, semeia, cria um administrador, sobe a API; `flutter test --tags integration` na máquina e com `--platform chrome` | o app real conversa com a API real, também de dentro do navegador |
 | `android` | `flutter build apk --debug` | o app compila para Android |
-| `docker` | `docker compose up --build`, espera `/health/ready`, confere o usuário do processo, semeia e consulta o catálogo | a imagem e o compose funcionam |
+| `docker` | `docker compose up --build`, espera `/health/ready`, confere o usuário do processo, semeia e consulta o catálogo; depois sobe a receita de produção de `deploy/` e confere HTTPS, o redirecionamento de `http`, o cabeçalho HSTS, a documentação desligada, a recusa de `seed-demo` e o limite de login atrás do proxy | a imagem e o compose funcionam; a receita de [implantação](deployment.md) sobe com HTTPS e com as travas de produção |
 
 Versões fixadas no topo do arquivo: Flutter 3.41.7, Python 3.14.
 
@@ -68,4 +68,5 @@ Caminhos, do mais simples para o que pede autorização:
 ## O que o CI não cobre
 
 iOS (pediria um executor macOS), build de release assinado, desempenho, e
-qualquer coisa em produção (não existe).
+qualquer coisa em um servidor de verdade (não existe): a receita de produção é
+conferida com o domínio `localhost` e um certificado de teste.

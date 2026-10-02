@@ -18,7 +18,7 @@ combinada.
 | Quem revisa os textos legais e quais são os dados da empresa? | termos e política têm trechos entre colchetes ([legal](../03-features/legal.md)) |
 | O domínio `yvenist.com` é de vocês? | o identificador `com.yvenist.app` pressupõe isso ([ADR-013](../05-decisions/ADR-013-identificador-do-app.md)) |
 | Como o Yvenist cobra? | o app promete anúncio gratuito; não há cobrança no código |
-| Onde a API vai ser hospedada? | sem API em `https` não há build de release utilizável |
+| Onde a API vai ser hospedada? | sem API em `https` não há build de release utilizável. Os dois caminhos (servidor próprio com a receita de `deploy/`, ou uma plataforma de contêineres) estão em [deployment](../09-guides/deployment.md) |
 | O "orçamento" deve chegar aos fornecedores? | hoje é só uma estimativa para o cliente |
 | Em que ordem entram as funções "Em breve"? | veja a lista abaixo |
 

@@ -168,6 +168,21 @@ class TestSecurityHeaders:
         assert response.headers["x-content-type-options"] == "nosniff"
         assert response.headers["cache-control"] == "no-store"
 
+    def test_production_tells_browsers_to_stay_on_https(self) -> None:
+        application = build_app(env="production", password_hash_profile="recommended")
+
+        with TestClient(application) as client:
+            ok = client.get("/health/live")
+            error = client.get("/api/v1/users/me")
+
+        one_year = "max-age=31536000; includeSubDomains"
+        assert ok.headers["strict-transport-security"] == one_year
+        assert error.headers["strict-transport-security"] == one_year
+
+    def test_outside_production_there_is_no_hsts(self, client: TestClient) -> None:
+        # Em desenvolvimento a API é servida em http, na própria máquina.
+        assert "strict-transport-security" not in client.get("/health/live").headers
+
 
 class TestHealth:
     def test_liveness(self, client: TestClient) -> None:

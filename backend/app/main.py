@@ -72,7 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     # Adicionado por último para ser o mais externo: também cobre as respostas
     # geradas pelo CORS e pelos tratadores de erro.
-    app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(RequestContextMiddleware, strict_transport_security=settings.is_production)
 
     register_error_handlers(app)
     app.include_router(api_router)
