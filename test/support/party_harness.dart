@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/client/shared/listing_party_item_catalog.dart';
 import 'package:yvenist/features/party_maker/domain/entities/party.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
@@ -74,12 +75,12 @@ Future<void> fillEvent(
 
   await scrollToAndTap(
     tester,
-    find.widgetWithText(TextFormField, 'Data$suffix'),
+    find.widgetWithText(PickerFormField, 'Data$suffix'),
   );
   await tapAndSettle(tester, find.text('OK'));
   await scrollToAndTap(
     tester,
-    find.widgetWithText(TextFormField, 'Horário de início$suffix'),
+    find.widgetWithText(PickerFormField, 'Horário de início$suffix'),
   );
   await tapAndSettle(tester, find.text('OK'));
   await enterField(tester, 'Número de convidados$suffix', guests);

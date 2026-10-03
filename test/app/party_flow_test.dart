@@ -156,6 +156,28 @@ void main() {
       expect(app.state.parties.parties, isEmpty);
     });
 
+    appTest('o erro de um campo some quando o campo é corrigido', (
+      tester,
+      app,
+    ) async {
+      // Regressão: depois de uma tentativa com campos faltando, o erro
+      // continuava embaixo de um campo já preenchido até a tentativa
+      // seguinte. Visto em um Android: a data escolhida seguia em vermelho,
+      // com "Informe a data da festa." embaixo.
+      await startAddingToNewParty(tester, salao, title: festa);
+      await tapAndSettle(tester, filledButton('Adicionar à festa'));
+      expect(find.text('Informe a data da festa.'), findsOneWidget);
+
+      await fillEvent(tester);
+      // O erro sai com uma animação curta.
+      await tester.pumpAndSettle();
+
+      expect(find.text('Informe a data da festa.'), findsNothing);
+      expect(find.text('Informe o número de convidados.'), findsNothing);
+      // O que continua faltando continua marcado.
+      expect(find.text('Campo obrigatório.'), findsOneWidget);
+    });
+
     appTest('os convidados não passam do que o salão comporta', (
       tester,
       app,
@@ -445,6 +467,24 @@ void main() {
       expect(decoration.relation.kind, ItemRelationKind.recommended);
     });
 
+    appTest('um parceiro adicionado de dentro da festa é confirmado sem o '
+        'atalho para a festa', (tester, app) async {
+      // Regressão: o aviso oferecia "Ver festa" com a pessoa já olhando para
+      // a festa: um botão que não levava a lugar nenhum. Visto em um Android.
+      await seedParty(tester, app, title: festa, withAttraction: false);
+      await openTab(tester, 'Minhas festas');
+
+      await revealAndTap(
+        tester,
+        find.byTooltip('Adicionar $decoracao à festa'),
+      );
+      await enterField(tester, 'Tema', 'Safari');
+      await tapAndSettle(tester, filledButton('Adicionar à festa'));
+
+      expect(find.text('$decoracao adicionado a $festa.'), findsOneWidget);
+      expect(find.text('Ver festa'), findsNothing);
+    });
+
     appTest('os dados do evento podem ser alterados, e a estimativa por '
         'pessoa acompanha', (tester, app) async {
       await seedParty(tester, app, title: festa, withBuffet: true);
@@ -640,11 +680,7 @@ void main() {
         findsOneWidget,
       );
       await enterField(tester, 'Valor do orçamento', '1.800');
-      await enterField(
-        tester,
-        'Mensagem para o cliente (opcional)',
-        'Inclui a montagem',
-      );
+      await enterField(tester, 'Mensagem (opcional)', 'Inclui a montagem');
       await tapAndSettle(tester, filledButton('Enviar valor'));
 
       expect(
@@ -662,6 +698,60 @@ void main() {
       expect(find.text(formatBrl(185000)), findsOneWidget);
       await reveal(tester, find.text('Orçamento: ${formatBrl(180000)}'));
       expect(find.text('"Inclui a montagem"'), findsOneWidget);
+    });
+
+    appTest('ao responder, o erro do valor some quando o valor é informado', (
+      tester,
+      app,
+    ) async {
+      // Regressão: o erro continuava embaixo do campo com o valor já
+      // digitado, até a tentativa seguinte. Visto em um Android.
+      final party = await seedParty(
+        tester,
+        app,
+        title: festa,
+        withAttraction: false,
+      );
+      await app.state.parties.requestQuote(party.id);
+      await openTab(tester, 'Minhas festas');
+      await tapAndSettle(tester, find.text('Responder como fornecedor (demo)'));
+      await tapAndSettle(tester, find.text('Informar valor').first);
+      await tapAndSettle(tester, filledButton('Enviar valor'));
+      const message = 'Informe o valor, por exemplo 1500 ou 1.500,00.';
+      expect(find.text(message), findsOneWidget);
+
+      await enterField(tester, 'Valor do orçamento', '1650');
+      await tester.pumpAndSettle();
+
+      expect(find.text(message), findsNothing);
+    });
+
+    appTest('ao pedir uma alteração, o erro some quando o motivo é escrito', (
+      tester,
+      app,
+    ) async {
+      // Regressão: o mesmo do diálogo do valor.
+      final party = await seedParty(
+        tester,
+        app,
+        title: festa,
+        withAttraction: false,
+      );
+      await app.state.parties.requestQuote(party.id);
+      await openTab(tester, 'Minhas festas');
+      await tapAndSettle(tester, find.text('Responder como fornecedor (demo)'));
+      await tapAndSettle(tester, find.text('Pedir alteração').first);
+      await tapAndSettle(tester, filledButton('Pedir alteração'));
+      expect(find.text('Explique o motivo para o cliente.'), findsOneWidget);
+
+      await enterField(
+        tester,
+        'O que o cliente precisa mudar',
+        'Atendo no máximo 3 horas.',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Explique o motivo para o cliente.'), findsNothing);
     });
 
     appTest('recebido o orçamento, a festa mostra o total e pode ser '

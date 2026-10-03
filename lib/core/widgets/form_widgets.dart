@@ -77,6 +77,61 @@ class FormErrorBanner extends StatelessWidget {
   }
 }
 
+/// Campo de formulário que abre um seletor (calendário, relógio) em vez do
+/// teclado: um botão com a aparência dos campos em volta.
+///
+/// Não é um `TextFormField` só de leitura com `onTap`. O toque do dedo
+/// funcionaria, mas o Flutter não publica ação nenhuma de um campo só de
+/// leitura: para o leitor de tela ele seria um texto, sem nada para acionar.
+/// Aqui o rótulo, o valor e o toque são um botão só.
+class PickerFormField extends StatelessWidget {
+  const PickerFormField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.onTap,
+    this.validator,
+  });
+
+  final String label;
+
+  /// O que foi escolhido, já escrito para a tela; vazio se nada foi.
+  final String value;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  /// A mensagem de erro, ou `null` se o campo está certo.
+  final String? Function()? validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return FormField<String>(
+      validator: (_) => validator?.call(),
+      builder: (field) => Semantics(
+        container: true,
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: InputDecorator(
+            isEmpty: value.isEmpty,
+            decoration: InputDecoration(
+              labelText: label,
+              suffixIcon: Icon(icon),
+              errorText: field.errorText,
+            ),
+            // Sempre um texto, mesmo vazio, e no estilo do que se digita nos
+            // campos vizinhos: assim o campo tem a altura deles, com ou sem
+            // valor.
+            child: Text(value, style: Theme.of(context).textTheme.bodyLarge),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Campo de senha com botão para mostrar/ocultar o que foi digitado.
 class PasswordField extends StatefulWidget {
   const PasswordField({

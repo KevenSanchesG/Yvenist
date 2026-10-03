@@ -169,6 +169,11 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surface,
+        // Sem isto, o erro e a ajuda de um campo ficam em uma linha só e o
+        // que não cabe é cortado com reticências: em um diálogo estreito, ou
+        // com a fonte do sistema grande, a pessoa não lê o que tem de fazer.
+        errorMaxLines: 3,
+        helperMaxLines: 3,
         border: fieldBorder,
         enabledBorder: fieldBorder,
         // O mesmo laranja do rótulo e do cursor do campo em foco, que vêm de

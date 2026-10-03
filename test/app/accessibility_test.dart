@@ -435,6 +435,35 @@ void main() {
         isSemantics(isLiveRegion: true),
       );
     });
+
+    appTest('a data e o horário do evento são botões que abrem o seletor', (
+      tester,
+      app,
+    ) async {
+      // Regressão: os dois eram campos de texto só de leitura. O dedo abria o
+      // calendário, mas o Flutter não publica a ação de um campo só de
+      // leitura: para o leitor de tela eles eram um texto, sem nada para
+      // acionar. Visto no Android, onde os dois apareciam como não tocáveis.
+      await startAddingToNewParty(tester, salao, title: festa);
+
+      for (final label in ['Data', 'Horário de início']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasTapAction: true),
+          reason: label,
+        );
+      }
+
+      // Acionar pelo leitor de tela faz o mesmo que o toque do dedo.
+      tester.semantics.tap(find.semantics.byLabel('Data'));
+      await tester.pumpAndSettle();
+      expect(find.text('Data da festa'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Cancelar'));
+
+      tester.semantics.tap(find.semantics.byLabel('Horário de início'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancelar'), findsOneWidget);
+    });
   });
 
   group('área de toque', () {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:yvenist/core/widgets/form_widgets.dart';
 import 'package:yvenist/features/party_maker/domain/repositories/party_item_catalog.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/guest_count.dart';
 import 'package:yvenist/features/party_maker/presentation/party_presentation.dart';
@@ -103,34 +104,7 @@ class EventDetailsFields extends StatefulWidget {
 }
 
 class _EventDetailsFieldsState extends State<EventDetailsFields> {
-  late final TextEditingController _day = TextEditingController(text: _dayText);
-  late final TextEditingController _time = TextEditingController();
-  bool _timeWasFilled = false;
-
   EventDetailsInput get _input => widget.input;
-
-  String get _dayText {
-    final day = _input.day;
-    return day == null ? '' : formatDay(day);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // O formato da hora depende do aparelho (24h ou AM/PM): só dá para
-    // escrever depois que a tela tem contexto.
-    if (!_timeWasFilled) {
-      _timeWasFilled = true;
-      _time.text = _input.time?.format(context) ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _day.dispose();
-    _time.dispose();
-    super.dispose();
-  }
 
   void _changed() {
     setState(() {});
@@ -154,7 +128,6 @@ class _EventDetailsFieldsState extends State<EventDetailsFields> {
     );
     if (picked == null || !mounted) return;
     _input.day = picked;
-    _day.text = formatDay(picked);
     _changed();
   }
 
@@ -166,7 +139,6 @@ class _EventDetailsFieldsState extends State<EventDetailsFields> {
     );
     if (picked == null || !mounted) return;
     _input.time = picked;
-    _time.text = picked.format(context);
     _changed();
   }
 
@@ -191,6 +163,7 @@ class _EventDetailsFieldsState extends State<EventDetailsFields> {
   Widget build(BuildContext context) {
     final optional = widget.requireDate ? '' : ' (opcional)';
     final max = widget.maxGuests;
+    final day = _input.day;
 
     final guests = TextFormField(
       controller: _input.guests,
@@ -233,32 +206,27 @@ class _EventDetailsFieldsState extends State<EventDetailsFields> {
           },
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: _day,
-          readOnly: true,
+        PickerFormField(
+          label: 'Data$optional',
+          value: day == null ? '' : formatDay(day),
+          icon: Icons.calendar_today_outlined,
           onTap: _pickDay,
-          validator: (_) => widget.requireDate && _input.day == null
+          validator: () => widget.requireDate && _input.day == null
               ? 'Informe a data da festa.'
               : null,
-          decoration: InputDecoration(
-            labelText: 'Data$optional',
-            suffixIcon: const Icon(Icons.calendar_today_outlined),
-          ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: _time,
-          readOnly: true,
+        PickerFormField(
+          label: 'Horário de início$optional',
+          // O formato da hora é o do aparelho (24h ou AM/PM).
+          value: _input.time?.format(context) ?? '',
+          icon: Icons.schedule,
           onTap: _pickTime,
           // Com o dia marcado, o horário faz parte da data: sem ele o
           // fornecedor não sabe quando chegar.
-          validator: (_) => _input.day != null && _input.time == null
+          validator: () => _input.day != null && _input.time == null
               ? 'Informe o horário de início.'
               : null,
-          decoration: InputDecoration(
-            labelText: 'Horário de início$optional',
-            suffixIcon: const Icon(Icons.schedule),
-          ),
         ),
         const SizedBox(height: 16),
         guests,

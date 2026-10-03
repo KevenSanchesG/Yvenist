@@ -39,12 +39,17 @@ Future<void> startAddToPartyFlow(
 ///
 /// Se o anúncio já está naquela festa, abre o item que está lá para a pessoa
 /// alterar, em vez de pôr o mesmo anúncio duas vezes.
+///
+/// [fromParty] diz que a pessoa partiu da tela da própria festa (um parceiro
+/// recomendado): o aviso confirma sem oferecer o atalho "Ver festa", que não
+/// levaria a lugar nenhum.
 Future<void> configureAndAddToParty(
   BuildContext context, {
   required String listingId,
   required String itemName,
   required PartyTarget target,
   PartyItemId? recommendedBy,
+  bool fromParty = false,
 }) async {
   final controller = context.read<PartyMakerController>();
   final tabs = context.read<AppTabController>();
@@ -75,7 +80,9 @@ Future<void> configureAndAddToParty(
       _confirm(
         messenger,
         '$itemName atualizado em ${party.title.value}.',
-        onOpen: () => _open(controller, tabs, navigator, party.id),
+        onOpen: fromParty
+            ? null
+            : () => _open(controller, tabs, navigator, party.id),
       );
     }
     return;
@@ -97,7 +104,9 @@ Future<void> configureAndAddToParty(
   _confirm(
     messenger,
     '$itemName adicionado a ${saved.title.value}.',
-    onOpen: () => _open(controller, tabs, navigator, saved.id),
+    onOpen: fromParty
+        ? null
+        : () => _open(controller, tabs, navigator, saved.id),
   );
 }
 
@@ -113,17 +122,21 @@ void _open(
   tabs.goTo(AppTab.partyMaker);
 }
 
+/// Confirma com um aviso. [onOpen] é o atalho até a festa; sem ele (a pessoa
+/// já está nela) o aviso só confirma.
 void _confirm(
   ScaffoldMessengerState messenger,
   String message, {
-  required VoidCallback onOpen,
+  required VoidCallback? onOpen,
 }) {
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(label: 'Ver festa', onPressed: onOpen),
+        action: onOpen == null
+            ? null
+            : SnackBarAction(label: 'Ver festa', onPressed: onOpen),
       ),
     );
 }

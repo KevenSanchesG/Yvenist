@@ -39,6 +39,10 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   List<EventTypeOption> _eventTypes = const [];
   String? _error;
 
+  // Depois da primeira tentativa com erro, o formulário confere de novo a cada
+  // mudança: o erro de um campo some assim que o campo é corrigido.
+  bool _showErrors = false;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +82,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     setState(() => _error = null);
     final invalid = _formKey.currentState!.validateGranularly();
     if (invalid.isNotEmpty) {
+      setState(() => _showErrors = true);
       // O campo com problema pode estar fora da tela: a rolagem vai até ele.
       await Scrollable.ensureVisible(
         invalid.first.context,
@@ -149,6 +154,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         bottom: false,
         child: Form(
           key: _formKey,
+          autovalidateMode: _showErrors
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
           // Uma coluna, e não uma lista preguiçosa: a validação só enxerga os
           // campos que estão montados, e com letras grandes o nome da festa
           // sai da tela antes de a pessoa chegar ao botão.
@@ -191,6 +199,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   input: _event,
                   eventTypes: _eventTypes,
                   maxGuests: capacity,
+                  // A data e o horário não são campos de texto: é a tela que
+                  // avisa o formulário de que mudaram.
+                  onChanged: () => setState(() {}),
                 ),
                 if (hasQuotes) ...[
                   const SizedBox(height: 16),

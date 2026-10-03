@@ -69,6 +69,7 @@ class _PartnerSuggestionsState extends State<PartnerSuggestions>
       itemName: partner.name,
       target: ExistingPartyTarget(widget.party.id),
       recommendedBy: widget.item.id,
+      fromParty: true,
     );
   }
 

@@ -341,6 +341,10 @@ class _AmountDialogState extends State<_AmountDialog> {
   late final TextEditingController _amount;
   late final TextEditingController _message;
 
+  // Depois da primeira tentativa com erro, o formulário confere de novo a cada
+  // mudança: o erro some assim que o valor é corrigido.
+  bool _showErrors = false;
+
   @override
   void initState() {
     super.initState();
@@ -373,7 +377,10 @@ class _AmountDialogState extends State<_AmountDialog> {
   }
 
   void _confirm() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _showErrors = true);
+      return;
+    }
     final message = _message.text.trim();
     Navigator.pop(
       context,
@@ -393,6 +400,9 @@ class _AmountDialogState extends State<_AmountDialog> {
       title: Text('Valor de ${widget.request.name}'),
       content: Form(
         key: _formKey,
+        autovalidateMode: _showErrors
+            ? AutovalidateMode.always
+            : AutovalidateMode.disabled,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -419,9 +429,13 @@ class _AmountDialogState extends State<_AmountDialog> {
                 maxLength: VendorResponse.maxMessageLength,
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
+                // Rótulo curto: um rótulo não quebra de linha, e o que não
+                // cabe no diálogo é cortado. Quem lê a mensagem está dito na
+                // ajuda.
                 decoration: const InputDecoration(
-                  labelText: 'Mensagem para o cliente (opcional)',
+                  labelText: 'Mensagem (opcional)',
                   hintText: 'Ex.: o que está incluído, condições',
+                  helperText: 'O cliente lê junto com o valor.',
                   alignLabelWithHint: true,
                 ),
               ),
@@ -465,6 +479,10 @@ class _ExplanationDialogState extends State<_ExplanationDialog> {
   final _formKey = GlobalKey<FormState>();
   final _message = TextEditingController();
 
+  // Como no diálogo do valor: depois da primeira tentativa com erro, o
+  // formulário confere de novo a cada mudança.
+  bool _showErrors = false;
+
   @override
   void dispose() {
     _message.dispose();
@@ -472,7 +490,10 @@ class _ExplanationDialogState extends State<_ExplanationDialog> {
   }
 
   void _confirm() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _showErrors = true);
+      return;
+    }
     Navigator.pop(context, widget.build(_message.text.trim()));
   }
 
@@ -482,6 +503,9 @@ class _ExplanationDialogState extends State<_ExplanationDialog> {
       title: Text(widget.title),
       content: Form(
         key: _formKey,
+        autovalidateMode: _showErrors
+            ? AutovalidateMode.always
+            : AutovalidateMode.disabled,
         child: SingleChildScrollView(
           child: TextFormField(
             controller: _message,

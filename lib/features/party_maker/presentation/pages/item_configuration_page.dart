@@ -218,6 +218,10 @@ class _ItemConfigurationPageState extends State<ItemConfigurationPage> {
   String? _loadError;
   String? _submitError;
 
+  // Depois da primeira tentativa com erro, o formulário confere de novo a cada
+  // mudança: o erro de um campo some assim que o campo é corrigido.
+  bool _showErrors = false;
+
   @override
   void initState() {
     super.initState();
@@ -399,6 +403,7 @@ class _ItemConfigurationPageState extends State<ItemConfigurationPage> {
     setState(() => _submitError = null);
     final invalid = _formKey.currentState!.validateGranularly();
     if (invalid.isNotEmpty) {
+      setState(() => _showErrors = true);
       // O campo com problema pode estar fora da tela: a rolagem vai até ele.
       await Scrollable.ensureVisible(
         invalid.first.context,
@@ -508,6 +513,9 @@ class _ItemConfigurationPageState extends State<ItemConfigurationPage> {
           Expanded(
             child: Form(
               key: _formKey,
+              autovalidateMode: _showErrors
+                  ? AutovalidateMode.always
+                  : AutovalidateMode.disabled,
               // Uma coluna, e não uma lista preguiçosa: a validação só enxerga
               // os campos que estão montados, e todos têm de ser conferidos,
               // inclusive os que estão fora da tela.

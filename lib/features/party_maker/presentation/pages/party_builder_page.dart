@@ -322,10 +322,12 @@ class PartyBuilderPage extends StatelessWidget {
     final confirmed = await _confirmDialog(
       context,
       title: 'Aceitar o orçamento?',
+      // "Aparece na lista", e não "eles ficam sabendo": o app não avisa
+      // ninguém, e a pessoa não deve contar com um aviso que não existe.
       message:
           'O total informado pelos fornecedores é '
-          '${total == null ? onRequestLabel : formatBrl(total.cents)}. Eles '
-          'ficam sabendo que você aceitou.\n\n'
+          '${total == null ? onRequestLabel : formatBrl(total.cents)}. O '
+          'aceite aparece para eles na lista de pedidos.\n\n'
           'O pagamento é combinado direto com cada fornecedor.',
       action: 'Aceitar',
     );
@@ -348,9 +350,9 @@ class PartyBuilderPage extends StatelessWidget {
       context,
       title: 'Cancelar esta festa?',
       message:
-          'Os fornecedores que receberam o pedido ficam sabendo. A festa '
-          'continua na sua lista, como cancelada, e não pode mais ser '
-          'alterada.',
+          'O cancelamento aparece para os fornecedores na lista de pedidos '
+          'deles. A festa continua na sua lista, como cancelada, e não pode '
+          'mais ser alterada.',
       action: 'Cancelar a festa',
       dismiss: 'Manter a festa',
     );
