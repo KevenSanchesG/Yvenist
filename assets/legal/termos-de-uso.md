@@ -4,7 +4,7 @@ Versão 2026-10 (preliminar)
 
 ## 1. O que é o Yvenist
 
-O Yvenist é uma plataforma que reúne anúncios de espaços e serviços para festas e eventos. Pelo aplicativo você encontra anúncios, guarda os seus favoritos, monta a sua festa reunindo os itens que escolheu e gera um orçamento estimado. Quem tem um espaço ou serviço pode se cadastrar como fornecedor e publicar anúncios.
+O Yvenist é uma plataforma que reúne anúncios de espaços e serviços para festas e eventos. Pelo aplicativo você encontra anúncios, guarda os seus favoritos, monta a sua festa reunindo e configurando os itens que escolheu, vê uma estimativa do custo e solicita o orçamento aos fornecedores. Quem tem um espaço ou serviço pode se cadastrar como fornecedor e publicar anúncios.
 
 O Yvenist não presta os serviços anunciados. A contratação de um espaço ou serviço acontece diretamente entre você e o fornecedor, e é dele a responsabilidade pelo que foi anunciado e combinado.
 
@@ -23,8 +23,10 @@ O Yvenist não presta os serviços anunciados. A contratação de um espaço ou 
 ## 4. Anúncios, preços e orçamentos
 
 - As informações de cada anúncio (descrição, capacidade, preço, política de cancelamento) são fornecidas pelo fornecedor.
-- O preço mostrado é o valor inicial informado pelo fornecedor ("a partir de"). O valor final depende do que for combinado entre vocês.
-- O orçamento gerado pelo aplicativo é uma estimativa, calculada com os preços dos anúncios no momento em que você o solicita. Ele não é uma reserva, não é um contrato e não garante disponibilidade na data da festa.
+- O preço mostrado em um anúncio é informado pelo fornecedor. Pode ser um valor inicial ("a partir de"), um valor por pessoa, por hora ou por unidade, ou "sob consulta", quando o fornecedor não publica o valor. O valor final depende do que for combinado entre vocês.
+- A estimativa mostrada na festa é uma conta feita pelo aplicativo com os preços publicados e com o que você informou (convidados, duração, quantidade). Ela não é o preço final, e os itens sob consulta ficam fora dela.
+- Ao solicitar o orçamento, cada fornecedor recebe o pedido do item dele e pode informar um valor, pedir uma alteração ou recusar. O valor informado é uma proposta do fornecedor, e o Yvenist não o confere.
+- Aceitar um orçamento pelo aplicativo registra a sua escolha. Não é uma reserva, não é um contrato e não garante disponibilidade na data da festa: a contratação é combinada diretamente com cada fornecedor. [Efeito do aceite a confirmar com advogado.]
 - Nesta versão o aplicativo não processa pagamentos. O pagamento, quando houver, é combinado diretamente com cada fornecedor.
 
 ## 5. Regras para fornecedores
@@ -32,6 +34,7 @@ O Yvenist não presta os serviços anunciados. A contratação de um espaço ou 
 - O cadastro pede CPF ou CNPJ e o nome do responsável ou a razão social, usados para verificar quem está anunciando.
 - Cadastros e anúncios passam por análise antes de serem publicados. Podemos recusar ou remover o que estiver incompleto, incorreto ou em desacordo com estes termos, informando o motivo.
 - O fornecedor é responsável pela veracidade do anúncio, por ter as autorizações necessárias para a atividade e por cumprir o que combinar com os clientes.
+- O fornecedor recebe pelo aplicativo os pedidos de orçamento dos seus anúncios, é responsável pelos valores e pelas mensagens que enviar em resposta, e deve usar as informações de um pedido apenas para respondê-lo. [Redação a revisar por advogado.]
 - Nesta versão o Yvenist não cobra pela publicação de anúncios. [Condição comercial a confirmar antes do lançamento.]
 
 ## 6. O que não é permitido

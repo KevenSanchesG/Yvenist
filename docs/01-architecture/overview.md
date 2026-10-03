@@ -1,7 +1,7 @@
 ---
 title: Arquitetura — visão geral
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Arquitetura — visão geral
@@ -48,13 +48,14 @@ próprio aparelho (`localhost`, `127.0.0.1`, `::1`) — `lib/core/config/app_con
 
 Exemplo: tocar em "Solicitar orçamento".
 
-1. `PartyBuilderPage` chama `PartyMakerController.lockActivePartyForPayment()`.
-2. O controller executa o caso de uso `LockPartyForPaymentUseCase`.
-3. O agregado `Party` aplica a regra no aparelho (`lockForPayment`).
+1. `PartyBuilderPage` chama `PartyMakerController.requestQuote(partyId)`.
+2. O controller executa o caso de uso `RequestQuoteUseCase`.
+3. O agregado `Party` aplica a regra no aparelho (`requestQuote`).
 4. `PartyRepository.save` grava: em memória, ou `PUT /parties/{id}` com o
    estado desejado e a versão conhecida.
 5. Na API, `parties/router.py` → `PartyService.save_party` → `domain.reconcile`
-   valida de novo e grava.
+   valida de novo e grava. A partir daí cada item aparece para o fornecedor
+   dele (`quotes/`).
 6. A festa volta como ficou gravada e substitui a cópia do app.
 7. Qualquer falha vira `AppFailure` com mensagem em português, mostrada em um
    aviso; a tela nunca recebe uma exceção.
@@ -64,6 +65,8 @@ Exemplo: tocar em "Solicitar orçamento".
 | Quero mudar... | Comece por |
 |---|---|
 | uma regra da festa | `lib/features/party_maker/domain/` **e** `backend/app/modules/parties/domain.py` (as duas têm de concordar) |
+| o que uma categoria pede para entrar na festa | `item_configuration_spec.dart` **e** `backend/app/modules/parties/configuration.py` |
+| a conta da estimativa | `value_objects/pricing.dart` **e** `backend/app/modules/catalog/pricing.py` |
 | uma tela | `lib/features/<funcionalidade>/presentation/pages/` |
 | uma chamada à API | `lib/features/<funcionalidade>/data/api_*_repository.dart` |
 | uma rota | `backend/app/modules/<módulo>/router.py` e `service.py` |

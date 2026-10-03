@@ -75,10 +75,9 @@ em análise ──aprovado──▶ publicado
 Só anúncio **publicado** aparece na busca e pode entrar em uma festa. Os status
 `draft` e `archived` existem no modelo e nenhum fluxo os usa hoje.
 
-TODO: um anúncio sob consulta ainda não entra em uma festa (o app avisa; a API
-responde `listing_not_available`). A festa soma preço vezes quantidade, e sem
-preço o item valeria zero. Sai quando o Party Maker passar a estimar por modelo
-de preço.
+Um anúncio sob consulta entra em uma festa como qualquer outro: fica fora da
+estimativa, que diz quantos itens ficaram de fora, e o valor vem na resposta do
+fornecedor ([Party Maker](../03-features/party-maker/business-rules.md)).
 
 ## Regras
 

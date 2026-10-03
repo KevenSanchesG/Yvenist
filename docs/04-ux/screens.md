@@ -1,7 +1,7 @@
 ---
 title: Telas e navegação
 type: ux
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Telas e navegação
@@ -15,7 +15,12 @@ Barra inferior (app_shell.dart)
 │                          sino ▸ Notificações (vazia)
 │                          categoria ▸ aba Explorar com o filtro
 ├── Explorar
-├── ● Minhas festas* ───── hub Minhas Festas ⇄ Montagem da festa
+├── ● Minhas festas* ───── Minhas Festas ▸ Nova festa (dados do evento)
+│                              ⇅
+│                          A festa ▸ Alterar item (configuração)
+│                                  ▸ parceiro recomendado ▸ configuração
+│                                  ▸ ⋮ Histórico · Editar dados do evento · Cancelar · Apagar
+│                                  ▸ Responder como fornecedor (só no modo demonstração)
 ├── Chat ───────────────── "Conversas em breve"
 └── Perfil* ────────────── Dados Pessoais
                            Formas de Pagamento ("em breve")
@@ -24,9 +29,10 @@ Barra inferior (app_shell.dart)
                            Segurança ▸ Alterar senha · Excluir conta
                            Termos e Política ▸ Termos de Uso · Política de Privacidade
                            Fornecedor: Convite ▸ O que anunciar ▸ Formulário do salão
+                           Modo Fornecedor: Pedidos de orçamento ▸ diálogos de resposta
                            Administração**: Fila de análise
 
-De qualquer card de anúncio:  + ▸ folha "Em qual festa?" ▸ diálogo "Nome da nova festa"
+De qualquer card de anúncio:  + ▸ folha "Em qual festa?" (▸ diálogo "Nome da nova festa") ▸ configuração do item
 Onde uma conta é exigida:     Entrar ⇄ Criar conta
 ```
 
@@ -59,8 +65,11 @@ acrescente `--dart-define=ALL_DARK=true` e elas saem em
 | Busca com resultados | `busca.png` | |
 | Favoritos | `favoritos.png` | |
 | Folha "Em qual festa?" | `adicionar-a-festa.png` | |
-| Montagem da festa | `party-maker.png` | `party-maker-escuro.png` |
-| Minhas Festas (com orçamento solicitado) | `minhas-festas.png` | |
+| Configuração de um item (um salão) | `configurar-item.png` | |
+| A festa, em planejamento | `party-maker.png` | `party-maker-escuro.png` |
+| A festa, com o orçamento recebido | `party-orcamento.png` | `party-orcamento-escuro.png` |
+| Minhas Festas | `minhas-festas.png` | |
+| Pedidos de orçamento (fornecedor) | `pedidos-de-orcamento.png` | |
 | Perfil (com conta) | `perfil.png` | `perfil-escuro.png` |
 | Perfil (visitante) | `perfil-visitante.png` | |
 | Dados Pessoais | `dados-pessoais.png` | |
@@ -74,10 +83,12 @@ acrescente `--dart-define=ALL_DARK=true` e elas saem em
 | Fila de análise: fornecedores | `admin-fornecedores.png` | `admin-fornecedores-escuro.png` |
 | Fila de análise: anúncios | `admin-anuncios.png` | |
 
-Mudou uma tela que tem captura → regenere e envie as imagens junto.
+Mudou uma tela que tem captura → regenere e envie as imagens junto. As
+capturas da festa usam uma data fixa (15/06/2030), para a imagem não mudar a
+cada geração.
 
 ## Telas sem captura
 
 Segurança, Alterar senha, Política de Privacidade, Formas de Pagamento, Chat,
-Notificações, e a tela de erro de configuração (`ConfigErrorApp`, mostrada
-quando `API_BASE_URL` é inválida).
+Notificações, os dados do evento, o histórico da festa, e a tela de erro de
+configuração (`ConfigErrorApp`, mostrada quando `API_BASE_URL` é inválida).

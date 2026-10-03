@@ -1,7 +1,7 @@
 ---
 title: Roadmap
 type: project
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Roadmap
@@ -19,7 +19,8 @@ combinada.
 | Para que servem o telefone e a data de nascimento? | são pedidos e nenhuma função os usa ([personal-data](../01-architecture/personal-data.md)) |
 | Como o Yvenist cobra? | o app promete anúncio gratuito; não há cobrança no código |
 | Onde a API vai ser hospedada? | sem API em `https` não há build de release utilizável. Os dois caminhos (servidor próprio com a receita de `deploy/`, ou uma plataforma de contêineres) estão em [deployment](../09-guides/deployment.md) |
-| O "orçamento" deve chegar aos fornecedores? | hoje é só uma estimativa para o cliente |
+| As decisões de negócio do Party Maker valem como foram feitas? | o orçamento passou a chegar aos fornecedores, item por item, com escolhas que ninguém confirmou: [ADR-019](../05-decisions/ADR-019-festa-como-composicao-de-evento.md) e as perguntas em [party-maker/roadmap](../03-features/party-maker/roadmap.md) |
+| O que acontece depois que a pessoa aceita um orçamento? | hoje nada: não reserva, não gera contrato, não cobra |
 | Em que ordem entram as funções "Em breve"? | veja a lista abaixo |
 
 ## Para publicar no Android
@@ -47,10 +48,9 @@ O que já existe para cada uma:
 | Cadastro de outras categorias | API aceita qualquer categoria | formulário por categoria |
 | Meus Anúncios | `GET /vendors/me/listings` | a tela; edição de anúncio não existe na API |
 | Fotos do anúncio | campo `cover_image_url` (uma URL) | envio e armazenamento de arquivos |
-| Data e convidados da festa | domínio e API aceitam (`event_at`, `guest_count`) | os campos na tela |
-| Renomear e cancelar festa | domínio e API aceitam | os botões na tela |
+| Indicar parceiros no anúncio | a API aceita `partner_listing_ids`; a festa já os sugere | a tela no cadastro do fornecedor |
 | Pagamentos | status `paid` no ciclo da festa | tudo: provedor, fluxo, telas |
-| Chat, notificações, avaliações | nada (só as colunas `rating_*` do anúncio) | tudo |
+| Chat, notificações, avaliações | nada (só as colunas `rating_*` do anúncio) | tudo. Sem notificação, a resposta de um orçamento só aparece quando a pessoa atualiza a festa |
 | Recuperar senha, confirmar e-mail | nada | serviço de e-mail e fluxo |
 | Autenticação em dois fatores | nada | tudo |
 
@@ -63,6 +63,9 @@ que torna cada uma urgente.
 
 1. Hospedar a API (sem isso nada chega a usuários).
 2. Fechar os textos legais e publicar no Android em teste interno.
-3. Página de detalhe do anúncio e data/convidados da festa: a API já atende, e
-   são o que mais falta para a festa montada ser útil.
-4. Decidir o que o orçamento vira (pedido ao fornecedor?) antes de pagamentos.
+3. Confirmar com os donos as decisões de negócio do Party Maker (ADR-019)
+   antes de mostrá-lo a usuários reais.
+4. Página de detalhe do anúncio: a API já atende, e é o que mais falta para a
+   pessoa escolher bem o que põe na festa.
+5. Avisar a pessoa quando um fornecedor responde, e decidir o que o aceite de
+   um orçamento vira (reserva? contrato?), antes de pagamentos.

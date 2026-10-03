@@ -1,7 +1,7 @@
 ---
 title: Inventário de dados pessoais
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Inventário de dados pessoais
@@ -30,7 +30,8 @@ manifestos do Android e do iOS.
 | Aceite dos termos | `users.terms_version`, `terms_accepted_at` | cadastro | sim | registro do aceite | ninguém (só no banco) |
 | Sessões | `refresh_tokens`: hash do token, `user_agent` (até 255 caracteres), abertura, validade, encerramento | cada login | sim | manter a sessão; detectar reuso de token | a própria conta (`GET /users/me/sessions`) |
 | Favoritos | `favorites` | botão de favoritar | não | lista de favoritos | a própria conta |
-| Festas | `parties`, `party_items`, `party_snapshots`: nome, data, convidados, itens, orçamento | Party Maker | não | montar a festa | a própria conta |
+| Festas | `parties`, `party_items`, `party_snapshots`, `party_events`: nome, tipo de evento, data e hora, convidados, itens, a configuração de cada item (inclusive **observações em texto livre**), a estimativa do pedido e o histórico | Party Maker | não | montar a festa e pedir o orçamento | a própria conta. **Ao solicitar o orçamento**, o fornecedor de cada item vê o evento (tipo, data, convidados) e a configuração daquele item, sem o nome da festa nem de quem pediu (seção abaixo) |
+| Respostas a pedidos de orçamento | `party_items.quote_*` e `quoted_cents`; `party_events` | caixa de pedidos do fornecedor | — | informar o valor, pedir alteração ou recusar | o fornecedor que respondeu e a conta dona da festa |
 | Tipo de pessoa, CPF ou CNPJ, nome ou razão social | `vendor_profiles` | cadastro de fornecedor | sim, para anunciar | verificar quem anuncia | a conta vê o documento mascarado; **administradores veem o número completo** |
 | Resultado da análise | `vendor_profiles` e `listings`: situação, motivo da recusa, data, quem analisou | fila de análise | — | informar o fornecedor | a conta dona (sem o nome de quem analisou); administradores |
 | Anúncio | `listings`: título, descrição, bairro, cidade, UF, preço, capacidade, área, estrutura, cancelamento, URL da capa | cadastro de salão | sim, para anunciar | catálogo | **qualquer pessoa**, depois de publicado |
@@ -39,6 +40,23 @@ manifestos do Android e do iOS.
 O anúncio público **não** leva o nome nem o documento de quem anuncia
 (`ListingSummary` e `ListingDetail`, em `catalog/schemas.py`). Administradores
 não recebem e-mail nem telefone de ninguém pela fila (`AdminVendorResponse`).
+
+## O que uma conta vê de outra no pedido de orçamento
+
+É o único ponto em que um dado escrito por uma conta chega a outra conta que
+não é da administração. Conferido em `quotes/schemas.py`
+(`QuoteRequestResponse`) e `parties/schemas.py` (`PartyItemResponse`).
+
+| Quem | Vê | Não vê |
+|---|---|---|
+| O fornecedor, de cada item dos próprios anúncios, enquanto a festa está com o orçamento solicitado (ou foi cancelada depois disso) | tipo de evento, data e hora, convidados; nome, quantidade e configuração do item, **com as observações que a pessoa escreveu**; a estimativa; `party_id` e `item_id`, que não dão acesso à festa | nome da festa, nome, e-mail ou id de quem pediu; os itens de outros fornecedores |
+| O cliente, de cada item da festa | o valor e o recado do fornecedor; `vendor_id`, um identificador opaco que só agrupa os itens do mesmo fornecedor | nome, documento ou contato do fornecedor |
+
+As observações e o recado são texto livre: é onde alguém pode escrever um dado
+pessoal (um telefone, uma condição de saúde de um convidado). A Política de
+Privacidade pede para não escrever o que não se quer compartilhar; a tela não
+impede. Uma festa que voltou para a edição deixa de aparecer para o
+fornecedor (`_VISIBLE_TO_VENDOR` em `quotes/service.py`).
 
 ## O que passa pelo servidor e não é guardado
 
@@ -88,8 +106,14 @@ conta, e o banco apaga em cascata sessões, favoritos, festas, cadastro de
 fornecedor e anúncios ([data-model](data-model.md)). É imediata e definitiva.
 
 O que sobra: a cópia de nome, preço e imagem de um anúncio que já estava na
-festa de outra pessoa (`party_items`, sem ligação com o fornecedor), e o que
+festa de outra pessoa (`party_items`, sem ligação com o fornecedor: `vendor_id`,
+`listing_id` e `offer_id` viram nulos), o valor e o recado que o fornecedor
+tinha respondido para aquele item (no item e em `party_events`), e o que
 estiver em cópias de segurança (OPEN QUESTION: não há política de cópias).
+
+Quando quem exclui a conta é o cliente, as festas dele somem com tudo
+(`party_items`, `party_snapshots`, `party_events`), e os pedidos deixam de
+aparecer para os fornecedores.
 
 Sessões vencidas ou encerradas ficam no banco até alguém rodar
 `purge-tokens`: não há rotina automática.
@@ -108,6 +132,7 @@ nos próprios textos, sempre mantendo o rótulo de versão preliminar:
 | Não havia como pedir a exclusão sem o app, que a Play Store exige | frase na seção 7 da política e a página `deploy/site/exclusao-de-conta.md` |
 | "A sessão fica no cofre seguro do aparelho" não vale para a versão web | mantido: a versão web não é publicada. Rever junto com o KI-30 |
 | O app passou a guardar a escolha de tema no aparelho | frase acrescentada à seção 2 da política, no mesmo dia em que a função entrou |
+| 3 de outubro de 2026: a festa passou a guardar o tipo de evento, a configuração de cada item (com observações) e o histórico, e o pedido de orçamento passou a chegar aos fornecedores | seções 2 a 5 da política (o que é guardado, para quê, o que o fornecedor recebe e o que sobra depois da exclusão); seções 1, 4 e 5 dos termos (estimativa, orçamento, aceite, dever do fornecedor); a página de exclusão de conta. Dois trechos novos pedem revisão de advogado, entre colchetes |
 
 ## Perguntas que o levantamento deixa
 
@@ -121,6 +146,9 @@ Estão no [roadmap](../00-project/roadmap.md) e em
   ou o app deve perguntar a data de nascimento no cadastro?
 - OPEN QUESTION: por quanto tempo ficam as cópias de segurança, e quem é o
   provedor de hospedagem (e em que país)?
+- OPEN QUESTION: o envio dos dados do evento e das observações ao fornecedor,
+  no pedido de orçamento, precisa de um aviso ou de um aceite próprio? Hoje o
+  diálogo de confirmação diz o que é enviado, e a política descreve.
 
 ## Apoio para a ficha "Segurança dos dados" da Play Store
 
@@ -135,12 +163,15 @@ donos.
 | IDs de usuário (o id da conta) | sim | sim | funcionalidade do app |
 | Número de telefone | sim | não | gerenciamento da conta |
 | Outras informações (data de nascimento; CPF ou CNPJ de quem anuncia) | sim | não | gerenciamento da conta; prevenção de fraude e segurança |
-| Outro conteúdo gerado pelo usuário (festas, anúncios) | sim | não | funcionalidade do app |
+| Outro conteúdo gerado pelo usuário (festas, com as observações de cada item; anúncios; respostas a pedidos de orçamento) | sim | não | funcionalidade do app |
 | Outras ações (favoritos) | sim | não | funcionalidade do app |
 | Histórico de pesquisa no app | não: usado e descartado | — | — |
 | Localização, fotos, dados financeiros, IDs do aparelho, registros de falha | não | — | — |
 
-- Compartilhado com terceiros: não.
+- Compartilhado com terceiros: não, no sentido de empresas de fora. `[INFERÊNCIA]`
+  O pedido de orçamento leva dados do evento a outro usuário do app (o
+  fornecedor), a pedido da própria pessoa; se isso é "compartilhamento" na
+  definição da ficha é uma decisão de quem a preenche.
 - Criptografado em trânsito: sim, em builds de release.
 - Exclusão: pelo app, e pela página pública de exclusão de conta
   ([legal](../03-features/legal.md)).

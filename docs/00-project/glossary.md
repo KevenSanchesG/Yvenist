@@ -25,12 +25,18 @@ código. Na API os nomes são os mesmos do app, em `snake_case`.
 | Parceiro | outro anúncio que um anúncio recomenda; é contratado à parte | `ListingDetail.partners`, tabela `listing_partners` |
 | Vitrine | as faixas de anúncios da tela inicial | `HomeController`, `HomeSection` |
 | Favorito | anúncio guardado pela conta | `FavoritesController`, tabela `favorites` |
-| Festa | o que a pessoa está planejando: um nome e os itens escolhidos | `Party` (agregado) |
-| Party Maker | a funcionalidade de montar festas; é a aba central | `features/party_maker` |
-| Item da festa | um anúncio colocado na festa, com nome e preço copiados naquele momento | `PartyItem` |
-| Orçamento | a soma dos itens da festa | `PartyBudget`; depois de solicitado, `PartyPaymentSnapshot` |
-| Solicitar orçamento | travar a festa e registrar a estimativa | `lockForPayment`; status `locked` |
-| Editar festa | destravar uma festa com orçamento solicitado | `unlock` |
+| Festa | o evento que a pessoa está compondo: nome, tipo, data, convidados e os itens escolhidos | `Party` (agregado) |
+| Party Maker | a funcionalidade de compor e gerenciar um evento; é a aba central | `features/party_maker` |
+| Item da festa | um anúncio (ou um serviço próprio de um anúncio) colocado na festa: a cópia do catálogo, o que a pessoa configurou e o que o fornecedor respondeu | `PartyItem` |
+| Configuração do item | o que a categoria pede para o item entrar: a duração de um salão, o tema de uma decoração | `ItemConfiguration`; a tabela é `ItemConfigurationSpec` (app) e `_SPECS` (API) |
+| Estimativa | a conta que o app faz com o preço do anúncio e o que a pessoa informou. Não é o preço | `Pricing.estimate`, `BudgetEstimate`; `estimate_cents` |
+| Orçamento | o valor que cada fornecedor respondeu para o item dele. Nunca se confunde com a estimativa | `ItemQuote`; `quoted_cents` |
+| Solicitar orçamento | congelar a festa e mandar cada item para o fornecedor dele | `Party.requestQuote`; status `locked` |
+| Pedido de orçamento | um item de uma festa, como o fornecedor o vê | `QuoteRequest`; `GET /vendors/me/quote-requests` |
+| Edição solicitada | um fornecedor pediu uma alteração em um item, ou não pode atender | status `edit_requested`; `QuoteStatus.changesRequested`, `declined` |
+| Rodada | cada vez que o orçamento de uma festa é pedido; a segunda em diante é um reenvio | `Party.quoteRound`; `quote_round` |
+| Editar festa | voltar ao planejamento uma festa com o orçamento solicitado | `Party.reopenForEditing` |
+| Orçamento aceito | a pessoa aceitou o que os fornecedores responderam. Não reserva nem cobra | status `confirmed` |
 | Fornecedor | conta que pediu para anunciar | `VendorProfile` |
 | Cadastro de fornecedor | os dados de quem anuncia (CPF/CNPJ e nome), enviados com o primeiro anúncio | `POST /vendors/onboarding` |
 | Fila de análise | cadastros e anúncios esperando decisão | `ReviewQueue`, rotas `/admin/*` |
@@ -47,7 +53,7 @@ código. Na API os nomes são os mesmos do app, em `snake_case`.
 | Falha | erro traduzido para um texto que a tela pode mostrar | `AppFailure` e subclasses |
 | Estado desejado | a festa como o app quer gravá-la, enviada inteira | `PUT /parties/{id}`, `partyToJson` |
 | Versão | contador que detecta gravação concorrente da festa | `parties.version` |
-| Snapshot | cópia de um dado no momento em que foi usado | nome e preço do item; orçamento travado |
+| Snapshot | cópia de um dado no momento em que foi usado | nome e preço do item; a estimativa de quando o orçamento foi solicitado (`party_snapshots`) |
 | Token de acesso | credencial curta de cada chamada (15 min) | JWT |
 | Token de renovação | credencial longa que troca o par de tokens | tabela `refresh_tokens` (só o hash) |
 | Família | os tokens de renovação nascidos do mesmo login | `refresh_tokens.family_id` |

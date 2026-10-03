@@ -2,7 +2,7 @@
 title: Party Maker — domínio
 type: feature
 tags: [party-maker]
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Party Maker — domínio
@@ -15,69 +15,131 @@ exceção de domínio se a regra não deixar.
 
 ```
 Party
- ├── PartyTitle, EventDate?, GuestCount?
+ ├── o evento: PartyTitle, eventType?, EventDate?, GuestCount?
  ├── status: PartyStatus
- ├── budget: PartyBudget ── PartyItem*      (imutável: cada mudança gera outro)
- └── paymentSnapshot: PartyPaymentSnapshot? (só enquanto travada)
+ ├── budget: PartyBudget ── PartyItem*         (imutável: cada mudança gera outro)
+ │                            ├── de onde veio: ExternalRef (anúncio ou serviço próprio)
+ │                            ├── cópia do catálogo: nome, categoria, Pricing, capacidade
+ │                            ├── o que a pessoa informou: Quantity, ItemConfiguration
+ │                            ├── a que item se liga: ItemRelation
+ │                            └── o que o fornecedor respondeu: ItemQuote
+ ├── quoteRound                                (quantas vezes o orçamento foi pedido)
+ ├── quoteSnapshot: QuoteRequestSnapshot?      (só com o orçamento solicitado)
+ └── history: PartyHistoryEntry*               (só cresce)
 ```
 
 Campo a campo: [entities](entities.md).
 
+## Status
+
+| Status | Na tela | Quem leva a festa até ele | O conteúdo pode mudar? |
+|---|---|---|---|
+| `draft` | Rascunho | só dados antigos (o app não cria mais) | sim |
+| `planning` | Em planejamento | a pessoa (criar, voltar a editar) | sim |
+| `locked` | Orçamento solicitado | a pessoa (solicitar) | não |
+| `quoted` | Orçamento recebido | **a resposta de um fornecedor**: todos os itens têm valor | não |
+| `edit_requested` | Edição solicitada | **a resposta de um fornecedor**: um item voltou | não |
+| `confirmed` | Orçamento aceito | a pessoa (aceitar) | não |
+| `paid` | Pago | ninguém: não há pagamento | não |
+| `cancelled` | Cancelado | a pessoa (cancelar) | não |
+
+`PartyStatus` (`domain/enums/party_status.dart`) agrupa: `isEditable` (`draft`,
+`planning`), `isSubmitted` (`locked`, `quoted`, `edit_requested`, `confirmed`)
+e `acceptsVendorAnswers` (`locked`, `quoted`, `edit_requested`). Na API são
+`_EDITABLE`, `SUBMITTED` e `ANSWERABLE` (`parties/domain.py`).
+
 ## Ciclo de vida
 
 ```
-              startPlanning          lockForPayment
-  draft ─────────────────▶ planning ───────────────▶ locked ─ ─ confirmPayment ─ ─▶ paid
-    │                         │  ▲                      │
-    │                         │  └────── unlock ────────┘
-    └──────── cancel ─────────┴────────── cancel ───────┴──────▶ cancelled
+                         solicitar                       todos responderam com valor
+  planning ─────────────────────────────▶ locked ─────────────────────────────────▶ quoted ──aceitar──▶ confirmed
+     ▲                                      │  ▲                                       │                    │
+     │                                      │  └── o fornecedor corrige ───────────────┤                    │
+     │              um item voltou (alteração pedida ou recusa)                        │                    │
+     │                                      ▼                                          │                    │
+     │                                edit_requested ◀─────────────────────────────────┘                    │
+     │                                      │                                                               │
+     └────────────── voltar a editar ───────┴───────────────────────────────────────────────────────────────┘
+
+  qualquer status, menos paid e cancelled ── cancelar ──▶ cancelled
 ```
 
-| Status | Na tela | Itens podem mudar? |
-|---|---|---|
-| `draft` | Rascunho | sim |
-| `planning` | Em planejamento | sim |
-| `locked` | Orçamento solicitado | não |
-| `paid` | Pago | não |
-| `cancelled` | Cancelado | não |
+## O que a pessoa pode pedir
 
-## Transições
+A tabela é `_ALLOWED_TRANSITIONS` (API) e os métodos de `Party` (app):
 
 | De | Para | Como | Condição |
 |---|---|---|---|
-| (não existe) | `draft` ou `planning` | criar | — |
+| (não existe) | `planning` | criar | — |
 | `draft` | `planning` | `startPlanning` | — |
-| `planning` | `locked` | `lockForPayment` | ao menos um item; gera o snapshot |
-| `locked` | `planning` | `unlock` | apaga o snapshot |
-| `locked` | `paid` | `confirmPayment` | só no domínio do app; **a API não aceita** `paid` vindo do cliente |
+| `planning` | `locked` | `requestQuote` | sem pendências ([regras](business-rules.md)) |
+| `locked`, `quoted`, `edit_requested`, `confirmed` | `planning` | `reopenForEditing` | — |
+| `quoted` | `confirmed` | `confirmQuote` | — |
 | qualquer, menos `paid` e `cancelled` | `cancelled` | `cancel` | — |
 
-Na API a mesma tabela é `_ALLOWED_TRANSITIONS` (`parties/domain.py`). Diferença
-proposital: lá `paid` nunca é destino de uma gravação do cliente ("só o fluxo de
-pagamento, no servidor, poderá marcar uma festa como paga").
+Três destinos **nunca** são aceitos vindos do app: `quoted` e `edit_requested`
+(saem da resposta de um fornecedor) e `paid` (sairia de um fluxo de pagamento,
+no servidor). O app, quando calcula um desses localmente, envia `locked`
+(`_requestedStatus` em `data/party_mapper.dart`) e o servidor decide o resto.
 
-## O que acontece na prática
+## O que o fornecedor faz com a festa
 
-O app nunca cria um `draft`: `PartyMakerController` cria toda festa já em
-`planning` (`CreatePartyUseCase(startPlanning: true)`), em uma gravação só. O
-status `draft` existe e é aceito, mas nenhum fluxo o usa.
+Ele não vê a festa: vê **um pedido por item** dos próprios anúncios
+(`QuoteRequest`). Cada resposta é para um item:
+
+| Resposta | O item fica | A festa fica |
+|---|---|---|
+| informar o valor | `quoted`, com o valor e um recado opcional | `quoted` se todos os itens têm valor; senão `locked` |
+| pedir uma alteração | `changes_requested`, com o motivo | `edit_requested` |
+| recusar | `declined`, com o motivo | `edit_requested` |
+
+O status da festa com o orçamento solicitado é sempre **derivado** das
+respostas (`Party._statusFromQuotes`; `_status_from_quotes` na API): algum item
+devolvido → `edit_requested`; todos com valor → `quoted`; senão `locked`.
+
+Enquanto a pessoa não aceita, o fornecedor pode corrigir a resposta.
+
+## Estados que não são status
+
+A festa tem situações que a tela mostra e que não viraram um status, porque
+podem ser calculadas:
+
+| Situação | Como se sabe |
+|---|---|
+| pronta para pedir o orçamento | `party.quoteBlockers` vazio |
+| reenviada | `quoteRound > 1` |
+| com itens que pedem a atenção da pessoa | `party.itemsNeedingAttention` |
+| com um item cujo anúncio saiu do catálogo | `externalRef.isAvailable` falso |
+
+## Rodadas
+
+Cada `requestQuote` soma 1 a `quoteRound`. Ao pedir de novo depois de editar:
+
+- o item que **já tinha valor e não mudou** continua com ele: o fornecedor não
+  responde de novo;
+- o item que mudou, o item novo e o que tinha sido devolvido voltam a ser
+  pedidos (`pending`).
+
+Voltar a editar retira o pedido de quem ainda não tinha respondido (`pending`
+vira `none`) e mantém à vista o que já foi respondido.
 
 ## Duas implementações das mesmas regras
 
 | | App | API |
 |---|---|---|
-| Onde | `Party` e `PartyBudget` | `reconcile` em `parties/domain.py` |
-| Estilo | objeto que muda de estado, método por operação | função pura: estado atual + estado desejado → novo estado |
-| Papel | resposta imediata, sem rede | a autoridade |
-| Itens novos | o app informa nome e preço | **copiados do catálogo**, ignorando o que o app mandou |
+| Onde | `Party`, `PartyBudget`, `ItemConfigurationSpec`, `Pricing` | `reconcile` e `apply_vendor_response` em `parties/domain.py`; `configuration.py`; `catalog/pricing.py` |
+| Estilo | objeto que muda de estado, um método por operação | funções puras: estado atual + estado desejado → novo estado |
+| Papel | resposta imediata, sem rede; é a regra inteira no modo demonstração | a autoridade |
+| Itens novos | o app informa de onde o item vem, a quantidade e a configuração | nome, categoria, preço, capacidade, fornecedor e **a própria relação** são copiados do catálogo |
 
-Mudou uma regra em um lado, mude no outro. Os códigos de erro são os mesmos
-nos dois (`venue_already_selected`, `cannot_lock_without_items`...). Todas as
-regras: [business-rules](business-rules.md).
+Mudou uma regra em um lado, mude no outro, com o mesmo código de erro. Todas
+as regras: [business-rules](business-rules.md).
 
-## Política: festa vazia não existe
+## Política: uma festa pode ficar vazia
 
-Remover o último item apaga a festa (`RemoveItemFromPartyUseCase`). E uma festa
-criada junto com o primeiro item é descartada se o item não puder entrar
-(`addItemToNewParty`). É uma regra do caso de uso, não do agregado: a API
-aceita gravar uma festa sem itens.
+Um evento existe antes de ter itens: a pessoa cria a festa só com o nome e
+monta depois. Tirar o último item **não** apaga a festa; apagar é uma ação
+própria (`DeletePartyUseCase`), com confirmação. Uma exceção de bom senso: a
+festa criada junto com o primeiro item (pelo "+" de um anúncio) só é gravada
+se o item entrar (`AddItemToPartyUseCase.intoNewParty`), para não sobrar uma
+festa que a pessoa não chegou a montar.

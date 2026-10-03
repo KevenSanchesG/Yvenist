@@ -1,7 +1,7 @@
 ---
 title: Testes
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Testes
@@ -15,7 +15,7 @@ O que o CI roda: [ci](../09-guides/ci.md).
 |---|---|
 | `test/features/**` | regras de domínio, controllers e repositórios. Os da API são testados contra uma camada HTTP de mentira (`support/fake_api.dart`): caminho, corpo e tradução de erros |
 | `test/core/**` | `ApiClient` (renovação da sessão), cofre de tokens, utilitários, **contraste das cores nos dois temas** (`theme_contrast_test.dart`), nenhuma cor escrita à mão nas telas (`theme_usage_test.dart`), a escolha de tema e onde ela é guardada (`theme_mode_test.dart`), arquivos embutidos (`bundled_assets_test.dart`) |
-| `test/app/*_flow_test.dart` | o app inteiro em modo demonstração, na tela de um celular (360×780): navegar, buscar, entrar, montar festa, anunciar, analisar |
+| `test/app/*_flow_test.dart` | o app inteiro em modo demonstração, na tela de um celular (360×780): navegar, buscar, entrar, montar festa, pedir e responder orçamento, anunciar, analisar |
 | `test/app/system_bars_test.dart` | com as barras de um aparelho (os outros testes rodam sem elas): o conteúdo não passa por baixo do relógio no perfil, o último item das listas e os botões dos rodapés ficam acima da barra de navegação, e a barra é transparente nos dois temas |
 | `test/app/accessibility_test.dart` | área de toque de 48×48, rótulos, leitores de tela, cada fluxo de novo com a fonte do sistema em 200% e os fluxos principais de novo **no tema escuro** |
 | `test/integration/` | o código real do app contra uma API no ar. Pulado sem `YVENIST_API_URL`. Roda na máquina e **dentro do Chrome** |
@@ -26,6 +26,7 @@ Apoio (`test/support/`):
 | Arquivo | Para que serve |
 |---|---|
 | `app_harness.dart` | `appTest` sobe o app para um teste de fluxo; `demoDependencies` troca uma dependência; `openTab`, `tapAndSettle`, `scrollToAndTap`, `enterField`; `useDarkTheme` põe o app no tema escuro |
+| `party_harness.dart` | o Party Maker nos testes de tela: `seedParty` monta uma festa pelo controller, `answerAll` responde como os fornecedores, `reveal` rola a lista até um item (a festa monta os itens conforme eles entram na tela), `fillVenue`, `choosePartyOption` |
 | `fake_keystore.dart` | `FakeKeystore`: o cofre do sistema visto pelo canal do plugin, em um mapa; pode ser mandado falhar |
 | `visual_harness.dart` | fontes reais (a Inter embutida), imagens de rede de mentira, tela de celular |
 | `fake_api.dart` | `FakeApi`: define a resposta de cada rota e confere o que foi pedido |
@@ -41,6 +42,8 @@ Etiquetas (`dart_test.yaml`): `integration` e `screenshots`.
 | `test_auth.py`, `test_users.py`, `test_passwords.py` | cadastro, login, rotação e reuso de token, dados pessoais, senhas comuns |
 | `test_catalog.py`, `test_favorites.py` | busca, filtros, cursor, favoritos |
 | `test_parties.py`, `test_parties_domain.py` | cada regra da festa, com e sem banco |
+| `test_party_configuration.py`, `test_pricing.py` | o que cada categoria pede e a conta da estimativa. As duas tabelas são as mesmas dos testes do app (`item_configuration_spec_test.dart`, `value_objects_test.dart`): é o que prende um lado ao outro |
+| `test_quotes.py` | a caixa de pedidos do fornecedor: o que ele vê, o que pode responder, e o que não é dele |
 | `test_vendors.py` | cadastro de fornecedor e fila de análise |
 | `test_api_basics.py`, `test_core.py` | formato de erro, mensagens por campo, CORS, saúde, configuração |
 | `test_migrations.py` | o banco criado pelas migrações é igual ao dos modelos; `downgrade` volta ao vazio |
@@ -86,6 +89,13 @@ Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios
   do CI.
 - Um teste de tela nunca usa rede: as imagens são substituídas
   (`withFakeNetworkImages`) e os dados vêm dos repositórios em memória.
+- Em um teste de tela (`appTest`), **um toque que não acerta o alvo falha o
+  teste** (`hitTestWarningShouldBeFatal`). Sem isso o Flutter só avisa, e o
+  teste pode passar olhando para a tela errada. Um botão fora da tela pede
+  `scrollToAndTap`; um item de uma lista que ainda não foi montado pede rolar
+  até ele (`reveal`).
+- Regra que depende do "agora" recebe um relógio (`Clock`), e o teste usa um
+  parado (`fixedClock`, `TestClock` em `test/features/party_maker/party_fixtures.dart`).
 - Texto longo lido de um asset em teste de tela: carregar com `cache: false`.
   O cache do `rootBundle` guarda um `Future` do teste anterior, que nunca
   completa no seguinte (aconteceu em `legal_document_page.dart`).

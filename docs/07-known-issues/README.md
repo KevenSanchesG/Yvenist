@@ -1,7 +1,7 @@
 ---
 title: Problemas e limites conhecidos
 type: known-issues
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Problemas e limites conhecidos
@@ -26,14 +26,17 @@ gatilho, não é para agora.
 
 | # | O quê | Quando incomoda |
 |---|---|---|
-| KI-10 | O orçamento não chega a nenhum fornecedor | assim que houver usuários reais ([PM-1](../03-features/party-maker/known-issues.md)) |
-| KI-11 | Não há página de detalhe do anúncio | a pessoa decide só pelo card |
-| KI-12 | Só salões podem ser cadastrados pelo app | fornecedores de outras categorias |
+| KI-11 | Não há página de detalhe do anúncio | a pessoa decide pelo card e pela tela de configuração do item |
+| KI-12 | Só salões podem ser cadastrados pelo app, e o cadastro não deixa indicar parceiros | fornecedores de outras categorias ([PM-7](../03-features/party-maker/known-issues.md)) |
 | KI-13 | Anúncio sem fotos: a capa é uma URL e o formulário nem a pede | anúncios reais ficam sem imagem |
 | KI-14 | Não há como editar, despublicar ou apagar um anúncio | o primeiro fornecedor que errar um dado |
 | KI-15 | Notas dos anúncios não têm quem as alimente | os cards mostram nota só nos dados de demonstração |
 | KI-16 | Sem recuperar senha nem confirmar e-mail | a primeira pessoa que esquecer a senha |
 | KI-19 | Telefone e data de nascimento são pedidos em Dados Pessoais e nenhuma função os usa | a revisão jurídica: a LGPD pede finalidade para cada dado ([personal-data](../01-architecture/personal-data.md)) |
+| KI-60 | O Party Maker de 3 de outubro de 2026 tem decisões de negócio tomadas sem os donos: orçamento por item, o que cada categoria pergunta, o que é obrigatório para pedir, o status "orçamento aceito", nenhuma ponta ver quem é a outra | antes de mostrar a usuários reais: os donos precisam confirmar ou mudar ([ADR-019](../05-decisions/ADR-019-festa-como-composicao-de-evento.md), [PM-20 a PM-26](../03-features/party-maker/known-issues.md)) |
+| KI-61 | Ninguém é avisado: a resposta de um fornecedor só aparece quando a pessoa atualiza a festa, e o pedido só aparece quando o fornecedor abre a caixa de pedidos | assim que houver usuários reais ([PM-1](../03-features/party-maker/known-issues.md)) |
+| KI-62 | Aceitar um orçamento não reserva a data, não gera contrato e não cobra; um orçamento respondido não expira | a primeira festa combinada de verdade pelo app ([PM-3, PM-4](../03-features/party-maker/known-issues.md)) |
+| KI-63 | As observações de um item e o recado do fornecedor são texto livre que chega à outra ponta | alguém escrever ali um dado pessoal; a política pede para não escrever, a tela não impede ([personal-data](../01-architecture/personal-data.md)) |
 
 ## Técnicos
 
@@ -46,7 +49,7 @@ gatilho, não é para agora.
 | KI-24 | Fila de análise limitada a 50, sem paginação | mais de 50 itens pendentes | paginar por cursor |
 | KI-25 | A data mostrada na fila é a do primeiro envio do cadastro | cadastros reenviados | expor a data do reenvio |
 | KI-26 | Aceite dos termos sem reaceite quando o texto muda; os textos prometem um aviso "pelo aplicativo" que não existe | textos finais e uma mudança relevante | fluxo de reaceite, ou tirar a promessa dos textos |
-| KI-27 | Regras das festas duplicadas no app e na API | toda mudança de regra | [PM-9](../03-features/party-maker/known-issues.md) |
+| KI-27 | Regras das festas duplicadas no app e na API: o ciclo, a tabela de cada categoria e a conta da estimativa | toda mudança de regra | [PM-10](../03-features/party-maker/known-issues.md) |
 | KI-28 | Mensagens de erro espalhadas, sem catálogo; um idioma só | internacionalização | [ADR-009](../05-decisions/ADR-009-erros-uniformes.md) |
 
 ## Web
@@ -71,6 +74,7 @@ tratada como produto.
 | KI-43 | Carga: nenhum teste de desempenho |
 | KI-44 | O tema escuro em um aparelho de verdade: foi visto nas capturas geradas pelos testes e em um emulador Android 13 |
 | KI-45 | As barras do sistema fora do Android 13: o leiaute de borda a borda foi visto só no emulador dessa versão, que é a única imagem instalada. Do Android 15 em diante o sistema impõe o mesmo leiaute; no 9 ou mais antigo vale o clássico ([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)) |
+| KI-46 | As telas do Party Maker de 3 de outubro de 2026 (dados do evento, configuração do item, a festa com o orçamento, histórico, pedidos de orçamento) em um aparelho ou em um emulador: foram vistas só nas capturas geradas pelos testes, nos dois temas |
 
 ## Ambiente de desenvolvimento
 
@@ -85,7 +89,9 @@ tratada como produto.
 
 ## Como registrar um problema
 
-Uma linha na tabela certa, com o próximo número da faixa. Se precisar de mais
+Uma linha na tabela certa, com o próximo número da faixa. Um número que saiu
+**não volta a ser usado**: o changelog cita o antigo ("era o KI-10"). A faixa
+de produto (KI-10 a KI-19) acabou e continua em KI-60. Se precisar de mais
 do que uma linha (passos para reproduzir, análise), crie uma nota a partir de
 [`templates/known-issue.md`](../templates/known-issue.md) nesta pasta e
 aponte para ela. Resolveu → tire a linha daqui e cite no

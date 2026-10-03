@@ -1,7 +1,7 @@
 ---
 title: Acessibilidade
 type: ux
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Acessibilidade
@@ -23,8 +23,11 @@ Motivos: [ADR-017](../05-decisions/ADR-017-um-laranja-e-tema-escuro.md).
 | Cor só pelo tema | nenhuma cor escrita à mão fora de `lib/core/theme/` | `test/core/theme_usage_test.dart` |
 | Nada escondido pelas barras do sistema | o último item de uma lista e os botões de um rodapé ficam acima da barra de navegação; no perfil, o conteúdo não passa por baixo do relógio | `test/app/system_bars_test.dart` |
 
-Telas cobertas: início, explorar, busca, escolha da festa, montagem, minhas
-festas, favoritos, perfil (com conta e de visitante), dados pessoais,
+Telas cobertas: início, explorar, busca, escolha da festa, configuração de um
+item, a festa em cada situação (em planejamento, com o orçamento solicitado,
+com edição solicitada, com o orçamento recebido e aceito), dados do evento,
+histórico da festa, minhas festas, pedidos de orçamento do fornecedor e seus
+diálogos, favoritos, perfil (com conta e de visitante), dados pessoais,
 aparência, segurança, entrar, criar conta, convite e cadastro do salão,
 termos, fila de análise e seus diálogos.
 

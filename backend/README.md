@@ -1,8 +1,8 @@
 # Yvenist API
 
-API do Yvenist: contas, catálogo de anúncios, favoritos, festas e cadastro de
-fornecedores. FastAPI + SQLAlchemy 2 + Alembic, com PostgreSQL em produção e
-SQLite para desenvolver sem instalar nada.
+API do Yvenist: contas, catálogo de anúncios, favoritos, festas, pedidos de
+orçamento e cadastro de fornecedores. FastAPI + SQLAlchemy 2 + Alembic, com
+PostgreSQL em produção e SQLite para desenvolver sem instalar nada.
 
 ## Rodando localmente
 
@@ -110,9 +110,11 @@ Nesse modo rodam também os testes que só fazem sentido em um banco de verdade:
 
 - `tests/test_concurrency.py`: requisições realmente simultâneas (dois cadastros
   com o mesmo e-mail, o mesmo token de renovação usado em paralelo, dois
-  aparelhos gravando a mesma festa...). No SQLite eles são pulados.
-- `tests/test_migrations.py` aplica as migrações no próprio PostgreSQL e
-  confere que o resultado é idêntico ao que os modelos descrevem.
+  aparelhos gravando a mesma festa, vários fornecedores respondendo à mesma
+  festa ao mesmo tempo...). No SQLite eles são pulados.
+- `tests/test_migrations.py` aplica as migrações no próprio PostgreSQL,
+  confere que o resultado é idêntico ao que os modelos descrevem e leva festas
+  gravadas no formato antigo até o atual.
 
 Conferido em PostgreSQL 17.11 com `psycopg` 3.3.
 
@@ -130,7 +132,8 @@ O limite de requisições fica desligado porque os testes criam dezenas de conta
 em sequência; nunca use essas duas variáveis em produção (a segunda nem é
 aceita com `YVENIST_ENV=production`).
 
-Os cenários da fila de análise precisam de um administrador
+Os cenários da fila de análise, e os de um fornecedor respondendo a um pedido
+de orçamento (só um fornecedor aprovado responde), precisam de um administrador
 (`python -m app.cli create-admin --email admin@example.com`) e das variáveis
 `YVENIST_ADMIN_EMAIL` e `YVENIST_ADMIN_PASSWORD` do lado do teste. Para rodar
 os mesmos testes dentro do navegador a API também precisa autorizar a origem
@@ -154,9 +157,12 @@ app/
   core/              configuração, banco, segurança, erros, paginação, logs
   modules/
     accounts/        cadastro, login, sessões, dados pessoais
-    catalog/         categorias, tipos de evento, busca de anúncios
+    catalog/         categorias, tipos de evento, busca de anúncios, formas
+                     de cobrar (pricing.py)
     favorites/       favoritos do usuário
-    parties/         festas (regras em domain.py, sem banco nem HTTP)
+    parties/         festas, do lado de quem monta (regras em domain.py e
+                     configuration.py, sem banco nem HTTP)
+    quotes/          pedidos de orçamento, do lado do fornecedor que responde
     vendors/         cadastro de fornecedor, anúncios próprios, fila de análise
 migrations/          migrações Alembic
 tests/               testes (API, domínio, migrações, CLI)
@@ -179,5 +185,5 @@ repositório. O que diz respeito à API:
 | Segurança e dados pessoais | [`docs/01-architecture/security.md`](../docs/01-architecture/security.md) |
 | Produção e HTTPS | [`docs/09-guides/deployment.md`](../docs/09-guides/deployment.md) |
 | O que cada teste prova | [`docs/01-architecture/testing.md`](../docs/01-architecture/testing.md) |
-| Por que cada escolha (formato de erro, autenticação, festas por estado, concorrência pelo banco, dinheiro em centavos) | [`docs/05-decisions/README.md`](../docs/05-decisions/README.md) |
+| Por que cada escolha (formato de erro, autenticação, festas por estado, concorrência pelo banco, dinheiro em centavos, a festa como composição de um evento) | [`docs/05-decisions/README.md`](../docs/05-decisions/README.md) |
 | Regras das festas | [`docs/03-features/party-maker/business-rules.md`](../docs/03-features/party-maker/business-rules.md) |

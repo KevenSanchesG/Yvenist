@@ -1,7 +1,7 @@
 ---
 title: Guia de desenvolvimento
 type: guide
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Guia de desenvolvimento
@@ -65,7 +65,7 @@ pytest -q
 |---|---|
 | API em PostgreSQL (inclui concorrência) | `YVENIST_TEST_DATABASE_URL=postgresql+psycopg://usuario:senha@host/banco_vazio pytest -q`. **O banco é apagado e recriado** |
 | Integração app ↔ API | subir a API com `YVENIST_RATE_LIMIT_ENABLED=false` e `YVENIST_PASSWORD_HASH_PROFILE=test`, depois `YVENIST_API_URL=http://127.0.0.1:8000/api/v1 flutter test --tags integration test/integration` |
-| Cenários da fila de análise | além disso: `python -m app.cli create-admin --email admin@example.com` e as variáveis `YVENIST_ADMIN_EMAIL` / `YVENIST_ADMIN_PASSWORD` |
+| Cenários da fila de análise e dos pedidos de orçamento respondidos por um fornecedor (só um fornecedor aprovado responde) | além disso: `python -m app.cli create-admin --email admin@example.com` e as variáveis `YVENIST_ADMIN_EMAIL` / `YVENIST_ADMIN_PASSWORD`. Sem elas esses cenários são pulados |
 | Integração dentro do navegador | só no CI ([web](web.md)) |
 | Regenerar as capturas de tela, nos dois temas | `flutter test --update-goldens --run-skipped --tags screenshots test/visual/screenshots_test.dart` ([screens](../04-ux/screens.md)) |
 

@@ -8,7 +8,7 @@
 
 ## 📱 About
 
-**Yvenist** is a marketplace dedicated to the events and parties sector, inspired by Airbnb's model. Instead of searching for venues on Google and collecting quotes over WhatsApp, the organizer discovers venues and services, assembles the whole party in one place and requests a single quote. Suppliers register their business, go through a review step and get their listings published.
+**Yvenist** is a marketplace dedicated to the events and parties sector, inspired by Airbnb's model. Instead of searching for venues on Google and collecting quotes over WhatsApp, the organizer discovers venues and services, composes the whole event in one place, sees an estimate and requests the quotes in one step. Suppliers register their business, go through a review step, get their listings published and answer the quote requests.
 
 The repository holds two pieces:
 
@@ -29,10 +29,11 @@ The app also runs **without the API**, in *demo mode*, with sample data kept in 
 | Search by text (ignores accents and capitalization) | Working |
 | Accounts: sign up, sign in, restore session, edit profile, change password, delete account | Working |
 | Favorites, synced per account | Working |
-| **Party Maker**: build a party from listings, running total, request a quote (locks the party), unlock to edit | Working |
-| Supplier onboarding: 6-step venue registration with CPF/CNPJ validation | Working |
+| **Party Maker**: compose an event (type, date, guests) from listings configured per category, with the venue's own services and recommended partners; a running estimate that follows each pricing model (fixed, per person, per hour, per unit, "on request" never becomes a number); request quotes, follow each supplier's answer, edit and resubmit, accept, cancel; history | Working |
+| Quote requests for suppliers: each supplier sees the requests for their own listings and answers with a value, a change request or a refusal | Working (in demo mode the same account plays the supplier) |
+| Supplier onboarding: 7-step venue registration with CPF/CNPJ validation, pricing model and the venue's own services | Working |
 | Review pipeline: suppliers and listings are published only after approval | Working: administrators approve or reject from a review queue in the app |
-| Client / Supplier mode switch on the Profile tab | Working (supplier mode shows listing counters) |
+| Client / Supplier mode switch on the Profile tab | Working (supplier mode shows listing counters and the quote requests) |
 | Light and dark themes | Working: follows the device by default; the user can pick one in Profile → Appearance, and the choice is kept on the device |
 | Terms of Use and Privacy Policy | Preliminary texts shown in the app; legal review still pending |
 
@@ -47,7 +48,7 @@ The app shows these as "Em breve" ("coming soon") instead of pretending they exi
 - Listing photos upload, availability calendar, listing details page
 - Two-factor authentication and the "connected devices" screen (the API already lists and revokes sessions)
 - Supplier registration for categories other than venues
-- Sending the quote to suppliers (today it is an estimate for the organizer only)
+- Booking: an accepted quote does not reserve the date, and there is no supplier calendar
 
 ---
 
@@ -59,9 +60,13 @@ Generated from the real screens by an automated test (`test/visual/screenshots_t
 |---|---|---|---|
 | ![Home](docs/screenshots/home.png) | ![Explore](docs/screenshots/explorar.png) | ![Party Maker](docs/screenshots/party-maker.png) | ![Profile](docs/screenshots/perfil.png) |
 
-| Add to a party | Sign in | Supplier invitation | Supplier form |
+| Add to a party | Configure the item | Quote received | Quote requests (supplier) |
 |---|---|---|---|
-| ![Add to party](docs/screenshots/adicionar-a-festa.png) | ![Sign in](docs/screenshots/entrar.png) | ![Supplier invitation](docs/screenshots/fornecedor-convite.png) | ![Supplier form](docs/screenshots/fornecedor-validacao.png) |
+| ![Add to party](docs/screenshots/adicionar-a-festa.png) | ![Configure the item](docs/screenshots/configurar-item.png) | ![Quote received](docs/screenshots/party-orcamento.png) | ![Quote requests](docs/screenshots/pedidos-de-orcamento.png) |
+
+| Sign in | Supplier invitation | Supplier form |
+|---|---|---|
+| ![Sign in](docs/screenshots/entrar.png) | ![Supplier invitation](docs/screenshots/fornecedor-convite.png) | ![Supplier form](docs/screenshots/fornecedor-validacao.png) |
 
 The same test renders every screen in the dark theme too:
 
@@ -135,9 +140,9 @@ ruff check . && mypy app tests
 | Suite | What it proves |
 |---|---|
 | App unit tests | Domain rules, controllers, repositories (API ones against a fake HTTP layer) |
-| App flow tests | The whole app in demo mode on a phone-sized screen: browse, search, sign in, build a party, supplier onboarding |
+| App flow tests | The whole app in demo mode on a phone-sized screen: browse, search, sign in, compose a party, request and answer quotes, supplier onboarding |
 | Accessibility tests | 48×48 touch targets, labels for screen readers, color contrast (WCAG AA) in both themes, no layout overflow with the system font at 200% or in the dark theme |
-| Backend tests | Every endpoint, the party rules, migrations equal to the models |
+| Backend tests | Every endpoint, the party and quote rules, the estimate arithmetic, migrations equal to the models |
 | Backend on PostgreSQL | Same suite plus truly simultaneous requests: `YVENIST_TEST_DATABASE_URL=postgresql+psycopg://... pytest` |
 | Integration tests | The real app code against a running API: `YVENIST_API_URL=http://127.0.0.1:8000/api/v1 flutter test --tags integration test/integration` |
 | Integration tests in the browser | The same scenarios inside Chrome, which is what exercises CORS and the web HTTP client (CI only) |

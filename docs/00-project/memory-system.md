@@ -1,7 +1,7 @@
 ---
 title: Sistema de memória do Yvenist
 type: index
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Sistema de memória do Yvenist
@@ -14,24 +14,30 @@ Obsidian: os mesmos arquivos Markdown servem aos dois.
 ## O projeto em um parágrafo
 
 O Yvenist é um marketplace de festas e eventos, de Rafael e Keven. Quem vai
-comemorar encontra salões e serviços, monta a festa em um só lugar (o **Party
-Maker**) e gera um orçamento; quem oferece um espaço se cadastra como
-fornecedor e tem o anúncio publicado depois de uma análise. São duas peças no
-mesmo repositório: o app Flutter (`lib/`) e a API FastAPI com PostgreSQL
-(`backend/`). Sem API configurada o app roda sozinho, em modo demonstração.
-Detalhes: [visão](vision.md).
+comemorar encontra salões e serviços, compõe o evento em um só lugar (o **Party
+Maker**), vê uma estimativa e pede o orçamento aos fornecedores; quem oferece
+um espaço se cadastra como fornecedor, tem o anúncio publicado depois de uma
+análise e responde aos pedidos. São duas peças no mesmo repositório: o app
+Flutter (`lib/`) e a API FastAPI com PostgreSQL (`backend/`). Sem API
+configurada o app roda sozinho, em modo demonstração. Detalhes:
+[visão](vision.md).
 
-## Estado atual (2 de outubro de 2026)
+## Estado atual (3 de outubro de 2026)
 
-- A `main` tem todo o trabalho desde 2 de outubro de 2026: a branch
-  `feat/professional-foundation` foi mesclada nela, a pedido dos donos, por
-  avanço rápido (sem commit de mesclagem). O trabalho continua na branch;
-  novo envio e nova mesclagem só quando os donos pedirem.
-- CI verde nos cinco jobs (app, backend em SQLite e PostgreSQL, integração na
-  máquina e dentro do Chrome, APK Android, Docker). Detalhes: [CI](../09-guides/ci.md).
-- Funciona: catálogo e busca, contas, favoritos, Party Maker, cadastro de
-  salão, fila de análise para administradores, textos legais preliminares,
-  tema claro e escuro à escolha da pessoa.
+- A `main` tem o trabalho até 2 de outubro de 2026 (commit `8505b1e`). A
+  branch `feat/professional-foundation` está **à frente dela, só nesta
+  máquina**, com o Party Maker novo: nada disso foi enviado ao GitHub. Envio e
+  mesclagem só quando os donos pedirem.
+- O CI estava verde nos cinco jobs no último envio; **não rodou** os commits do
+  Party Maker novo. O que foi conferido na máquina está no
+  [changelog](../08-changelog/2026-10.md). Detalhes do CI: [CI](../09-guides/ci.md).
+- Funciona: catálogo e busca (com vários jeitos de cobrar), contas, favoritos,
+  Party Maker (compor o evento, estimativa, pedir orçamento, responder como
+  fornecedor, edição solicitada, aceite, histórico), cadastro de salão, fila
+  de análise para administradores, textos legais preliminares, tema claro e
+  escuro à escolha da pessoa.
+- **Esperando os donos**: as decisões de negócio do Party Maker
+  ([ADR-019](../05-decisions/ADR-019-festa-como-composicao-de-evento.md)).
 - Não existe (aparece como "Em breve"): pagamentos, chat, avaliações,
   notificações, envio de fotos, página de detalhe do anúncio.
 - Nunca foi publicado em loja nem colocado em produção. A chave de envio do

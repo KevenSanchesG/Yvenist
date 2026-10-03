@@ -29,7 +29,7 @@ R$ 1.700", "R$ 55 por pessoa", "Sob consulta"): as formas estão em
 
 | Ação | Comportamento |
 |---|---|
-| **+** | abre a escolha da festa ([Party Maker](party-maker/user-flows.md)); vira ✓ quando o anúncio já está em alguma |
+| **+** | abre a escolha da festa e, em seguida, a configuração do item ([Party Maker](party-maker/user-flows.md)); vira ✓ quando o anúncio já está em alguma |
 | ♥ | favorita ou desfavorita; visitante é levado ao login e a ação continua depois |
 
 O card **não abre uma página de detalhe**: ela não existe.

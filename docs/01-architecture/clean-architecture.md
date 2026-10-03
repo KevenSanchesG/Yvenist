@@ -1,7 +1,7 @@
 ---
 title: O app (Flutter)
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # O app (Flutter)
@@ -31,10 +31,11 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 | `core/storage` | `TokenStorage` (cofre do sistema ou memória) e `ThemePreferenceStorage` (a escolha de tema, guardada no aparelho) |
 | `core/error`, `core/state` | `AppFailure`, `LoadState<T>` |
 | `core/theme`, `core/widgets` | os dois temas, as cores e os estilos de texto (`context.colors`, `context.text`) e widgets compartilhados ([design system](../04-ux/design-system.md)) |
-| `core/utils` | dinheiro, CPF/CNPJ, ids |
+| `core/pricing` | `PricingModel`: a que um preço se refere. Fica aqui porque o catálogo e o Party Maker usam o mesmo vocabulário |
+| `core/utils` | dinheiro, CPF/CNPJ, ids, o relógio (`Clock`, para quem tem regra que depende do "agora") |
 | `features/auth` | sessão, entrar, criar conta |
 | `features/catalog` | anúncios, categorias, busca (só domínio e dados) |
-| `features/client` | telas do cliente: `home`, `explore`, `search`, `favorites`, `profile`; `shared` tem o card e as ações de um anúncio |
+| `features/client` | telas do cliente: `home`, `explore`, `search`, `favorites`, `profile`; `shared` tem o card, as ações de um anúncio e a ponte entre o catálogo e o Party Maker (`listing_party_item_catalog.dart`) |
 | `features/party_maker` | [Party Maker](../03-features/party-maker/architecture.md) |
 | `features/vendor` | cadastro de fornecedor e do salão |
 | `features/admin` | fila de análise |
@@ -50,7 +51,13 @@ As dependências apontam para dentro: `presentation ──▶ domain ◀── d
 | `app/app_shell.dart` | as cinco abas, a barra inferior, o bloqueio "esta aba exige conta" |
 
 Contratos disponíveis: `AuthRepository`, `CatalogRepository`,
-`FavoritesRepository`, `PartyRepository`, `VendorRepository`, `ReviewRepository`.
+`FavoritesRepository`, `PartyRepository`, `QuoteInboxRepository`,
+`VendorRepository`, `ReviewRepository`.
+
+Um contrato pode também ser o que **uma funcionalidade pede a outra**, sem
+conhecê-la: `PartyItemCatalog` é declarado pelo Party Maker, e quem o atende é
+`ListingPartyItemCatalog`, montado em `yvenist_app.dart` sobre o
+`CatalogRepository`. Assim o Party Maker não importa o catálogo.
 
 ## Estado
 
@@ -60,7 +67,7 @@ Contratos disponíveis: `AuthRepository`, `CatalogRepository`,
 |---|---|---|
 | Do app inteiro | `SessionController`, `FavoritesController`, `PartyMakerController`, `VendorController`, `AppTabController` | criados em `AppState`; quando a sessão muda, cada um troca de conta e recarrega |
 | Do aparelho | `ThemeModeController` | criado em `AppState`; **não** depende da sessão. É lido antes do `runApp` (`main.dart`) |
-| De uma tela | `HomeController`, `ListingSearchController`, `ExploreController`, `ReviewQueueController` | nascem e morrem com a tela (`ChangeNotifierProvider(create:)`) |
+| De uma tela | `HomeController`, `ListingSearchController`, `ExploreController`, `ReviewQueueController`, `QuoteInboxController` | nascem e morrem com a tela (`ChangeNotifierProvider(create:)`) |
 
 Regras comuns: operação devolve `bool`/valor e guarda a falha; dado que demora
 tem estado explícito (`LoadState<T>` ou `hasLoaded`/`loadError`); depois de

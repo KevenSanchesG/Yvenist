@@ -19,14 +19,14 @@ Se você não tem mais o aplicativo instalado, peça a exclusão escrevendo, a p
 - A conta: nome, e-mail, senha, telefone e data de nascimento.
 - As sessões abertas em todos os aparelhos.
 - Os favoritos.
-- As festas, com os itens e os orçamentos gerados.
+- As festas, com os itens, o que você informou em cada um, os pedidos de orçamento e o histórico deles. Os pedidos deixam de aparecer para os fornecedores.
 - Para fornecedores: o cadastro, com o CPF ou CNPJ, e todos os anúncios.
 
 A exclusão é definitiva e não pode ser desfeita.
 
 ## 4. O que continua guardado
 
-- Se um cliente já tinha colocado um anúncio seu em uma festa, o nome, o preço e a imagem daquele item continuam na festa dele, sem ligação com você.
+- Se um cliente já tinha colocado um anúncio seu em uma festa, o nome, o preço e a imagem daquele item continuam na festa dele, sem ligação com você. O mesmo vale para o valor e a mensagem que você tinha enviado em resposta a um pedido de orçamento daquele item.
 - O que a lei exigir que seja mantido. [Prazos de cópias de segurança a definir antes do lançamento.]
 
 ## 5. Mais informações

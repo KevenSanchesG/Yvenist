@@ -1,7 +1,7 @@
 ---
 title: Decisões (ADRs)
 type: index
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Decisões (ADRs)
@@ -30,6 +30,7 @@ por que está assim, para ninguém desfazer sem saber o que perde.
 | [016](ADR-016-identificador-br-com-yvenist-app.md) | Identificador `br.com.yvenist.app`, seguindo o domínio dos donos | aceita (decisão dos donos) |
 | [017](ADR-017-um-laranja-e-tema-escuro.md) | Um laranja por tema (`#C2410C`), tema escuro e a escolha em Aparência | aceita (decisão dos donos) |
 | [018](ADR-018-tela-inteira-em-qualquer-android.md) | O app desenha a tela inteira (borda a borda) em qualquer Android | aceita |
+| [019](ADR-019-festa-como-composicao-de-evento.md) | A festa é a composição de um evento: itens configurados por categoria, estimativa separada do orçamento, orçamento por item respondido pelo fornecedor | aceita, aguardando confirmação dos donos |
 
 ## Quando criar um ADR
 

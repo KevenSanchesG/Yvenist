@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso e Política de Privacidade
 type: feature
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Termos de Uso e Política de Privacidade
@@ -9,11 +9,12 @@ updated: 2026-10-02
 ## Situação
 
 **Versão preliminar.** Os textos foram escritos a partir do que o código faz
-(o que cada tabela guarda, o que a exclusão apaga, o que o "orçamento" é) e
-conferidos de novo, linha a linha, em 2 de outubro de 2026
-([personal-data](../01-architecture/personal-data.md)). **Não passaram por
-advogado.** O que depende de uma decisão dos donos está entre colchetes no
-próprio texto.
+(o que cada tabela guarda, o que a exclusão apaga, o que são a estimativa e o
+orçamento, o que o fornecedor recebe em um pedido) e conferidos, linha a
+linha, em 2 de outubro de 2026; em 3 de outubro foram atualizados para o Party
+Maker novo ([personal-data](../01-architecture/personal-data.md)). **Não
+passaram por advogado.** O que depende de uma decisão dos donos está entre
+colchetes no próprio texto.
 
 | Documento | Arquivo | Onde aparece |
 |---|---|---|
@@ -89,8 +90,16 @@ Dos donos (dados e decisões):
 De um advogado:
 
 - o enquadramento das bases legais (seção 3 da política);
+- o efeito de aceitar um orçamento pelo aplicativo (seção 4 dos termos). O
+  texto diz o que o código faz: registra a escolha, sem reservar nem contratar;
+- o dever do fornecedor com os dados de um pedido de orçamento (seção 5 dos
+  termos);
 - a limitação de responsabilidade (seção 8 dos termos);
 - o foro (seção 10 dos termos).
+
+OPEN QUESTION: o envio dos dados do evento e das observações ao fornecedor
+precisa de um aviso ou de um aceite próprio
+([personal-data](../01-architecture/personal-data.md))?
 
 Enquanto houver um colchete, o texto tem de se dizer preliminar: um teste
 falha se alguém tirar o "(preliminar)" sem resolver as lacunas, no app e no
@@ -99,6 +108,7 @@ site.
 ## Quando atualizar os textos
 
 Sempre que o app passar a coletar, compartilhar ou guardar algo novo: campo
-novo em `users`, um serviço de terceiros, envio de fotos, pagamentos,
-notificações, análise de uso. A política descreve o código; se o código muda,
+novo em `users`, um campo novo na configuração de um item da festa, algo a
+mais que o fornecedor passe a ver em um pedido, um serviço de terceiros, envio
+de fotos, pagamentos, notificações, análise de uso. A política descreve o código; se o código muda,
 ela e o [inventário](../01-architecture/personal-data.md) mudam junto.

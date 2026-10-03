@@ -1,7 +1,7 @@
 ---
 title: Fila de análise (administração)
 type: feature
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Fila de análise (administração)
@@ -28,7 +28,7 @@ quantidade de cada uma; do mais antigo para o mais novo; até 50 por vez.
 | Aba | Cada cartão mostra | Ações |
 |---|---|---|
 | Fornecedores | nome, pessoa física/jurídica, **CPF/CNPJ completo**, data do cadastro, os anúncios que aguardam com ele | Recusar, Aprovar |
-| Anúncios | título, categoria, local, preço, fornecedor e data; "Ver detalhes" abre descrição, capacidade, área, eventos, estrutura e cancelamento | Recusar, Publicar |
+| Anúncios | título, categoria, local, o preço com a forma de cobrar e o valor mínimo, fornecedor e data; "Ver detalhes" abre descrição, capacidade, área, eventos, estrutura, cancelamento e os **serviços próprios** do anúncio (quem publica o anúncio publica junto o que ele oferece) | Recusar, Publicar |
 
 ## Decisões
 
@@ -70,4 +70,6 @@ verificação de acessibilidade e de fonte em 200%, e três cenários em
 
 Paginação da fila, histórico do que já foi decidido, busca, despublicar um
 anúncio, gestão de contas, e qualquer administração de catálogo (categorias,
-tipos de evento).
+tipos de evento). A fila também não mostra os parceiros que um anúncio
+recomenda, nem os pedidos de orçamento: a administração não vê as festas de
+ninguém.

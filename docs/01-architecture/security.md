@@ -1,7 +1,7 @@
 ---
 title: Segurança e dados pessoais
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Segurança e dados pessoais
@@ -11,9 +11,10 @@ updated: 2026-10-02
 | Senhas | Argon2id; mínimo de 8 caracteres; lista de senhas comuns; tempo de resposta igual para e-mail existente ou não | `accounts/service.py`, `accounts/passwords.py` |
 | Sessão | tokens no cofre do sistema; rotação com detecção de reuso; logout invalida no servidor | `token_storage.dart`, `accounts/service.py` |
 | Transporte | release exige `https`; `http` só em debug e para o próprio aparelho; em produção a API manda `Strict-Transport-Security` (um ano) | `app_config.dart`, `android/app/src/debug/AndroidManifest.xml`, `core/logging.py` |
-| Autorização | toda consulta filtra pelo dono: a festa de outra pessoa "não existe" (404); rotas `/admin` exigem administrador | `parties/service.py`, `api/deps.py` |
+| Autorização | toda consulta filtra pelo dono: a festa de outra pessoa "não existe" (404); um fornecedor só vê e responde os pedidos de orçamento dos próprios anúncios, e o de outro também "não existe"; rotas `/admin` exigem administrador | `parties/service.py`, `quotes/service.py`, `api/deps.py` |
 | Entrada | validada no servidor (Pydantic); o app valida antes só para dar retorno rápido | `schemas.py` de cada módulo |
-| Preços | sempre copiados do catálogo pelo servidor | `parties/domain.py` |
+| Preços | nome, preço, forma de cobrança e relação de um item são sempre copiados do catálogo pelo servidor; a estimativa é recalculada por ele; o valor de um orçamento só entra pela resposta do fornecedor do item | `parties/domain.py`, `quotes/service.py` |
+| O que uma conta vê de outra | no pedido de orçamento, o fornecedor recebe o evento e a configuração do item, sem o nome da festa nem de quem pediu; o cliente não recebe quem é o fornecedor | `quotes/schemas.py`, [personal-data](personal-data.md) |
 | Força bruta | limite por IP em login e cadastro, em memória. Atrás de um proxy o IP é o que ele informa, e só se a API confiar nele (`FORWARDED_ALLOW_IPS`): [deployment](../09-guides/deployment.md) | `core/rate_limit.py`, `api/deps.py` |
 | Logs | id, método, caminho, status e duração; sem corpo, query string ou cabeçalhos | `core/logging.py` |
 | Produção | a API se recusa a subir com segredo de desenvolvimento, hash de teste, CORS `*` ou origem de CORS em `http` | `core/config.py` |
