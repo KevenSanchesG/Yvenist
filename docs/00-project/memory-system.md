@@ -25,12 +25,13 @@ configurada o app roda sozinho, em modo demonstração. Detalhes:
 ## Estado atual (3 de outubro de 2026)
 
 - A `main` tem o trabalho até 2 de outubro de 2026 (commit `8505b1e`). A
-  branch `feat/professional-foundation` está **à frente dela, só nesta
-  máquina**, com o Party Maker novo: nada disso foi enviado ao GitHub. Envio e
-  mesclagem só quando os donos pedirem.
-- O CI estava verde nos cinco jobs no último envio; **não rodou** os commits do
-  Party Maker novo. O que foi conferido na máquina (as suítes, o PostgreSQL, a
-  integração com a API local e um emulador Android) está no
+  branch `feat/professional-foundation` está **à frente dela**, com o Party
+  Maker novo, e foi enviada ao GitHub em 3 de outubro de 2026, a pedido dos
+  donos. A mesclagem na `main` não foi pedida. Envio e mesclagem só quando os
+  donos pedirem.
+- O CI passou nos cinco jobs no envio do Party Maker novo (commit `bfb33f7`).
+  O que foi conferido além dele, na máquina (o PostgreSQL com a prova das
+  travas e um emulador Android), está no
   [changelog](../08-changelog/2026-10.md). Detalhes do CI: [CI](../09-guides/ci.md).
 - Funciona: catálogo e busca (com vários jeitos de cobrar), contas, favoritos,
   Party Maker (compor o evento, estimativa, pedir orçamento, responder como
