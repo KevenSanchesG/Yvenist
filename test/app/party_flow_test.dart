@@ -8,7 +8,7 @@ import '../support/app_harness.dart';
 /// Fluxos de favoritos e do Party Maker, a partir dos anúncios da vitrine.
 void main() {
   const salao = 'Salão Glamour 8'; // R$ 1.700,00
-  const atracao = 'Atração Festiva 8'; // R$ 1.150,00
+  const atracao = 'Atração Festiva 8'; // R$ 270,00 por hora
   const festa = '15 anos da Maria';
 
   /// Toca no "+" de [listing] e cria uma festa nova com ele.
@@ -141,7 +141,7 @@ void main() {
       expect(find.text('2 itens selecionados'), findsOneWidget);
       expect(find.text(salao), findsOneWidget);
       expect(find.text(atracao), findsOneWidget);
-      expect(find.text(formatBrl(285000)), findsOneWidget);
+      expect(find.text(formatBrl(197000)), findsOneWidget);
     });
 
     appTest('uma festa aceita só um salão, e a escolha explica o motivo', (

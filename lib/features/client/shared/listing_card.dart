@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
-import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
@@ -11,12 +10,11 @@ import 'package:yvenist/features/party_maker/presentation/controllers/party_make
 
 /// Descrição de um anúncio para leitores de tela, em uma frase só.
 String listingSemanticLabel(Listing listing) {
-  final price = formatBrl(listing.priceFromCents, hideZeroCents: true);
   final rating = listing.hasRatings
       ? 'Nota ${formatRating(listing.ratingAverage)} de 5, '
             '${listing.ratingCount} avaliações'
       : 'Ainda sem avaliações';
-  return '${listing.title}. A partir de $price. $rating. '
+  return '${listing.title}. ${listing.priceLabel}. $rating. '
       '${listing.locationLabel}.';
 }
 
@@ -118,7 +116,8 @@ class ListingCard extends StatelessWidget {
   }
 }
 
-/// Selo "A partir de R$ ...", no laranja da marca.
+/// Selo com o preço ("A partir de R$ ...", "R$ ... por pessoa", "Sob
+/// consulta"), no laranja da marca.
 class PriceBadge extends StatelessWidget {
   const PriceBadge({super.key, required this.listing});
 
@@ -132,10 +131,7 @@ class PriceBadge extends StatelessWidget {
         color: context.colors.primary,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text(
-        'A partir de ${formatBrl(listing.priceFromCents, hideZeroCents: true)}',
-        style: context.text.cardPrice,
-      ),
+      child: Text(listing.priceLabel, style: context.text.cardPrice),
     );
   }
 }

@@ -1,7 +1,7 @@
 ---
 title: A API (FastAPI)
 type: architecture
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # A API (FastAPI)
@@ -113,6 +113,8 @@ cadastro e análise dupla. A regra do salão único é testada sem simultaneidad
 | quantidade de um item | 999 | `parties/domain.py` |
 | favoritos por conta | 500 | `favorites/service.py` |
 | anúncios por fornecedor | 50 | `vendors/service.py` |
-| preço de um anúncio | R$ 1 milhão | `vendors/schemas.py` |
+| preço de um anúncio ou de um serviço próprio | R$ 1 milhão | `catalog/pricing.py` |
+| serviços próprios por anúncio | 20 | `vendors/schemas.py` |
+| parceiros por anúncio | 20 | `vendors/schemas.py` |
 | fila de análise | 50 por consulta, sem paginação | `vendors/service.py` |
 | login / cadastro por IP | 10 / 5 por minuto | `core/config.py` |

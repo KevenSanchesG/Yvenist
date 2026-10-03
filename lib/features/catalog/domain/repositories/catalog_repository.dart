@@ -24,4 +24,8 @@ abstract interface class CatalogRepository {
     String? cursor,
     int limit = 20,
   });
+
+  /// Um anúncio publicado, com a capacidade, os serviços próprios e os
+  /// parceiros. Lança `NotFoundFailure` se ele não existe ou saiu do catálogo.
+  Future<ListingDetail> getListing(String id);
 }

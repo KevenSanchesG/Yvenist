@@ -26,7 +26,8 @@ from app.modules.accounts.models import RefreshToken, User
 from app.modules.accounts.passwords import COMMON_PASSWORD_MESSAGE, is_too_common
 from app.modules.accounts.schemas import PASSWORD_MIN_LENGTH
 from app.modules.accounts.service import normalize_email
-from app.modules.catalog.models import Category, EventType, Listing, ListingStatus
+from app.modules.catalog.models import Category, EventType, Listing, ListingOffer, ListingStatus
+from app.modules.catalog.pricing import PricingModel
 from app.modules.catalog.text import build_search_text
 from app.modules.vendors.models import PersonType, VendorProfile, VendorStatus
 
@@ -43,18 +44,55 @@ _ATTRACTION_IMAGE = (
     "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=600&q=80"
 )
 
+_FIXED = PricingModel.FIXED
 _DEMO_GROUPS = (
-    # (categoria, título, bairro, preço inicial, incremento, nota, avaliações, imagem, eventos)
-    ("venue", "Salão Glamour", "Campo Grande", 100_000, 10_000, "5.00", 120, _VENUE_IMAGE,
-     ("wedding", "debutante", "graduation")),
-    ("attraction", "Atração Festiva", "Barra da Tijuca", 80_000, 5_000, "4.80", 85,
-     _ATTRACTION_IMAGE, ("kids_party", "corporate")),
-    ("buffet", "Buffet Sabor & Festa", "Tijuca", 250_000, 15_000, "4.70", 60, _VENUE_IMAGE,
-     ("wedding", "corporate", "barbecue")),
-    ("decoration", "Decoração Encanto", "Recreio", 60_000, 4_000, "4.90", 40, _ATTRACTION_IMAGE,
-     ("wedding", "debutante", "kids_party")),
+    # (categoria, título, bairro, cobrança, preço, incremento, mínimo, nota, avaliações,
+    #  imagem, eventos)
+    ("venue", "Salão Glamour", "Campo Grande", _FIXED, 100_000, 10_000, None, "5.00", 120,
+     _VENUE_IMAGE, ("wedding", "debutante", "graduation")),
+    ("attraction", "Atração Festiva", "Barra da Tijuca", PricingModel.PER_HOUR, 20_000, 1_000,
+     None, "4.80", 85, _ATTRACTION_IMAGE, ("kids_party", "corporate")),
+    ("buffet", "Buffet Sabor & Festa", "Tijuca", PricingModel.PER_PERSON, 5_500, 500, 250_000,
+     "4.70", 60, _VENUE_IMAGE, ("wedding", "corporate", "barbecue")),
+    ("decoration", "Decoração Encanto", "Recreio", _FIXED, 60_000, 4_000, None, "4.90", 40,
+     _ATTRACTION_IMAGE, ("wedding", "debutante", "kids_party")),
 )  # fmt: skip
 _LISTINGS_PER_GROUP = 8
+# A última decoração é sob consulta: mostra como fica um item sem preço publicado.
+_ON_REQUEST_LISTING = ("decoration", _LISTINGS_PER_GROUP - 1)
+# O que cada salão recomenda: a decoração e a atração de mesmo número.
+_VENUE_PARTNER_CATEGORIES = ("decoration", "attraction")
+
+
+def _demo_venue_offers() -> list[ListingOffer]:
+    """Os serviços que cada salão de demonstração oferece junto com o espaço."""
+    return [
+        ListingOffer(
+            category_slug="buffet",
+            name="Buffet do salão",
+            description="Almoço ou jantar servido pela equipe da casa.",
+            pricing_model=PricingModel.PER_PERSON,
+            price_cents=4_500,
+            position=0,
+        ),
+        ListingOffer(
+            category_slug="attraction",
+            name="Animação da casa",
+            description="Recreadores do próprio salão.",
+            pricing_model=PricingModel.PER_HOUR,
+            price_cents=18_000,
+            position=1,
+        ),
+        ListingOffer(
+            category_slug="other",
+            name="Taxa de limpeza",
+            description="Cobrada em toda locação.",
+            pricing_model=_FIXED,
+            price_cents=15_000,
+            is_required=True,
+            position=2,
+        ),
+    ]
 
 
 def validated_email(email: str) -> str:
@@ -133,33 +171,45 @@ def seed_demo(session: Session, hasher: PasswordHasher, settings: Settings) -> s
     categories = {category.slug: category for category in session.scalars(select(Category))}
     event_types = {event.slug: event for event in session.scalars(select(EventType))}
     total = 0
-    for slug, title, neighborhood, base, step, rating, reviews, image, events in _DEMO_GROUPS:
+    created: dict[tuple[str, int], Listing] = {}
+    for (
+        slug, title, neighborhood, model, base, step, minimum, rating, reviews, image, events,
+    ) in _DEMO_GROUPS:  # fmt: skip
         for index in range(_LISTINGS_PER_GROUP):
             name = f"{title} {index + 1}"
-            session.add(
-                Listing(
-                    vendor_id=vendor.id,
-                    category_slug=slug,
-                    title=name,
-                    description=f"{name}: anúncio de demonstração do Yvenist em {neighborhood}.",
-                    neighborhood=neighborhood,
-                    city="Rio de Janeiro",
-                    state="RJ",
-                    price_from_cents=base + index * step,
-                    capacity=100 + index * 20 if slug == "venue" else None,
-                    amenities=["kitchen", "parking", "wifi"] if slug == "venue" else [],
-                    cover_image_url=image,
-                    status=ListingStatus.PUBLISHED,
-                    rating_average=Decimal(rating),
-                    rating_count=reviews + index,
-                    search_text=build_search_text(
-                        name, neighborhood, "Rio de Janeiro", "RJ", categories[slug].name
-                    ),
-                    published_at=now - timedelta(minutes=total),
-                    event_types=[event_types[event] for event in events],
-                )
+            on_request = (slug, index) == _ON_REQUEST_LISTING
+            listing = Listing(
+                vendor_id=vendor.id,
+                category_slug=slug,
+                title=name,
+                description=f"{name}: anúncio de demonstração do Yvenist em {neighborhood}.",
+                neighborhood=neighborhood,
+                city="Rio de Janeiro",
+                state="RJ",
+                pricing_model=PricingModel.ON_REQUEST if on_request else model,
+                price_from_cents=0 if on_request else base + index * step,
+                minimum_price_cents=None if on_request else minimum,
+                capacity=100 + index * 20 if slug == "venue" else None,
+                amenities=["kitchen", "parking", "wifi"] if slug == "venue" else [],
+                offers=_demo_venue_offers() if slug == "venue" else [],
+                partners=[],
+                cover_image_url=image,
+                status=ListingStatus.PUBLISHED,
+                rating_average=Decimal(rating),
+                rating_count=reviews + index,
+                search_text=build_search_text(
+                    name, neighborhood, "Rio de Janeiro", "RJ", categories[slug].name
+                ),
+                published_at=now - timedelta(minutes=total),
+                event_types=[event_types[event] for event in events],
             )
+            session.add(listing)
+            created[slug, index] = listing
             total += 1
+    for index in range(_LISTINGS_PER_GROUP):
+        created["venue", index].partners = [
+            created[category, index] for category in _VENUE_PARTNER_CATEGORIES
+        ]
     session.commit()
     return f"{total} anúncios de demonstração criados."
 

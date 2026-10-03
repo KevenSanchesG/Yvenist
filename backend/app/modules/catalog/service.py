@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
-from sqlalchemy import ColumnElement, Select, and_, exists, or_, select
+from sqlalchemy import ColumnElement, Select, and_, case, exists, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import NotFoundError
@@ -17,11 +17,28 @@ from app.modules.catalog.models import (
     ListingStatus,
     listing_event_types,
 )
+from app.modules.catalog.pricing import MAX_PRICE_CENTS, PricingModel
 from app.modules.catalog.text import normalize_text
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 _ONE_MICROSECOND = timedelta(microseconds=1)
 _INT64_LIMIT = 2**63
+
+# O que o detalhe de um anúncio mostra além do card. As relações são
+# lazy="raise": quem monta um ``ListingDetail`` carrega com estas opções.
+LISTING_DETAIL_OPTIONS = (
+    selectinload(Listing.event_types),
+    selectinload(Listing.offers),
+    selectinload(Listing.partners),
+)
+
+# Um anúncio sob consulta não tem preço para comparar: nas duas ordens de preço
+# ele vai para o fim, em vez de aparecer como o mais barato.
+_has_no_price = Listing.pricing_model == PricingModel.ON_REQUEST
+_AFTER_EVERY_PRICE = MAX_PRICE_CENTS + 1
+_BEFORE_EVERY_PRICE = -1
+_price_ascending = case((_has_no_price, _AFTER_EVERY_PRICE), else_=Listing.price_from_cents)
+_price_descending = case((_has_no_price, _BEFORE_EVERY_PRICE), else_=Listing.price_from_cents)
 
 
 class ListingSort(StrEnum):
@@ -100,7 +117,7 @@ class CatalogService:
         listing = self._db.scalar(
             select(Listing)
             .where(Listing.id == listing_id, Listing.status == ListingStatus.PUBLISHED)
-            .options(selectinload(Listing.event_types))
+            .options(*LISTING_DETAIL_OPTIONS)
         )
         if listing is None:
             raise ListingNotFoundError
@@ -124,6 +141,9 @@ class CatalogService:
                     listing_event_types.c.event_type_slug == filters.event_type,
                 )
             )
+        if filters.min_price_cents is not None or filters.max_price_cents is not None:
+            # Sem preço publicado não há como dizer que cabe na faixa.
+            statement = statement.where(~_has_no_price)
         if filters.min_price_cents is not None:
             statement = statement.where(Listing.price_from_cents >= filters.min_price_cents)
         if filters.max_price_cents is not None:
@@ -138,19 +158,22 @@ class CatalogService:
             case ListingSort.POPULAR:
                 return statement.order_by(Listing.rating_count.desc(), Listing.id)
             case ListingSort.PRICE_ASC:
-                return statement.order_by(Listing.price_from_cents, Listing.id)
+                return statement.order_by(_price_ascending, Listing.id)
             case ListingSort.PRICE_DESC:
-                return statement.order_by(Listing.price_from_cents.desc(), Listing.id)
+                return statement.order_by(_price_descending.desc(), Listing.id)
             case ListingSort.RECENT:
                 return statement.order_by(Listing.published_at.desc(), Listing.id)
 
     @staticmethod
     def _cursor_for(sort: ListingSort, listing: Listing) -> Cursor:
+        has_no_price = listing.pricing_model is PricingModel.ON_REQUEST
         match sort:
             case ListingSort.POPULAR:
                 key: int = listing.rating_count
-            case ListingSort.PRICE_ASC | ListingSort.PRICE_DESC:
-                key = listing.price_from_cents
+            case ListingSort.PRICE_ASC:
+                key = _AFTER_EVERY_PRICE if has_no_price else listing.price_from_cents
+            case ListingSort.PRICE_DESC:
+                key = _BEFORE_EVERY_PRICE if has_no_price else listing.price_from_cents
             case ListingSort.RECENT:
                 # Publicado sempre tem data (garantido por CHECK no banco).
                 key = _to_micros(listing.published_at or _EPOCH)
@@ -172,13 +195,13 @@ class CatalogService:
                 )
             case ListingSort.PRICE_ASC:
                 return or_(
-                    Listing.price_from_cents > key,
-                    and_(Listing.price_from_cents == key, after_tie),
+                    _price_ascending > key,
+                    and_(_price_ascending == key, after_tie),
                 )
             case ListingSort.PRICE_DESC:
                 return or_(
-                    Listing.price_from_cents < key,
-                    and_(Listing.price_from_cents == key, after_tie),
+                    _price_descending < key,
+                    and_(_price_descending == key, after_tie),
                 )
             case ListingSort.RECENT:
                 try:

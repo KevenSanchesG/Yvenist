@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.core.pagination import Cursor, encode_cursor
 from app.modules.catalog.models import ListingStatus
+from app.modules.catalog.pricing import PricingModel
 from app.modules.catalog.reference_data import CATEGORIES, EVENT_TYPES
-from tests.conftest import CreateListing
+from tests.conftest import CreateListing, offer
 
 LISTINGS = "/api/v1/catalog/listings"
 
@@ -52,7 +53,9 @@ class TestSearch:
                     "neighborhood": "Campo Grande",
                     "city": "Rio de Janeiro",
                     "state": "RJ",
+                    "pricing_model": "fixed",
                     "price_from_cents": 150_000,
+                    "minimum_price_cents": None,
                     "currency": "BRL",
                     "cover_image_url": "https://example.com/capa.jpg",
                     "rating_average": 4.8,
@@ -61,6 +64,34 @@ class TestSearch:
             ],
             "next_cursor": None,
         }
+
+    def test_the_card_says_how_the_listing_charges(
+        self, client: TestClient, create_listing: CreateListing
+    ) -> None:
+        create_listing(
+            title="Buffet",
+            category="buffet",
+            pricing_model=PricingModel.PER_PERSON,
+            price_from_cents=6_000,
+            minimum_price_cents=250_000,
+        )
+
+        card = client.get(LISTINGS).json()["items"][0]
+
+        assert card["pricing_model"] == "per_person"
+        assert card["price_from_cents"] == 6_000
+        assert card["minimum_price_cents"] == 250_000
+
+    def test_a_listing_on_request_has_no_price_at_all(
+        self, client: TestClient, create_listing: CreateListing
+    ) -> None:
+        create_listing(pricing_model=PricingModel.ON_REQUEST)
+
+        card = client.get(LISTINGS).json()["items"][0]
+
+        # Nulo, e não zero: ninguém pode mostrar "R$ 0,00" no lugar de "sob consulta".
+        assert card["pricing_model"] == "on_request"
+        assert card["price_from_cents"] is None
 
     @pytest.mark.parametrize(
         "status",
@@ -108,6 +139,15 @@ class TestSearch:
         )
 
         assert titles(response) == ["Médio"]
+
+    @pytest.mark.parametrize("filters", [{"max_price_cents": 200_000}, {"min_price_cents": 0}])
+    def test_a_price_filter_leaves_out_what_has_no_price(
+        self, client: TestClient, create_listing: CreateListing, filters: dict[str, int]
+    ) -> None:
+        create_listing(title="Com preço", price_from_cents=100_000)
+        create_listing(title="Sob consulta", pricing_model=PricingModel.ON_REQUEST)
+
+        assert titles(client.get(LISTINGS, params=filters)) == ["Com preço"]
 
     @pytest.mark.parametrize("term", ["salao", "SALÃO", "  salão  glamour ", "campo grande"])
     def test_search_ignores_accents_case_and_spacing(
@@ -167,6 +207,21 @@ class TestSorting:
         assert titles(ascending) == ["Barato", "Médio", "Caro"]
         assert titles(descending) == ["Caro", "Médio", "Barato"]
 
+    def test_by_price_a_listing_on_request_goes_last_both_ways(
+        self, client: TestClient, create_listing: CreateListing
+    ) -> None:
+        # O banco guarda zero para "sob consulta": sem cuidado, ele apareceria
+        # como o mais barato de todos.
+        create_listing(title="Sob consulta", pricing_model=PricingModel.ON_REQUEST)
+        create_listing(title="Barato", price_from_cents=50_000)
+        create_listing(title="Caro", price_from_cents=300_000)
+
+        ascending = client.get(LISTINGS, params={"sort": "price_asc"})
+        descending = client.get(LISTINGS, params={"sort": "price_desc"})
+
+        assert titles(ascending) == ["Barato", "Caro", "Sob consulta"]
+        assert titles(descending) == ["Caro", "Barato", "Sob consulta"]
+
     def test_most_recent_first(self, client: TestClient, create_listing: CreateListing) -> None:
         create_listing(title="Antigo", published_minutes_ago=60)
         create_listing(title="Novo", published_minutes_ago=1)
@@ -187,6 +242,8 @@ class TestPagination:
         for index in range(7):
             create_listing(
                 price_from_cents=100_000 if index < 4 else 200_000,
+                # Dois sob consulta no meio: também não se repetem nem somem.
+                pricing_model=PricingModel.ON_REQUEST if index in (1, 5) else PricingModel.FIXED,
                 rating_count=5 if index % 2 else 0,
                 published_minutes_ago=index // 2,
             )
@@ -294,6 +351,81 @@ class TestDetail:
         assert body["event_types"] == ["wedding", "graduation"]
         assert body["cancellation_policy"] == "flexible"
         assert body["amenities"] == []
+        assert body["offers"] == []
+        assert body["partners"] == []
+
+    def test_shows_the_services_the_listing_offers_itself(
+        self, client: TestClient, create_listing: CreateListing
+    ) -> None:
+        listing = create_listing(
+            capacity=120,
+            offers=(
+                offer(
+                    "Buffet da casa",
+                    pricing_model=PricingModel.PER_PERSON,
+                    price_cents=4_500,
+                    minimum_price_cents=200_000,
+                ),
+                offer("Taxa de limpeza", category="other", price_cents=15_000, required=True),
+                offer("Decoração", category="decoration", pricing_model=PricingModel.ON_REQUEST),
+            ),
+        )
+
+        body = client.get(f"{LISTINGS}/{listing.id}").json()
+
+        assert body["capacity"] == 120
+        # Na ordem em que o fornecedor cadastrou.
+        assert [
+            {key: value for key, value in service.items() if key != "id"}
+            for service in body["offers"]
+        ] == [
+            {
+                "category": "buffet",
+                "name": "Buffet da casa",
+                "description": None,
+                "pricing_model": "per_person",
+                "price_cents": 4_500,
+                "minimum_price_cents": 200_000,
+                "required": False,
+            },
+            {
+                "category": "other",
+                "name": "Taxa de limpeza",
+                "description": None,
+                "pricing_model": "fixed",
+                "price_cents": 15_000,
+                "minimum_price_cents": None,
+                "required": True,
+            },
+            {
+                "category": "decoration",
+                "name": "Decoração",
+                "description": None,
+                "pricing_model": "on_request",
+                "price_cents": None,
+                "minimum_price_cents": None,
+                "required": False,
+            },
+        ]
+
+    def test_shows_only_the_partners_that_are_published(
+        self, client: TestClient, create_listing: CreateListing
+    ) -> None:
+        band = create_listing(title="Banda Festa Boa", category="attraction")
+        decoration = create_listing(title="Arte em Flores", category="decoration")
+        archived = create_listing(title="Fechou", category="dj", status=ListingStatus.ARCHIVED)
+        venue = create_listing(title="Salão", partners=(band, decoration, archived))
+
+        body = client.get(f"{LISTINGS}/{venue.id}").json()
+
+        assert [partner["title"] for partner in body["partners"]] == [
+            "Arte em Flores",
+            "Banda Festa Boa",
+        ]
+        # Um parceiro aparece como um card: sem os serviços e parceiros dele.
+        assert "offers" not in body["partners"][0]
+        # A indicação tem um sentido só.
+        assert client.get(f"{LISTINGS}/{band.id}").json()["partners"] == []
 
     def test_unknown_listing_is_404(self, client: TestClient) -> None:
         response = client.get(f"{LISTINGS}/{uuid.uuid4()}")

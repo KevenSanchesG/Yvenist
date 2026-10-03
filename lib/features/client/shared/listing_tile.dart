@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
-import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/core/widgets/app_network_image.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
+import 'package:yvenist/features/client/shared/catalog_presentation.dart';
 import 'package:yvenist/features/client/shared/listing_card.dart';
 
 /// Anúncio em uma linha, para listas verticais (busca, explorar, favoritos).
@@ -48,8 +48,7 @@ class ListingTile extends StatelessWidget {
                       RatingRow(listing: listing),
                       const SizedBox(height: 6),
                       Text(
-                        'A partir de '
-                        '${formatBrl(listing.priceFromCents, hideZeroCents: true)}',
+                        listing.priceLabel,
                         style: text.caption.copyWith(
                           color: colors.primary,
                           fontWeight: FontWeight.w700,

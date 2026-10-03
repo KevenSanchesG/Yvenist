@@ -1,3 +1,5 @@
+import 'package:yvenist/core/pricing/pricing_model.dart';
+import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 
 /// Um cadastro de fornecedor esperando análise, como a administração o vê.
@@ -33,11 +35,14 @@ class ListingReview {
     required this.vendorId,
     required this.vendorName,
     required this.vendorStatus,
+    this.pricingModel = PricingModel.fixed,
+    this.minimumPriceCents,
     this.neighborhood,
     this.capacity,
     this.areaM2,
     this.amenities = const [],
     this.eventTypes = const [],
+    this.offers = const [],
     this.cancellationPolicy = CancellationPolicy.flexible,
   });
 
@@ -48,7 +53,15 @@ class ListingReview {
   final String? neighborhood;
   final String city;
   final String state;
-  final int priceFromCents;
+  final PricingModel pricingModel;
+
+  /// Nulo quando o anúncio é sob consulta.
+  final int? priceFromCents;
+  final int? minimumPriceCents;
+
+  /// Os serviços que o anunciante oferece junto: quem publica o anúncio
+  /// publica também o que está aqui.
+  final List<ListingOffer> offers;
   final int? capacity;
   final int? areaM2;
   final List<String> amenities;
@@ -75,7 +88,10 @@ class ListingReview {
       neighborhood: neighborhood,
       city: city,
       state: state,
+      pricingModel: pricingModel,
       priceFromCents: priceFromCents,
+      minimumPriceCents: minimumPriceCents,
+      offers: offers,
       capacity: capacity,
       areaM2: areaM2,
       amenities: amenities,

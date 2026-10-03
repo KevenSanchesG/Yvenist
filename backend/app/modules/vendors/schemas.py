@@ -6,12 +6,13 @@ from pydantic import AfterValidator, BaseModel, Field, HttpUrl, field_validator,
 
 from app.core.documents import is_valid_cnpj, is_valid_cpf, mask_document, normalize_document
 from app.modules.catalog.models import CancellationPolicy, Listing, ListingStatus
-from app.modules.catalog.reference_data import AMENITIES, BRAZILIAN_STATES
+from app.modules.catalog.pricing import MAX_PRICE_CENTS, PricingModel
+from app.modules.catalog.reference_data import AMENITIES, BRAZILIAN_STATES, VENUE_CATEGORY
 from app.modules.catalog.schemas import ListingDetail
 from app.modules.vendors.models import PersonType, VendorProfile, VendorStatus
 
-# Preço máximo aceito para um anúncio: R$ 1 milhão.
-MAX_PRICE_CENTS = 100_000_000
+MAX_OFFERS_PER_LISTING = 20
+MAX_PARTNERS_PER_LISTING = 20
 
 
 def _single_spaced(value: str) -> str:
@@ -47,6 +48,46 @@ class VendorData(BaseModel):
         return self
 
 
+def _check_pricing(model: PricingModel, price_cents: int, minimum_cents: int | None) -> None:
+    """O que vale para o preço de um anúncio e de um serviço dele."""
+    if model is PricingModel.ON_REQUEST:
+        if price_cents != 0 or minimum_cents is not None:
+            raise ValueError("Um preço sob consulta não tem valor nem mínimo.")
+    elif price_cents <= 0:
+        raise ValueError("Informe um preço maior que zero, ou marque como sob consulta.")
+
+
+class OfferInput(BaseModel):
+    """Um serviço que o próprio anunciante oferece junto com o anúncio."""
+
+    category: Annotated[str, Field(max_length=40)]
+    name: Annotated[str, Field(max_length=120), _required_text(3, "Informe o nome do serviço.")]
+    description: Annotated[str | None, Field(max_length=300)] = None
+    pricing_model: PricingModel = PricingModel.FIXED
+    price_cents: int = Field(default=0, ge=0, le=MAX_PRICE_CENTS)
+    minimum_price_cents: int | None = Field(default=None, ge=0, le=MAX_PRICE_CENTS)
+    # Quem contrata o anúncio contrata este serviço junto.
+    required: bool = False
+
+    @field_validator("category")
+    @classmethod
+    def _not_a_venue(cls, value: str) -> str:
+        # Uma festa tem um salão só: o serviço de um anúncio não pode ser outro.
+        if value == VENUE_CATEGORY:
+            raise ValueError("Um serviço do anúncio não pode ser um salão.")
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def _clean_description(cls, value: str | None) -> str | None:
+        return (_single_spaced(value) or None) if value is not None else None
+
+    @model_validator(mode="after")
+    def _coherent_pricing(self) -> Self:
+        _check_pricing(self.pricing_model, self.price_cents, self.minimum_price_cents)
+        return self
+
+
 class ListingInput(BaseModel):
     category: Annotated[str, Field(max_length=40)]
     title: Annotated[str, Field(max_length=120), _required_text(3, "Informe o nome do anúncio.")]
@@ -58,13 +99,32 @@ class ListingInput(BaseModel):
     neighborhood: Annotated[str | None, Field(max_length=80)] = None
     city: Annotated[str, Field(max_length=80), _required_text(2, "Informe a cidade.")]
     state: Annotated[str, Field(min_length=2, max_length=2)]
-    price_from_cents: int = Field(ge=0, le=MAX_PRICE_CENTS)
+    pricing_model: PricingModel = PricingModel.FIXED
+    # Zero só quando o anúncio é sob consulta.
+    price_from_cents: int = Field(default=0, ge=0, le=MAX_PRICE_CENTS)
+    minimum_price_cents: int | None = Field(default=None, ge=0, le=MAX_PRICE_CENTS)
     capacity: int | None = Field(default=None, ge=1, le=100_000)
     area_m2: int | None = Field(default=None, ge=1, le=1_000_000)
     amenities: list[str] = Field(default_factory=list, max_length=len(AMENITIES))
     event_types: list[str] = Field(default_factory=list, max_length=20)
     cancellation_policy: CancellationPolicy = CancellationPolicy.FLEXIBLE
     cover_image_url: HttpUrl | None = None
+    offers: list[OfferInput] = Field(default_factory=list, max_length=MAX_OFFERS_PER_LISTING)
+    # Outros anúncios publicados que este recomenda.
+    partner_listing_ids: list[uuid.UUID] = Field(
+        default_factory=list, max_length=MAX_PARTNERS_PER_LISTING
+    )
+
+    @model_validator(mode="after")
+    def _coherent_pricing(self) -> Self:
+        _check_pricing(self.pricing_model, self.price_from_cents, self.minimum_price_cents)
+        return self
+
+    @field_validator("partner_listing_ids")
+    @classmethod
+    def _unique_partners(cls, value: list[uuid.UUID]) -> list[uuid.UUID]:
+        # Sem repetição, na ordem em que vieram.
+        return list(dict.fromkeys(value))
 
     @field_validator("state")
     @classmethod

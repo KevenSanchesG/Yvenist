@@ -39,6 +39,9 @@ class ControllableCatalog implements CatalogRepository {
   /// Se definido, só as buscas de anúncios falham.
   Object? searchFailure;
 
+  /// Se definido, só a busca do detalhe de um anúncio falha.
+  Object? detailFailure;
+
   /// Enquanto não for completado, as buscas ficam esperando.
   Completer<void>? gate;
 
@@ -73,5 +76,12 @@ class ControllableCatalog implements CatalogRepository {
     await gate?.future;
     _failIfAsked(searchFailure);
     return _inner.search(query, cursor: cursor, limit: limit);
+  }
+
+  @override
+  Future<ListingDetail> getListing(String id) async {
+    await gate?.future;
+    _failIfAsked(detailFailure);
+    return _inner.getListing(id);
   }
 }

@@ -1,7 +1,7 @@
 ---
 title: Glossário
 type: project
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Glossário
@@ -18,7 +18,11 @@ código. Na API os nomes são os mesmos do app, em `snake_case`.
 | Salão | o anúncio da categoria `venue`. É a única categoria com cadastro pelo app | `venue` |
 | Tipo de evento | a ocasião: casamento, 15 anos... Um anúncio atende vários | `EventType`; slugs `wedding`, `debutante`, `kids_party`, `corporate`, `barbecue`, `graduation` |
 | Comodidade | o que o espaço oferece (Wi-Fi, cozinha...) | `amenities`; rótulos em `catalog_presentation.dart` |
-| "A partir de" | o preço inicial informado pelo fornecedor | `price_from_cents` |
+| "A partir de" | o preço inicial informado pelo fornecedor, quando o valor é fixo | `price_from_cents`, com `pricing_model` `fixed` |
+| Modelo de preço | a que o preço se refere: o serviço inteiro, cada pessoa, cada hora, cada unidade, ou sob consulta | `PricingModel` |
+| Sob consulta | anúncio ou serviço sem preço publicado; nunca aparece como um número | `PricingModel.onRequest`, `on_request` |
+| Serviço próprio | o que o anunciante oferece junto com o anúncio (o buffet do salão); pode ser obrigatório | `ListingOffer`, tabela `listing_offers` |
+| Parceiro | outro anúncio que um anúncio recomenda; é contratado à parte | `ListingDetail.partners`, tabela `listing_partners` |
 | Vitrine | as faixas de anúncios da tela inicial | `HomeController`, `HomeSection` |
 | Favorito | anúncio guardado pela conta | `FavoritesController`, tabela `favorites` |
 | Festa | o que a pessoa está planejando: um nome e os itens escolhidos | `Party` (agregado) |

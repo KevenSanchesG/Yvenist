@@ -3,7 +3,8 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict
 
-from app.modules.catalog.models import CancellationPolicy, Listing
+from app.modules.catalog.models import CancellationPolicy, Listing, ListingOffer, ListingStatus
+from app.modules.catalog.pricing import PricingModel, public_price
 
 
 class CategoryResponse(BaseModel):
@@ -30,7 +31,10 @@ class ListingSummary(BaseModel):
     neighborhood: str | None
     city: str
     state: str
-    price_from_cents: int
+    pricing_model: PricingModel
+    # Nulo quando o anúncio é sob consulta.
+    price_from_cents: int | None
+    minimum_price_cents: int | None
     currency: str
     cover_image_url: str | None
     rating_average: float
@@ -45,11 +49,39 @@ class ListingSummary(BaseModel):
             neighborhood=listing.neighborhood,
             city=listing.city,
             state=listing.state,
-            price_from_cents=listing.price_from_cents,
+            pricing_model=listing.pricing_model,
+            price_from_cents=public_price(listing.pricing_model, listing.price_from_cents),
+            minimum_price_cents=listing.minimum_price_cents,
             currency=listing.currency,
             cover_image_url=listing.cover_image_url,
             rating_average=float(listing.rating_average),
             rating_count=listing.rating_count,
+        )
+
+
+class OfferResponse(BaseModel):
+    """Um serviço que o próprio anunciante oferece junto com o anúncio."""
+
+    id: uuid.UUID
+    category: str
+    name: str
+    description: str | None
+    pricing_model: PricingModel
+    price_cents: int | None
+    minimum_price_cents: int | None
+    required: bool
+
+    @classmethod
+    def from_offer(cls, offer: ListingOffer) -> Self:
+        return cls(
+            id=offer.id,
+            category=offer.category_slug,
+            name=offer.name,
+            description=offer.description,
+            pricing_model=offer.pricing_model,
+            price_cents=public_price(offer.pricing_model, offer.price_cents),
+            minimum_price_cents=offer.minimum_price_cents,
+            required=offer.is_required,
         )
 
 
@@ -60,11 +92,18 @@ class ListingDetail(ListingSummary):
     amenities: list[str]
     cancellation_policy: CancellationPolicy
     event_types: list[str]
+    offers: list[OfferResponse]
+    # Só os parceiros que estão publicados: um anúncio recolhido não é indicado.
+    partners: list[ListingSummary]
 
     @classmethod
     def from_listing(cls, listing: Listing) -> Self:
-        """Exige ``listing.event_types`` já carregado."""
+        """Exige ``event_types``, ``offers`` e ``partners`` já carregados."""
         summary = ListingSummary.from_listing(listing)
+        partners = sorted(
+            (p for p in listing.partners if p.status is ListingStatus.PUBLISHED),
+            key=lambda partner: (partner.title, partner.id),
+        )
         return cls(
             **summary.model_dump(),
             description=listing.description,
@@ -73,6 +112,8 @@ class ListingDetail(ListingSummary):
             amenities=list(listing.amenities),
             cancellation_policy=listing.cancellation_policy,
             event_types=[event_type.slug for event_type in listing.event_types],
+            offers=[OfferResponse.from_offer(offer) for offer in listing.offers],
+            partners=[ListingSummary.from_listing(partner) for partner in partners],
         )
 
 

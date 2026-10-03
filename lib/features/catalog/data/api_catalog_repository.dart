@@ -1,6 +1,7 @@
 import 'package:yvenist/core/network/api_client.dart';
 import 'package:yvenist/features/catalog/data/listing_mapper.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
+import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 
 /// Catálogo servido pela API do Yvenist.
@@ -63,5 +64,11 @@ class ApiCatalogRepository implements CatalogRepository {
       items: listingsFromJson(json['items']),
       nextCursor: json['next_cursor'] as String?,
     );
+  }
+
+  @override
+  Future<ListingDetail> getListing(String id) async {
+    final json = await _api.get('/catalog/listings/$id') as Json;
+    return listingDetailFromJson(json);
   }
 }

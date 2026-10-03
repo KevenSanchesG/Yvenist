@@ -169,9 +169,68 @@ void main() {
       await tapAndSettle(tester, find.byTooltip('Ordenar: Mais procurados'));
       await tapAndSettle(tester, find.text('Menor preço'));
 
-      // A mais barata do catálogo de demonstração.
-      expect(find.text('Decoração Encanto 1'), findsOneWidget);
+      // O menor valor anunciado no catálogo de demonstração: a ordem compara o
+      // número do anúncio, seja ele por pessoa, por hora ou pelo serviço.
+      expect(find.text('Buffet Sabor & Festa 1'), findsOneWidget);
+      expect(find.text(r'R$ 55 por pessoa'), findsOneWidget);
       expect(find.byTooltip('Ordenar: Menor preço'), findsOneWidget);
+    });
+
+    /// Toca no filtro de uma categoria que pode estar fora da tela: a faixa de
+    /// filtros rola para o lado e só monta o que está visível.
+    Future<void> filterBy(WidgetTester tester, String category) async {
+      final chip = find.widgetWithText(FilterChip, category);
+      await tester.scrollUntilVisible(
+        chip,
+        120,
+        scrollable: find
+            .descendant(
+              of: find.bySemanticsLabel('Filtrar por categoria'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      // Montado não é o mesmo que inteiro na tela: traz o filtro para dentro
+      // antes de tocar.
+      await scrollToAndTap(tester, chip);
+    }
+
+    appTest('cada anúncio diz a que o preço se refere', (tester, app) async {
+      await openTab(tester, 'Explorar');
+
+      await filterBy(tester, 'Atrações');
+      expect(find.text(r'R$ 270 por hora'), findsOneWidget);
+
+      await filterBy(tester, 'Decorações');
+      // A mais procurada das decorações não publica preço: nenhum número
+      // aparece no lugar.
+      expect(find.text('Sob consulta'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Decoração Encanto 8\. Sob consulta\.')),
+        findsOneWidget,
+      );
+    });
+
+    appTest('um anúncio sob consulta ainda não entra em uma festa', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Explorar');
+      await filterBy(tester, 'Decorações');
+
+      await tapAndSettle(
+        tester,
+        find.byTooltip('Adicionar Decoração Encanto 8 a uma festa'),
+      );
+
+      expect(
+        find.text(
+          'Decoração Encanto 8 é sob consulta e ainda não pode entrar em uma '
+          'festa.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Criar nova festa'), findsNothing);
     });
 
     appTest('rolar até o fim busca a próxima página', (tester, app) async {

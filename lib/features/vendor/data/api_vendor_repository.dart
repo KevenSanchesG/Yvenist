@@ -53,7 +53,20 @@ class ApiVendorRepository implements VendorRepository {
                   'neighborhood': draft.neighborhood,
                   'city': draft.city,
                   'state': draft.state,
-                  'price_from_cents': draft.priceFromCents,
+                  'pricing_model': draft.pricingModel.apiValue,
+                  // Sob consulta não tem preço: a API espera zero.
+                  'price_from_cents': draft.priceFromCents ?? 0,
+                  'minimum_price_cents': draft.minimumPriceCents,
+                  'offers': [
+                    for (final offer in draft.offers)
+                      {
+                        'category': offer.categorySlug,
+                        'name': offer.name,
+                        'pricing_model': offer.pricingModel.apiValue,
+                        'price_cents': offer.priceCents ?? 0,
+                        'required': offer.isRequired,
+                      },
+                  ],
                   'capacity': draft.capacity,
                   'area_m2': draft.areaM2,
                   'amenities': draft.amenities.toList(),

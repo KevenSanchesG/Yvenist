@@ -18,6 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, UTCDateTime, str_enum, utcnow
+from app.modules.catalog.pricing import PricingModel
 
 
 class ListingStatus(StrEnum):
@@ -71,11 +72,33 @@ listing_event_types = Table(
     Index("ix_listing_event_types_event_type_slug", "event_type_slug"),
 )
 
+# Parceiros que um anúncio recomenda: outros anúncios, de qualquer fornecedor.
+# É uma indicação, e não um vínculo: o parceiro é contratado à parte.
+listing_partners = Table(
+    "listing_partners",
+    Base.metadata,
+    Column("listing_id", ForeignKey("listings.id", ondelete="CASCADE"), primary_key=True),
+    Column("partner_listing_id", ForeignKey("listings.id", ondelete="CASCADE"), primary_key=True),
+    CheckConstraint("listing_id <> partner_listing_id", name="not_self"),
+    # A chave primária começa por listing_id; apagar um anúncio procura também
+    # as linhas em que ele é o parceiro.
+    Index("ix_listing_partners_partner_listing_id", "partner_listing_id"),
+)
+
 
 class Listing(Base):
     __tablename__ = "listings"
     __table_args__ = (
         CheckConstraint("price_from_cents >= 0", name="price_non_negative"),
+        # Sob consulta não tem preço: o zero só existe para a coluna ordenar.
+        CheckConstraint(
+            "pricing_model <> 'on_request' OR price_from_cents = 0",
+            name="on_request_has_no_price",
+        ),
+        CheckConstraint(
+            "minimum_price_cents IS NULL OR minimum_price_cents >= 0",
+            name="minimum_price_non_negative",
+        ),
         CheckConstraint("capacity IS NULL OR capacity > 0", name="capacity_positive"),
         CheckConstraint("area_m2 IS NULL OR area_m2 > 0", name="area_positive"),
         CheckConstraint("rating_count >= 0", name="rating_count_non_negative"),
@@ -103,6 +126,12 @@ class Listing(Base):
     state: Mapped[str] = mapped_column(String(2))
     # Dinheiro sempre em centavos inteiros: nada de ponto flutuante.
     price_from_cents: Mapped[int]
+    # A que o preço se refere (o serviço inteiro, cada pessoa, cada hora...).
+    pricing_model: Mapped[PricingModel] = mapped_column(
+        str_enum(PricingModel, name="pricing_model"), default=PricingModel.FIXED
+    )
+    # Valor mínimo cobrado, qualquer que seja a conta do modelo.
+    minimum_price_cents: Mapped[int | None]
     currency: Mapped[str] = mapped_column(String(3), default="BRL")
     capacity: Mapped[int | None]
     area_m2: Mapped[int | None]
@@ -133,3 +162,56 @@ class Listing(Base):
         lazy="raise",
         order_by=EventType.sort_order,
     )
+    offers: Mapped[list["ListingOffer"]] = relationship(
+        back_populates="listing",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="ListingOffer.position",
+        lazy="raise",
+    )
+    partners: Mapped[list["Listing"]] = relationship(
+        secondary=listing_partners,
+        primaryjoin=lambda: Listing.id == listing_partners.c.listing_id,
+        secondaryjoin=lambda: Listing.id == listing_partners.c.partner_listing_id,
+        lazy="raise",
+    )
+
+
+class ListingOffer(Base):
+    """Serviço que o próprio anunciante oferece junto com o anúncio.
+
+    O buffet do salão, a atração da casa, uma taxa de limpeza. Não é um anúncio:
+    não aparece na busca, não passa por análise sozinho e só pode ser contratado
+    com o anúncio a que pertence.
+    """
+
+    __tablename__ = "listing_offers"
+    __table_args__ = (
+        CheckConstraint("price_cents >= 0", name="price_non_negative"),
+        CheckConstraint(
+            "pricing_model <> 'on_request' OR price_cents = 0",
+            name="on_request_has_no_price",
+        ),
+        CheckConstraint(
+            "minimum_price_cents IS NULL OR minimum_price_cents >= 0",
+            name="minimum_price_non_negative",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    listing_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("listings.id", ondelete="CASCADE"), index=True
+    )
+    category_slug: Mapped[str] = mapped_column(ForeignKey("categories.slug", ondelete="RESTRICT"))
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(String(300))
+    pricing_model: Mapped[PricingModel] = mapped_column(
+        str_enum(PricingModel, name="pricing_model")
+    )
+    price_cents: Mapped[int]
+    minimum_price_cents: Mapped[int | None]
+    # Obrigatório: quem contrata o anúncio contrata este serviço junto.
+    is_required: Mapped[bool] = mapped_column(default=False)
+    position: Mapped[int] = mapped_column(default=0)
+
+    listing: Mapped[Listing] = relationship(back_populates="offers", lazy="raise")

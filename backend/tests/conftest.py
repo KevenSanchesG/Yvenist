@@ -18,7 +18,8 @@ from app.core.database import utcnow
 from app.main import create_app
 from app.models import Base
 from app.modules.accounts.models import User
-from app.modules.catalog.models import Category, EventType, Listing, ListingStatus
+from app.modules.catalog.models import Category, EventType, Listing, ListingOffer, ListingStatus
+from app.modules.catalog.pricing import PricingModel
 from app.modules.catalog.reference_data import CATEGORIES, EVENT_TYPES
 from app.modules.catalog.text import build_search_text
 from app.modules.vendors.models import PersonType, VendorProfile, VendorStatus
@@ -169,6 +170,28 @@ def admin(register_user: RegisterUser, db: Session) -> AuthenticatedUser:
 
 CreateListing = Callable[..., Listing]
 
+
+def offer(
+    name: str = "Buffet da casa",
+    *,
+    category: str = "buffet",
+    pricing_model: PricingModel = PricingModel.FIXED,
+    price_cents: int = 50_000,
+    minimum_price_cents: int | None = None,
+    required: bool = False,
+) -> ListingOffer:
+    """Um serviço próprio de um anúncio, para passar em ``create_listing(offers=...)``."""
+    return ListingOffer(
+        category_slug=category,
+        name=name,
+        pricing_model=pricing_model,
+        # Sob consulta não tem preço: o banco guarda zero.
+        price_cents=0 if pricing_model is PricingModel.ON_REQUEST else price_cents,
+        minimum_price_cents=minimum_price_cents,
+        is_required=required,
+    )
+
+
 # CPFs válidos, só para os testes.
 VALID_CPFS = ("52998224725", "11144477735", "39053344705", "86288366757")
 VALID_CNPJ = "11222333000181"
@@ -200,6 +223,12 @@ def create_listing(db: Session, vendor_profile: VendorProfile) -> CreateListing:
         title: str | None = None,
         category: str = "venue",
         price_from_cents: int = 100_000,
+        pricing_model: PricingModel = PricingModel.FIXED,
+        minimum_price_cents: int | None = None,
+        capacity: int | None = None,
+        offers: tuple[ListingOffer, ...] = (),
+        partners: tuple[Listing, ...] = (),
+        vendor: VendorProfile | None = None,
         status: ListingStatus = ListingStatus.PUBLISHED,
         rating_count: int = 0,
         event_types: tuple[str, ...] = (),
@@ -212,15 +241,23 @@ def create_listing(db: Session, vendor_profile: VendorProfile) -> CreateListing:
         counter += 1
         title = title or f"Salão Glamour {counter}"
         category_name = next(c["name"] for c in CATEGORIES if c["slug"] == category)
+        for position, own_service in enumerate(offers):
+            own_service.position = position
         listing = Listing(
-            vendor_id=vendor_profile.id,
+            vendor_id=(vendor or vendor_profile).id,
             category_slug=category,
             title=title,
             description="Espaço completo para a sua festa, com tudo o que você precisa.",
             neighborhood=neighborhood,
             city=city,
             state=state,
-            price_from_cents=price_from_cents,
+            # Sob consulta não tem preço: o banco guarda zero.
+            price_from_cents=0 if pricing_model is PricingModel.ON_REQUEST else price_from_cents,
+            pricing_model=pricing_model,
+            minimum_price_cents=minimum_price_cents,
+            capacity=capacity,
+            offers=list(offers),
+            partners=list(partners),
             cover_image_url="https://example.com/capa.jpg",
             status=status,
             rating_average=Decimal("4.80"),

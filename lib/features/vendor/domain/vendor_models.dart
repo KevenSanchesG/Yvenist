@@ -1,3 +1,5 @@
+import 'package:yvenist/core/pricing/pricing_model.dart';
+
 /// Situação do cadastro de fornecedor de uma conta.
 enum VendorStatus {
   /// A conta ainda não pediu para ser fornecedora.
@@ -45,6 +47,31 @@ class VendorListing {
   final String? rejectionReason;
 }
 
+/// Um serviço que o próprio espaço oferece junto com a locação (o buffet da
+/// casa, uma taxa de limpeza), como o fornecedor o cadastra.
+class OfferDraft {
+  const OfferDraft({
+    required this.categorySlug,
+    required this.name,
+    required this.priceCents,
+    this.pricingModel = PricingModel.fixed,
+    this.isRequired = false,
+  }) : assert(
+         (priceCents == null) == (pricingModel == PricingModel.onRequest),
+         'Só um serviço sob consulta fica sem preço.',
+       );
+
+  final String categorySlug;
+  final String name;
+  final PricingModel pricingModel;
+
+  /// Nulo quando o serviço é sob consulta.
+  final int? priceCents;
+
+  /// Quem aluga o espaço contrata este serviço junto.
+  final bool isRequired;
+}
+
 /// Tudo que o fluxo "anunciar um salão" coleta, pronto para envio.
 class HallListingDraft {
   const HallListingDraft({
@@ -56,13 +83,19 @@ class HallListingDraft {
     required this.city,
     required this.state,
     required this.priceFromCents,
+    this.pricingModel = PricingModel.fixed,
+    this.minimumPriceCents,
+    this.offers = const [],
     this.neighborhood,
     this.areaM2,
     this.capacity,
     this.eventTypes = const {},
     this.amenities = const {},
     this.cancellationPolicy = CancellationPolicy.flexible,
-  });
+  }) : assert(
+         (priceFromCents == null) == (pricingModel == PricingModel.onRequest),
+         'Só um anúncio sob consulta fica sem preço.',
+       );
 
   final PersonType personType;
   final String document;
@@ -72,7 +105,14 @@ class HallListingDraft {
   final String? neighborhood;
   final String city;
   final String state;
-  final int priceFromCents;
+
+  /// A que o preço se refere: a locação inteira, cada convidado, cada hora.
+  final PricingModel pricingModel;
+
+  /// Nulo quando o anúncio é sob consulta.
+  final int? priceFromCents;
+  final int? minimumPriceCents;
+  final List<OfferDraft> offers;
   final int? areaM2;
   final int? capacity;
   final Set<String> eventTypes;

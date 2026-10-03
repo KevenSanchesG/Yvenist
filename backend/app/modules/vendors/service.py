@@ -4,15 +4,16 @@ import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.core.database import utcnow
 from app.core.errors import ConflictError, NotFoundError, UnprocessableError
 from app.modules.accounts.models import User
-from app.modules.catalog.models import Category, EventType, Listing, ListingStatus
+from app.modules.catalog.models import Category, EventType, Listing, ListingOffer, ListingStatus
+from app.modules.catalog.service import LISTING_DETAIL_OPTIONS
 from app.modules.catalog.text import build_search_text
 from app.modules.vendors.models import VendorProfile, VendorStatus
-from app.modules.vendors.schemas import ListingInput, OnboardingRequest, VendorData
+from app.modules.vendors.schemas import ListingInput, OfferInput, OnboardingRequest, VendorData
 
 MAX_LISTINGS_PER_VENDOR = 50
 _REVIEW_QUEUE_PAGE_SIZE = 50
@@ -46,6 +47,11 @@ class UnknownCategoryError(UnprocessableError):
 class UnknownEventTypeError(UnprocessableError):
     code = "unknown_event_type"
     message = "Tipo de evento inválido."
+
+
+class UnknownPartnerListingError(UnprocessableError):
+    code = "unknown_partner_listing"
+    message = "Um dos parceiros indicados não está publicado."
 
 
 class ListingLimitReachedError(ConflictError):
@@ -83,7 +89,7 @@ class VendorService:
             self._db.scalars(
                 select(Listing)
                 .where(Listing.vendor_id == profile.id)
-                .options(selectinload(Listing.event_types))
+                .options(*LISTING_DETAIL_OPTIONS)
                 .order_by(Listing.created_at.desc(), Listing.id)
             )
         )
@@ -185,7 +191,7 @@ class VendorService:
             select(Listing, VendorProfile)
             .join(VendorProfile, VendorProfile.id == Listing.vendor_id)
             .where(Listing.status == status)
-            .options(selectinload(Listing.event_types))
+            .options(*LISTING_DETAIL_OPTIONS)
             .order_by(Listing.created_at, Listing.id)
             .limit(_REVIEW_QUEUE_PAGE_SIZE)
         )
@@ -279,7 +285,11 @@ class VendorService:
             neighborhood=data.neighborhood,
             city=data.city,
             state=data.state,
+            pricing_model=data.pricing_model,
             price_from_cents=data.price_from_cents,
+            minimum_price_cents=data.minimum_price_cents,
+            offers=self._build_offers(data.offers),
+            partners=self._published_partners(data.partner_listing_ids),
             capacity=data.capacity,
             area_m2=data.area_m2,
             amenities=data.amenities,
@@ -296,6 +306,46 @@ class VendorService:
         self._db.flush()
         return listing
 
+    def _build_offers(self, offers: list[OfferInput]) -> list[ListingOffer]:
+        if not offers:
+            return []
+        slugs = {offer.category for offer in offers}
+        known = set(
+            self._db.scalars(
+                select(Category.slug).where(Category.slug.in_(slugs), Category.is_active)
+            )
+        )
+        if slugs - known:
+            raise UnknownCategoryError
+        return [
+            ListingOffer(
+                category_slug=offer.category,
+                name=offer.name,
+                description=offer.description,
+                pricing_model=offer.pricing_model,
+                price_cents=offer.price_cents,
+                minimum_price_cents=offer.minimum_price_cents,
+                is_required=offer.required,
+                position=position,
+            )
+            for position, offer in enumerate(offers)
+        ]
+
+    def _published_partners(self, listing_ids: list[uuid.UUID]) -> list[Listing]:
+        if not listing_ids:
+            return []
+        # Só se indica o que o cliente consegue abrir: um anúncio publicado.
+        partners = list(
+            self._db.scalars(
+                select(Listing)
+                .where(Listing.id.in_(listing_ids), Listing.status == ListingStatus.PUBLISHED)
+                .order_by(Listing.title, Listing.id)
+            )
+        )
+        if len(partners) != len(listing_ids):
+            raise UnknownPartnerListingError
+        return partners
+
     def _pending_vendor(self, vendor_id: uuid.UUID) -> VendorProfile:
         profile = self._db.scalar(
             select(VendorProfile).where(VendorProfile.id == vendor_id).with_for_update()
@@ -310,7 +360,7 @@ class VendorService:
         listing = self._db.scalar(
             select(Listing)
             .where(Listing.id == listing_id)
-            .options(selectinload(Listing.event_types))
+            .options(*LISTING_DETAIL_OPTIONS)
             .with_for_update(of=Listing)
         )
         if listing is None:

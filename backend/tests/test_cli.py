@@ -130,6 +130,39 @@ class TestSeedDemo:
         assert venues["items"][0]["title"] == "Salão Glamour 8"  # o mais avaliado primeiro
         assert [item["title"] for item in search.json()["items"]] == ["Salão Glamour 3"]
 
+    def test_demo_listings_show_every_way_of_charging(
+        self, cli_settings: Settings, session: Session
+    ) -> None:
+        cli.main(["seed-demo"], cli_settings)
+
+        with TestClient(create_app(cli_settings)) as client:
+
+            def first(category: str) -> dict:
+                found = client.get("/api/v1/catalog/listings", params={"category": category})
+                return found.json()["items"][0]
+
+            venue = client.get(f"/api/v1/catalog/listings/{first('venue')['id']}").json()
+            models = {category: first(category) for category in ("attraction", "buffet")}
+            decoration = first("decoration")
+
+        assert venue["pricing_model"] == "fixed"
+        assert venue["capacity"] == 240
+        assert [(o["name"], o["pricing_model"], o["required"]) for o in venue["offers"]] == [
+            ("Buffet do salão", "per_person", False),
+            ("Animação da casa", "per_hour", False),
+            ("Taxa de limpeza", "fixed", True),
+        ]
+        assert [p["title"] for p in venue["partners"]] == [
+            "Atração Festiva 8",
+            "Decoração Encanto 8",
+        ]
+        assert models["attraction"]["pricing_model"] == "per_hour"
+        assert models["buffet"]["pricing_model"] == "per_person"
+        assert models["buffet"]["minimum_price_cents"] == 250_000
+        # A mais procurada das decorações é a que não publica preço.
+        assert decoration["title"] == "Decoração Encanto 8"
+        assert decoration["price_from_cents"] is None
+
     def test_is_idempotent(
         self, cli_settings: Settings, session: Session, capsys: pytest.CaptureFixture[str]
     ) -> None:

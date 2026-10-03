@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
 import 'package:yvenist/core/state/load_state.dart';
 import 'package:yvenist/features/admin/data/api_review_repository.dart';
 import 'package:yvenist/features/admin/data/in_memory_review_repository.dart';
@@ -171,7 +172,9 @@ void main() {
       'neighborhood': null,
       'city': 'Rio de Janeiro',
       'state': 'RJ',
+      'pricing_model': 'per_person',
       'price_from_cents': 250000,
+      'minimum_price_cents': 900000,
       'currency': 'BRL',
       'cover_image_url': null,
       'rating_average': 0.0,
@@ -182,6 +185,19 @@ void main() {
       'amenities': ['kitchen', 'wifi'],
       'cancellation_policy': 'moderate',
       'event_types': ['wedding'],
+      'offers': [
+        {
+          'id': 'o1',
+          'category': 'other',
+          'name': 'Taxa de limpeza',
+          'description': null,
+          'pricing_model': 'fixed',
+          'price_cents': 15000,
+          'minimum_price_cents': null,
+          'required': true,
+        },
+      ],
+      'partners': <Object>[],
       'status': 'pending_review',
       'rejection_reason': null,
       'created_at': '2026-10-01T12:31:00Z',
@@ -228,7 +244,12 @@ void main() {
       expect(listing.categorySlug, 'venue');
       expect(listing.neighborhood, isNull);
       expect(listing.location, 'Rio de Janeiro, RJ');
+      expect(listing.pricingModel, PricingModel.perPerson);
       expect(listing.priceFromCents, 250000);
+      expect(listing.minimumPriceCents, 900000);
+      expect(listing.offers.single.name, 'Taxa de limpeza');
+      expect(listing.offers.single.priceCents, 15000);
+      expect(listing.offers.single.isRequired, isTrue);
       expect(listing.capacity, 150);
       expect(listing.areaM2, isNull);
       expect(listing.amenities, ['kitchen', 'wifi']);

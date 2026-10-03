@@ -36,17 +36,30 @@ Future<void> addListingToParty(BuildContext context, Listing listing) async {
   );
   if (!signedIn || !context.mounted) return;
 
-  await showAddToPartySheet(context, listing.toPartyItemDraft());
+  // A festa ainda soma preço vezes quantidade: um anúncio sem preço entraria
+  // nela como "R$ 0,00". Até a festa saber o que é "sob consulta", ele não
+  // entra.
+  final price = listing.priceFromCents;
+  if (price == null) {
+    showAppSnackBar(
+      context,
+      '${listing.title} é sob consulta e ainda não pode entrar em uma festa.',
+    );
+    return;
+  }
+
+  await showAddToPartySheet(context, listing.toPartyItemDraft(price));
 }
 
 extension ListingToPartyItem on Listing {
-  /// Traduz o anúncio para o formato que o Party Maker entende.
-  PartyItemDraft toPartyItemDraft() {
+  /// Traduz o anúncio, com o preço [priceCents], para o formato que o Party
+  /// Maker entende.
+  PartyItemDraft toPartyItemDraft(int priceCents) {
     return PartyItemDraft(
       externalRef: ExternalRef.listing(id),
       category: PartyItemCategory.fromSlug(categorySlug),
       name: title,
-      unitPrice: Money.fromCents(priceFromCents, currency: currency),
+      unitPrice: Money.fromCents(priceCents, currency: currency),
       imageUrl: coverImageUrl,
     );
   }

@@ -12,6 +12,7 @@ from tests.conftest import (
     VALID_CNPJ,
     VALID_CPFS,
     AuthenticatedUser,
+    CreateListing,
 )
 
 ONBOARDING = "/api/v1/vendors/onboarding"
@@ -279,6 +280,161 @@ class TestOnboarding:
         stored = db.scalar(select(Listing))
         assert stored is not None
         assert stored.search_text == "espaco crystal campo grande rio de janeiro rj saloes"
+
+
+class TestPricingAndOwnServices:
+    def test_a_listing_is_fixed_price_unless_it_says_otherwise(
+        self, client: TestClient, user: AuthenticatedUser
+    ) -> None:
+        listing = onboarding(client, user).json()["listing"]
+
+        assert listing["pricing_model"] == "fixed"
+        assert listing["price_from_cents"] == 250_000
+        assert listing["minimum_price_cents"] is None
+        assert listing["offers"] == []
+        assert listing["partners"] == []
+
+    def test_stores_how_the_listing_charges_and_its_own_services(
+        self, client: TestClient, user: AuthenticatedUser
+    ) -> None:
+        response = onboarding(
+            client,
+            user,
+            listing=listing_data(
+                pricing_model="per_hour",
+                price_from_cents=40_000,
+                minimum_price_cents=160_000,
+                offers=[
+                    {
+                        "category": "buffet",
+                        "name": "  Buffet   da casa ",
+                        "description": "Almoço ou jantar.",
+                        "pricing_model": "per_person",
+                        "price_cents": 4_500,
+                    },
+                    {"category": "other", "name": "Taxa de limpeza", "price_cents": 15_000,
+                     "required": True},
+                    {"category": "decoration", "name": "Decoração", "pricing_model": "on_request"},
+                ],
+            ),
+        )  # fmt: skip
+
+        assert response.status_code == 201, response.text
+        listing = response.json()["listing"]
+        assert listing["pricing_model"] == "per_hour"
+        assert listing["price_from_cents"] == 40_000
+        assert listing["minimum_price_cents"] == 160_000
+        assert [
+            (o["name"], o["pricing_model"], o["price_cents"], o["required"])
+            for o in listing["offers"]
+        ] == [
+            ("Buffet da casa", "per_person", 4_500, False),
+            ("Taxa de limpeza", "fixed", 15_000, True),
+            ("Decoração", "on_request", None, False),
+        ]
+
+    def test_a_listing_on_request_is_stored_without_a_price(
+        self, client: TestClient, user: AuthenticatedUser, db: Session
+    ) -> None:
+        listing = listing_data(pricing_model="on_request")
+        del listing["price_from_cents"]
+
+        response = onboarding(client, user, listing=listing)
+
+        assert response.status_code == 201, response.text
+        assert response.json()["listing"]["price_from_cents"] is None
+        stored = db.scalar(select(Listing))
+        assert stored is not None
+        assert stored.price_from_cents == 0
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"pricing_model": "inexistente"},
+            {"price_from_cents": 0},
+            {"pricing_model": "on_request", "price_from_cents": 100_000},
+            {"pricing_model": "on_request", "price_from_cents": 0, "minimum_price_cents": 1},
+            {"minimum_price_cents": -1},
+            {"offers": [{"category": "buffet", "name": "ab", "price_cents": 100}]},
+            {"offers": [{"category": "buffet", "name": "Buffet", "price_cents": 0}]},
+            {"offers": [{"category": "venue", "name": "Sala anexa", "price_cents": 100}]},
+            {"offers": [{"category": "buffet", "name": "Buffet", "price_cents": 100}] * 21},
+            {"partner_listing_ids": ["nao-e-uuid"]},
+        ],
+        ids=[
+            "modelo desconhecido",
+            "preço zero sem ser sob consulta",
+            "sob consulta com preço",
+            "sob consulta com mínimo",
+            "mínimo negativo",
+            "serviço com nome curto",
+            "serviço de graça sem ser sob consulta",
+            "serviço que é outro salão",
+            "serviços demais",
+            "parceiro com id inválido",
+        ],
+    )
+    def test_rejects_incoherent_pricing_and_services(
+        self, client: TestClient, user: AuthenticatedUser, overrides: dict[str, object]
+    ) -> None:
+        response = onboarding(client, user, listing=listing_data(**overrides))
+
+        assert response.status_code == 422
+        assert error_code(response) == "validation_error"
+
+    def test_a_service_needs_a_known_category(
+        self, client: TestClient, user: AuthenticatedUser, db: Session
+    ) -> None:
+        response = onboarding(
+            client,
+            user,
+            listing=listing_data(
+                offers=[{"category": "inexistente", "name": "Mágico", "price_cents": 100}]
+            ),
+        )
+
+        assert response.status_code == 422
+        assert error_code(response) == "unknown_category"
+        assert db.scalar(select(Listing)) is None
+
+    def test_recommends_published_listings_as_partners(
+        self, client: TestClient, user: AuthenticatedUser, create_listing: CreateListing
+    ) -> None:
+        band = create_listing(title="Banda Festa Boa", category="attraction")
+        flowers = create_listing(title="Arte em Flores", category="decoration")
+
+        response = onboarding(
+            client,
+            user,
+            # Repetido de propósito: o mesmo parceiro entra uma vez só.
+            listing=listing_data(partner_listing_ids=[str(band.id), str(flowers.id), str(band.id)]),
+        )
+
+        assert response.status_code == 201, response.text
+        assert [p["title"] for p in response.json()["listing"]["partners"]] == [
+            "Arte em Flores",
+            "Banda Festa Boa",
+        ]
+
+    @pytest.mark.parametrize("status", [ListingStatus.PENDING_REVIEW, ListingStatus.ARCHIVED])
+    def test_a_partner_has_to_be_published(
+        self,
+        client: TestClient,
+        user: AuthenticatedUser,
+        create_listing: CreateListing,
+        db: Session,
+        status: ListingStatus,
+    ) -> None:
+        hidden = create_listing(category="attraction", status=status)
+
+        response = onboarding(
+            client, user, listing=listing_data(partner_listing_ids=[str(hidden.id)])
+        )
+
+        assert response.status_code == 422
+        assert error_code(response) == "unknown_partner_listing"
+        # Nem o anúncio nem o cadastro ficam para trás.
+        assert db.scalar(select(VendorProfile).where(VendorProfile.user_id == user.id)) is None
 
 
 class TestReview:

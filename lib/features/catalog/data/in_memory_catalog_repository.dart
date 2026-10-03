@@ -1,3 +1,4 @@
+import 'package:yvenist/core/error/app_failure.dart';
 import 'package:yvenist/features/catalog/data/demo_catalog.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
@@ -54,6 +55,34 @@ class InMemoryCatalogRepository implements CatalogRepository {
     );
   }
 
+  @override
+  Future<ListingDetail> getListing(String id) async {
+    final entry = _find(id);
+    if (entry == null) {
+      throw const NotFoundFailure(
+        'Anúncio não encontrado.',
+        'listing_not_found',
+      );
+    }
+
+    final partners = [
+      for (final partnerId in entry.partnerIds) ?_find(partnerId)?.listing,
+    ]..sort((a, b) => a.title.compareTo(b.title));
+    return ListingDetail(
+      listing: entry.listing,
+      capacity: entry.capacity,
+      offers: entry.offers,
+      partners: partners,
+    );
+  }
+
+  DemoListing? _find(String id) {
+    for (final entry in _listings) {
+      if (entry.listing.id == id) return entry;
+    }
+    return null;
+  }
+
   String _searchText(Listing listing) {
     final category = categoryList
         .where((c) => c.slug == listing.categorySlug)
@@ -70,16 +99,27 @@ class InMemoryCatalogRepository implements CatalogRepository {
       ListingSort.popular => b.listing.ratingCount.compareTo(
         a.listing.ratingCount,
       ),
-      ListingSort.priceAsc => a.listing.priceFromCents.compareTo(
-        b.listing.priceFromCents,
-      ),
-      ListingSort.priceDesc => b.listing.priceFromCents.compareTo(
-        a.listing.priceFromCents,
+      ListingSort.priceAsc => _comparePrices(a.listing, b.listing),
+      ListingSort.priceDesc => _comparePrices(
+        a.listing,
+        b.listing,
+        descending: true,
       ),
       ListingSort.recent => b.publishedOrder.compareTo(a.publishedOrder),
     };
     // Desempate por id: a ordem é sempre a mesma entre uma página e outra.
     return byKey != 0 ? byKey : a.listing.id.compareTo(b.listing.id);
+  }
+
+  /// Um anúncio sob consulta não tem preço para comparar: nas duas ordens ele
+  /// vai para o fim, em vez de aparecer como o mais barato.
+  static int _comparePrices(Listing a, Listing b, {bool descending = false}) {
+    final priceA = a.priceFromCents;
+    final priceB = b.priceFromCents;
+    if (priceA == null || priceB == null) {
+      return (priceA == null ? 1 : 0) - (priceB == null ? 1 : 0);
+    }
+    return descending ? priceB.compareTo(priceA) : priceA.compareTo(priceB);
   }
 }
 

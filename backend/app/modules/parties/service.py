@@ -13,6 +13,7 @@ from app.core.database import utcnow
 from app.core.errors import ConflictError, NotFoundError
 from app.modules.accounts.models import User
 from app.modules.catalog.models import Listing, ListingStatus
+from app.modules.catalog.pricing import PricingModel
 from app.modules.parties.domain import (
     CatalogItem,
     ItemState,
@@ -152,7 +153,10 @@ class PartyService:
                 Listing.id == listing_id, Listing.status == ListingStatus.PUBLISHED
             )
         )
-        if listing is None:
+        # A festa ainda soma preço vezes quantidade: um anúncio sob consulta
+        # entraria nela valendo zero. Até a festa saber o que é "sob consulta",
+        # ele não entra.
+        if listing is None or listing.pricing_model is PricingModel.ON_REQUEST:
             return None
         return CatalogItem(
             listing_id=listing.id,

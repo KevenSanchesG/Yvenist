@@ -531,12 +531,12 @@ void main() {
           final parties = phone.state.parties;
           final salao = await phone.firstListing('venue');
           final atracao = await phone.firstListing('attraction');
-          final total = salao.priceFromCents + atracao.priceFromCents;
+          final total = salao.priceFromCents! + atracao.priceFromCents!;
 
-          await parties.addItemToNewParty('15 anos', salao.toPartyItemDraft());
+          await parties.addItemToNewParty('15 anos', salao.draft);
           final partyId = parties.activePartyId!;
           expect(
-            await parties.addItemToParty(partyId, atracao.toPartyItemDraft()),
+            await parties.addItemToParty(partyId, atracao.draft),
             isTrue,
             reason: parties.error,
           );
@@ -629,11 +629,8 @@ void main() {
           final (phone, account) = await signedUpDevice();
           final salao = await phone.firstListing('venue');
           final atracao = await phone.firstListing('attraction');
-          final decoracao = await phone.firstListing('decoration');
-          await phone.state.parties.addItemToNewParty(
-            'Formatura',
-            salao.toPartyItemDraft(),
-          );
+          final buffet = await phone.firstListing('buffet');
+          await phone.state.parties.addItemToNewParty('Formatura', salao.draft);
           final partyId = phone.state.parties.activePartyId!;
 
           final tablet = await device();
@@ -645,15 +642,12 @@ void main() {
 
           // O celular altera primeiro; o tablet ainda tem a versão anterior.
           expect(
-            await phone.state.parties.addItemToParty(
-              partyId,
-              atracao.toPartyItemDraft(),
-            ),
+            await phone.state.parties.addItemToParty(partyId, atracao.draft),
             isTrue,
           );
           final stale = await tablet.state.parties.addItemToParty(
             partyId,
-            decoracao.toPartyItemDraft(),
+            buffet.draft,
           );
 
           expect(stale, isFalse);
@@ -669,10 +663,7 @@ void main() {
 
           // Tentar de novo, agora sobre a versão atual, funciona.
           expect(
-            await tablet.state.parties.addItemToParty(
-              partyId,
-              decoracao.toPartyItemDraft(),
-            ),
+            await tablet.state.parties.addItemToParty(partyId, buffet.draft),
             isTrue,
             reason: tablet.state.parties.error,
           );
@@ -686,7 +677,7 @@ void main() {
           final salao = await ana.firstListing('venue');
           await ana.state.parties.addItemToNewParty(
             'Festa da Ana',
-            salao.toPartyItemDraft(),
+            salao.draft,
           );
           final partyId = ana.state.parties.activePartyId!.value;
 
@@ -921,7 +912,7 @@ void main() {
             expect(
               await client.state.parties.addItemToNewParty(
                 'Casamento',
-                listing.toPartyItemDraft(),
+                listing.draft,
               ),
               isTrue,
               reason: client.state.parties.error,
@@ -1059,6 +1050,11 @@ void main() {
       });
     },
   );
+}
+
+extension on Listing {
+  /// O anúncio pronto para entrar em uma festa. Só para os que têm preço.
+  PartyItemDraft get draft => toPartyItemDraft(priceFromCents!);
 }
 
 /// Faixa dos sufixos aleatórios que tornam únicos os e-mails e os títulos.

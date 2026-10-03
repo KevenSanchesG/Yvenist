@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession
 from app.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from app.modules.catalog.pricing import MAX_PRICE_CENTS
 from app.modules.catalog.schemas import (
     CategoryResponse,
     EventTypeResponse,
@@ -15,9 +16,6 @@ from app.modules.catalog.schemas import (
 from app.modules.catalog.service import CatalogService, ListingFilters, ListingSort
 
 router = APIRouter(prefix="/catalog", tags=["Catálogo"])
-
-# Limite do valor em centavos aceito nos filtros (R$ 1 milhão).
-_MAX_PRICE_CENTS = 100_000_000
 
 
 def get_catalog_service(db: DbSession) -> CatalogService:
@@ -43,8 +41,8 @@ def search_listings(
     q: Annotated[str | None, Query(max_length=80, description="Texto livre.")] = None,
     category: Annotated[str | None, Query(max_length=40)] = None,
     event_type: Annotated[str | None, Query(max_length=40)] = None,
-    min_price_cents: Annotated[int | None, Query(ge=0, le=_MAX_PRICE_CENTS)] = None,
-    max_price_cents: Annotated[int | None, Query(ge=0, le=_MAX_PRICE_CENTS)] = None,
+    min_price_cents: Annotated[int | None, Query(ge=0, le=MAX_PRICE_CENTS)] = None,
+    max_price_cents: Annotated[int | None, Query(ge=0, le=MAX_PRICE_CENTS)] = None,
     sort: ListingSort = ListingSort.POPULAR,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     cursor: Annotated[str | None, Query(max_length=300)] = None,

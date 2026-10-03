@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
+import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/features/catalog/data/api_catalog_repository.dart';
 import 'package:yvenist/features/catalog/data/in_memory_catalog_repository.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
@@ -57,6 +59,35 @@ void main() {
 
       expect(a, b);
       expect({a, b}, hasLength(1));
+    });
+  });
+
+  group('preço', () {
+    test('cada modelo diz a que o valor se refere', () {
+      expect(describePricing(PricingModel.fixed, 170000), r'R$ 1.700');
+      expect(
+        describePricing(PricingModel.perPerson, 5550),
+        r'R$ 55,50 por pessoa',
+      );
+      expect(describePricing(PricingModel.perHour, 20000), r'R$ 200 por hora');
+      expect(describePricing(PricingModel.perUnit, 800), r'R$ 8 por unidade');
+    });
+
+    test('sem preço publicado nunca sai um número', () {
+      expect(describePricing(PricingModel.onRequest, null), 'Sob consulta');
+      // Nem com um valor esquecido ao lado do modelo, nem com o modelo certo
+      // e o valor faltando.
+      expect(describePricing(PricingModel.onRequest, 0), 'Sob consulta');
+      expect(describePricing(PricingModel.perHour, null), 'Sob consulta');
+    });
+
+    test('um modelo que o app não conhece é tratado como sob consulta', () {
+      // Falha fechada: sem saber como o preço é cobrado, o app não estima.
+      expect(PricingModel.fromApi('per_weekend'), PricingModel.onRequest);
+      expect(PricingModel.fromApi(null), PricingModel.onRequest);
+      for (final model in PricingModel.values) {
+        expect(PricingModel.fromApi(model.apiValue), model);
+      }
     });
   });
 
@@ -180,6 +211,104 @@ void main() {
       ]);
     });
 
+    test(
+      'nas ordens de preço, o anúncio sob consulta vai para o fim',
+      () async {
+        Future<List<String>> decorations(ListingSort sort) async {
+          final page = await catalog.search(
+            ListingQuery(categorySlug: 'decoration', sort: sort),
+            limit: 50,
+          );
+          return titles(page);
+        }
+
+        final ascending = await decorations(ListingSort.priceAsc);
+        final descending = await decorations(ListingSort.priceDesc);
+
+        // A Decoração Encanto 8 não publica preço: não é a mais barata nem a
+        // mais cara.
+        expect(ascending.first, 'Decoração Encanto 1');
+        expect(ascending.last, 'Decoração Encanto 8');
+        expect(descending.first, 'Decoração Encanto 7');
+        expect(descending.last, 'Decoração Encanto 8');
+      },
+    );
+
+    test('cada categoria de demonstração cobra de um jeito', () async {
+      Future<Listing> mostPopular(String category) async {
+        final page = await catalog.search(
+          ListingQuery(categorySlug: category),
+          limit: 1,
+        );
+        return page.items.single;
+      }
+
+      final venue = await mostPopular('venue');
+      final attraction = await mostPopular('attraction');
+      final buffet = await mostPopular('buffet');
+      final decoration = await mostPopular('decoration');
+
+      expect(venue.pricingModel, PricingModel.fixed);
+      expect(venue.priceFromCents, 170000);
+      expect(attraction.pricingModel, PricingModel.perHour);
+      expect(attraction.priceFromCents, 27000);
+      expect(buffet.pricingModel, PricingModel.perPerson);
+      expect(buffet.minimumPriceCents, 250000);
+      expect(decoration.pricingModel, PricingModel.onRequest);
+      expect(decoration.priceFromCents, isNull);
+    });
+
+    test(
+      'o detalhe traz a capacidade, os serviços próprios e os parceiros',
+      () async {
+        final detail = await catalog.getListing('demo-venue-8');
+
+        expect(detail.listing.title, 'Salão Glamour 8');
+        expect(detail.capacity, 240);
+        expect(
+          [
+            for (final offer in detail.offers)
+              (
+                offer.name,
+                offer.pricingModel,
+                offer.priceCents,
+                offer.isRequired,
+              ),
+          ],
+          [
+            ('Buffet do salão', PricingModel.perPerson, 4500, false),
+            ('Animação da casa', PricingModel.perHour, 18000, false),
+            ('Taxa de limpeza', PricingModel.fixed, 15000, true),
+          ],
+        );
+        expect(detail.partners.map((partner) => partner.title), [
+          'Atração Festiva 8',
+          'Decoração Encanto 8',
+        ]);
+      },
+    );
+
+    test('só o salão tem serviços próprios e parceiros', () async {
+      final detail = await catalog.getListing('demo-attraction-8');
+
+      expect(detail.capacity, isNull);
+      expect(detail.offers, isEmpty);
+      expect(detail.partners, isEmpty);
+    });
+
+    test('o detalhe de um anúncio que não existe é "não encontrado"', () async {
+      await expectLater(
+        catalog.getListing('nao-existe'),
+        throwsA(
+          isA<NotFoundFailure>().having(
+            (failure) => failure.code,
+            'code',
+            'listing_not_found',
+          ),
+        ),
+      );
+    });
+
     test('pagina por cursor sem repetir nem pular itens', () async {
       final seen = <String>[];
       String? cursor;
@@ -238,7 +367,9 @@ void main() {
       'neighborhood': 'Campo Grande',
       'city': 'Rio de Janeiro',
       'state': 'RJ',
+      'pricing_model': 'fixed',
       'price_from_cents': 170000,
+      'minimum_price_cents': null,
       'currency': 'BRL',
       'cover_image_url': 'https://example.com/capa.jpg',
       'rating_average': 5.0,
@@ -263,7 +394,9 @@ void main() {
       expect(listing.title, 'Salão Glamour 8');
       expect(listing.categorySlug, 'venue');
       expect(listing.locationLabel, 'Campo Grande, RJ');
+      expect(listing.pricingModel, PricingModel.fixed);
       expect(listing.priceFromCents, 170000);
+      expect(listing.minimumPriceCents, isNull);
       expect(listing.coverImageUrl, 'https://example.com/capa.jpg');
       expect(listing.ratingAverage, 5.0);
       expect(listing.ratingCount, 127);
@@ -281,6 +414,7 @@ void main() {
             'neighborhood': null,
             'city': 'Niterói',
             'state': 'RJ',
+            'pricing_model': 'per_hour',
             'price_from_cents': 80000,
             'cover_image_url': null,
             'rating_average': 4,
@@ -296,6 +430,115 @@ void main() {
       expect(listing.coverImageUrl, isNull);
       expect(listing.locationLabel, 'Niterói, RJ');
       expect(listing.currency, 'BRL');
+      expect(listing.pricingModel, PricingModel.perHour);
+      expect(listing.minimumPriceCents, isNull);
+    });
+
+    test('sem preço, ou com um modelo desconhecido, o anúncio é sob '
+        'consulta', () async {
+      // Falha fechada: o app nunca mostra um número que não sabe o que
+      // significa. O mínimo vai junto, para não sobrar um valor na tela.
+      api.reply('GET', '/catalog/listings', {
+        'items': [
+          {
+            ...listingJson,
+            'pricing_model': 'on_request',
+            'price_from_cents': null,
+          },
+          {
+            ...listingJson,
+            'pricing_model': 'per_weekend',
+            'minimum_price_cents': 5,
+          },
+          {
+            ...listingJson,
+            'pricing_model': 'per_hour',
+            'price_from_cents': null,
+          },
+          {...listingJson}..remove('pricing_model'),
+        ],
+        'next_cursor': null,
+      });
+
+      final page = await catalog.search(const ListingQuery());
+
+      for (final listing in page.items) {
+        expect(listing.pricingModel, PricingModel.onRequest);
+        expect(listing.priceFromCents, isNull);
+        expect(listing.minimumPriceCents, isNull);
+      }
+    });
+
+    test('o detalhe traz capacidade, serviços próprios e parceiros', () async {
+      api.reply('GET', '/catalog/listings/salao', {
+        ...listingJson,
+        'description': 'Espaço completo.',
+        'capacity': 240,
+        'area_m2': null,
+        'amenities': <String>[],
+        'cancellation_policy': 'flexible',
+        'event_types': ['wedding'],
+        'offers': [
+          {
+            'id': 'o1',
+            'category': 'buffet',
+            'name': 'Buffet do salão',
+            'description': 'Almoço ou jantar.',
+            'pricing_model': 'per_person',
+            'price_cents': 4500,
+            'minimum_price_cents': 200000,
+            'required': false,
+          },
+          {
+            'id': 'o2',
+            'category': 'decoration',
+            'name': 'Decoração',
+            'description': null,
+            'pricing_model': 'on_request',
+            'price_cents': null,
+            'minimum_price_cents': null,
+            'required': true,
+          },
+        ],
+        'partners': [
+          {...listingJson, 'id': 'banda', 'title': 'Banda Festa Boa'},
+        ],
+      });
+
+      final detail = await catalog.getListing('salao');
+
+      expect(detail.listing.title, 'Salão Glamour 8');
+      expect(detail.capacity, 240);
+      final buffet = detail.offers.first;
+      expect(buffet.id, 'o1');
+      expect(buffet.categorySlug, 'buffet');
+      expect(buffet.description, 'Almoço ou jantar.');
+      expect(buffet.pricingModel, PricingModel.perPerson);
+      expect(buffet.priceCents, 4500);
+      expect(buffet.minimumPriceCents, 200000);
+      expect(buffet.isRequired, isFalse);
+      final decoration = detail.offers.last;
+      expect(decoration.pricingModel, PricingModel.onRequest);
+      expect(decoration.priceCents, isNull);
+      expect(decoration.isRequired, isTrue);
+      expect(detail.partners.single.title, 'Banda Festa Boa');
+      // O catálogo é público: não envia token.
+      expect(api.lastRequest.headers.containsKey('Authorization'), isFalse);
+    });
+
+    test('anúncio que saiu do catálogo é "não encontrado"', () async {
+      api.fail(
+        'GET',
+        '/catalog/listings/sumiu',
+        404,
+        'listing_not_found',
+        'Anúncio não encontrado.',
+      );
+
+      await expectLater(
+        catalog.getListing('sumiu'),
+        throwsA(isA<NotFoundFailure>()),
+      );
     });
 
     test('envia filtros, ordenação, limite e cursor como parâmetros', () async {

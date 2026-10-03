@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
 import 'package:yvenist/core/state/load_state.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
@@ -10,11 +11,31 @@ import 'package:yvenist/core/widgets/system_insets.dart';
 import 'package:yvenist/features/admin/domain/review_models.dart';
 import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/admin/presentation/controllers/review_queue_controller.dart';
+import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:yvenist/features/client/shared/catalog_presentation.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 
 final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
+
+/// O preço de um anúncio em análise, com o valor mínimo quando há.
+String _priceLine(ListingReview listing) {
+  final cents = listing.priceFromCents;
+  // O valor fixo é o preço inicial, e aqui aparece com os centavos: quem
+  // analisa confere o número que o fornecedor digitou.
+  final price = listing.pricingModel == PricingModel.fixed && cents != null
+      ? 'A partir de ${formatBrl(cents)}'
+      : describePricing(listing.pricingModel, cents);
+  final minimum = listing.minimumPriceCents;
+  return minimum == null ? price : '$price · mínimo de ${formatBrl(minimum)}';
+}
+
+/// Um serviço próprio em uma linha: "Buffet da casa (R$ 45 por pessoa)".
+String _offerLine(ListingOffer offer) {
+  final price = describePricing(offer.pricingModel, offer.priceCents);
+  final required = offer.isRequired ? ', obrigatório' : '';
+  return '${offer.name} ($price$required)';
+}
 
 /// Fila de análise: cadastros de fornecedor e anúncios esperando uma decisão.
 ///
@@ -343,10 +364,7 @@ class _ListingCard extends StatelessWidget {
       children: [
         Text('$categoryName · ${listing.location}', style: context.text.body),
         const SizedBox(height: 2),
-        Text(
-          'A partir de ${formatBrl(listing.priceFromCents)}',
-          style: context.text.body,
-        ),
+        Text(_priceLine(listing), style: context.text.body),
         const SizedBox(height: 2),
         Text(
           'Fornecedor: ${listing.vendorName} · enviado em '
@@ -386,6 +404,13 @@ class _ListingCard extends StatelessWidget {
               value:
                   '${listing.cancellationPolicy.label}. '
                   '${listing.cancellationPolicy.summary}',
+            ),
+            // Quem publica o anúncio publica também o que ele oferece junto.
+            _Detail(
+              label: 'Serviços próprios',
+              value: listing.offers.isEmpty
+                  ? 'Nenhum'
+                  : listing.offers.map(_offerLine).join('; '),
             ),
           ],
         ),

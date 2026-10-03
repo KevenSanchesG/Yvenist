@@ -1,7 +1,7 @@
 ---
 title: Vitrine, explorar, busca e favoritos
 type: feature
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Vitrine, explorar, busca e favoritos
@@ -22,8 +22,10 @@ menos favoritar.
 
 ## O card de anúncio
 
-`client/shared/listing_card.dart`. Mostra capa, preço "a partir de", título,
-nota e local, e duas ações (`listing_actions.dart`):
+`client/shared/listing_card.dart`. Mostra capa, preço, título, nota e local, e
+duas ações (`listing_actions.dart`). O preço diz a que se refere ("A partir de
+R$ 1.700", "R$ 55 por pessoa", "Sob consulta"): as formas estão em
+[catalog](../02-domain/catalog.md).
 
 | Ação | Comportamento |
 |---|---|

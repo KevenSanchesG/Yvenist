@@ -1,6 +1,7 @@
 import 'package:yvenist/core/network/api_client.dart';
 import 'package:yvenist/features/admin/domain/review_models.dart';
 import 'package:yvenist/features/admin/domain/review_repository.dart';
+import 'package:yvenist/features/catalog/data/listing_mapper.dart';
 import 'package:yvenist/features/vendor/data/vendor_api_mapping.dart';
 
 class ApiReviewRepository implements ReviewRepository {
@@ -73,6 +74,10 @@ class ApiReviewRepository implements ReviewRepository {
   }
 
   static ListingReview _listingFromJson(Json json) {
+    final pricing = pricingFromJson(
+      json['pricing_model'],
+      json['price_from_cents'],
+    );
     return ListingReview(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -81,7 +86,13 @@ class ApiReviewRepository implements ReviewRepository {
       neighborhood: json['neighborhood'] as String?,
       city: json['city'] as String,
       state: json['state'] as String,
-      priceFromCents: json['price_from_cents'] as int,
+      pricingModel: pricing.model,
+      priceFromCents: pricing.cents,
+      minimumPriceCents: json['minimum_price_cents'] as int?,
+      offers: [
+        for (final offer in (json['offers'] as List? ?? const []).cast<Json>())
+          listingOfferFromJson(offer),
+      ],
       capacity: json['capacity'] as int?,
       areaM2: json['area_m2'] as int?,
       amenities: (json['amenities'] as List).cast<String>(),

@@ -6,6 +6,7 @@ from sqlalchemy import event, func, select
 from sqlalchemy.orm import Session
 
 from app.modules.catalog.models import Listing, ListingStatus
+from app.modules.catalog.pricing import PricingModel
 from app.modules.parties import service as parties_service
 from app.modules.parties.domain import PartyStatus
 from app.modules.parties.models import Party, PartyItem, PartySnapshot
@@ -155,6 +156,21 @@ class TestCreate:
 
         response = client.put(
             f"{PARTIES}/{new_id()}", headers=user.headers, json=party_body(items=[item(hidden)])
+        )
+
+        assert response.status_code == 422
+        assert error_code(response) == "listing_not_available"
+
+    def test_a_listing_on_request_cannot_enter_a_party_yet(
+        self, client: TestClient, user: AuthenticatedUser, create_listing: CreateListing
+    ) -> None:
+        # A festa soma preço vezes quantidade: sem preço, o item valeria zero.
+        on_request = create_listing(pricing_model=PricingModel.ON_REQUEST)
+
+        response = client.put(
+            f"{PARTIES}/{new_id()}",
+            headers=user.headers,
+            json=party_body(items=[item(on_request)]),
         )
 
         assert response.status_code == 422

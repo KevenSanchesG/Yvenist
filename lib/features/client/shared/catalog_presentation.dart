@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
+import 'package:yvenist/core/utils/money_formatter.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
+import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 
 /// Como os conceitos do catálogo aparecem na tela: ícones e rótulos.
@@ -74,6 +77,18 @@ extension ListingSortPresentation on ListingSort {
     ListingSort.priceDesc => 'Maior preço',
     ListingSort.recent => 'Mais recentes',
   };
+}
+
+extension ListingPricePresentation on Listing {
+  /// O preço como aparece em um card: "A partir de R$ 1.700", "R$ 55 por
+  /// pessoa", "Sob consulta".
+  ///
+  /// O valor fixo é o preço inicial informado pelo fornecedor, por isso o "a
+  /// partir de"; os outros já dizem a que se referem.
+  String get priceLabel {
+    final price = describePricing(pricingModel, priceFromCents);
+    return pricingModel == PricingModel.fixed ? 'A partir de $price' : price;
+  }
 }
 
 /// Nota no formato brasileiro: `4.8` -> `4,8`.

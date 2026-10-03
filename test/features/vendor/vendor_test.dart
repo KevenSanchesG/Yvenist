@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:yvenist/core/error/app_failure.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
 import 'package:yvenist/features/vendor/data/api_vendor_repository.dart';
 import 'package:yvenist/features/vendor/data/in_memory_vendor_repository.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
@@ -278,7 +279,10 @@ void main() {
       expect(listing['neighborhood'], 'Campo Grande');
       expect(listing['city'], 'Rio de Janeiro');
       expect(listing['state'], 'RJ');
+      expect(listing['pricing_model'], 'fixed');
       expect(listing['price_from_cents'], 250000);
+      expect(listing['minimum_price_cents'], isNull);
+      expect(listing['offers'], isEmpty);
       expect(listing['capacity'], 150);
       expect(listing['area_m2'], 300);
       expect(listing['amenities'], unorderedEquals(['wifi', 'kitchen']));
@@ -287,6 +291,64 @@ void main() {
       // O cliente não escolhe status nem avaliações.
       expect(listing.containsKey('status'), isFalse);
       expect(api.lastRequest.headers['Authorization'], 'Bearer acesso');
+    });
+
+    test('envia como o salão cobra e os serviços que ele oferece', () async {
+      api.reply('POST', '/vendors/onboarding', {
+        'vendor': vendorJson(),
+        'listing': {'id': 'l1'},
+      }, status: 201);
+
+      await repository.submitHall(
+        const HallListingDraft(
+          personType: PersonType.individual,
+          document: validCpf,
+          legalName: 'Maria Oliveira',
+          title: 'Espaço Crystal',
+          description: 'Salão amplo, climatizado, com cozinha equipada.',
+          city: 'Rio de Janeiro',
+          state: 'RJ',
+          pricingModel: PricingModel.perPerson,
+          priceFromCents: 9000,
+          minimumPriceCents: 450000,
+          offers: [
+            OfferDraft(
+              categorySlug: 'other',
+              name: 'Taxa de limpeza',
+              priceCents: 15000,
+              isRequired: true,
+            ),
+            OfferDraft(
+              categorySlug: 'decoration',
+              name: 'Decoração',
+              pricingModel: PricingModel.onRequest,
+              priceCents: null,
+            ),
+          ],
+        ),
+      );
+
+      final listing = api.lastBody['listing'] as Map<String, dynamic>;
+      expect(listing['pricing_model'], 'per_person');
+      expect(listing['price_from_cents'], 9000);
+      expect(listing['minimum_price_cents'], 450000);
+      expect(listing['offers'], [
+        {
+          'category': 'other',
+          'name': 'Taxa de limpeza',
+          'pricing_model': 'fixed',
+          'price_cents': 15000,
+          'required': true,
+        },
+        // Sob consulta não tem preço: a API espera zero.
+        {
+          'category': 'decoration',
+          'name': 'Decoração',
+          'pricing_model': 'on_request',
+          'price_cents': 0,
+          'required': false,
+        },
+      ]);
     });
 
     test('pessoa jurídica vai como "pj"', () async {
