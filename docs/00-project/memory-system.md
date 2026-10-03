@@ -24,15 +24,14 @@ configurada o app roda sozinho, em modo demonstração. Detalhes:
 
 ## Estado atual (3 de outubro de 2026)
 
-- A `main` tem o trabalho até 2 de outubro de 2026 (commit `8505b1e`). A
-  branch `feat/professional-foundation` está **à frente dela**, com o Party
-  Maker novo, e foi enviada ao GitHub em 3 de outubro de 2026, a pedido dos
-  donos. A mesclagem na `main` não foi pedida. Envio e mesclagem só quando os
-  donos pedirem.
-- O CI passou nos cinco jobs no envio do Party Maker novo (commit `bfb33f7`).
-  O que foi conferido além dele, na máquina (o PostgreSQL com a prova das
-  travas e um emulador Android), está no
-  [changelog](../08-changelog/2026-10.md). Detalhes do CI: [CI](../09-guides/ci.md).
+- A `main` e a branch `feat/professional-foundation` têm o mesmo trabalho, com
+  o Party Maker novo: em 3 de outubro de 2026, a pedido dos donos, a branch
+  foi enviada ao GitHub e a `main` avançada até ela. Envio e mesclagem só
+  quando os donos pedirem.
+- O CI passou nos cinco jobs na branch e na `main`. O que foi conferido além
+  dele, na máquina (o PostgreSQL com a prova das travas e um emulador
+  Android), está no [changelog](../08-changelog/2026-10.md). Detalhes do CI:
+  [CI](../09-guides/ci.md).
 - Funciona: catálogo e busca (com vários jeitos de cobrar), contas, favoritos,
   Party Maker (compor o evento, estimativa, pedir orçamento, responder como
   fornecedor, edição solicitada, aceite, histórico), cadastro de salão, fila
