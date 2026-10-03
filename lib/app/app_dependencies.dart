@@ -16,8 +16,11 @@ import 'package:yvenist/features/client/favorites/data/api_favorites_repository.
 import 'package:yvenist/features/client/favorites/data/in_memory_favorites_repository.dart';
 import 'package:yvenist/features/client/favorites/domain/favorites_repository.dart';
 import 'package:yvenist/features/party_maker/data/repositories/api_party_repository.dart';
+import 'package:yvenist/features/party_maker/data/repositories/api_quote_inbox_repository.dart';
 import 'package:yvenist/features/party_maker/data/repositories/in_memory_party_repository.dart';
+import 'package:yvenist/features/party_maker/data/repositories/in_memory_quote_inbox_repository.dart';
 import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/quote_inbox_repository.dart';
 import 'package:yvenist/features/vendor/data/api_vendor_repository.dart';
 import 'package:yvenist/features/vendor/data/in_memory_vendor_repository.dart';
 import 'package:yvenist/features/vendor/domain/vendor_repository.dart';
@@ -34,6 +37,7 @@ class AppDependencies {
     required this.catalog,
     required this.favorites,
     required this.parties,
+    required this.quoteInbox,
     required this.vendors,
     required this.reviews,
     ThemePreferenceStorage? themePreferences,
@@ -75,6 +79,7 @@ class AppDependencies {
       catalog: ApiCatalogRepository(api),
       favorites: ApiFavoritesRepository(api),
       parties: ApiPartyRepository(api),
+      quoteInbox: ApiQuoteInboxRepository(api),
       vendors: ApiVendorRepository(api),
       reviews: ApiReviewRepository(api),
       themePreferences: themePreferences,
@@ -88,6 +93,7 @@ class AppDependencies {
     ThemePreferenceStorage? themePreferences,
   }) {
     final auth = InMemoryAuthRepository(startSignedIn: startSignedIn);
+    final parties = InMemoryPartyRepository();
     return AppDependencies(
       config: config,
       auth: auth,
@@ -95,7 +101,9 @@ class AppDependencies {
       favorites: InMemoryFavoritesRepository(
         currentUserId: () => auth.currentUserId,
       ),
-      parties: InMemoryPartyRepository(),
+      parties: parties,
+      // Sem servidor, é sobre as mesmas festas que os pedidos são respondidos.
+      quoteInbox: InMemoryQuoteInboxRepository(parties),
       vendors: InMemoryVendorRepository(
         currentUserId: () => auth.currentUserId,
       ),
@@ -109,6 +117,9 @@ class AppDependencies {
   final CatalogRepository catalog;
   final FavoritesRepository favorites;
   final PartyRepository parties;
+
+  /// Os pedidos de orçamento que a conta recebe como fornecedora.
+  final QuoteInboxRepository quoteInbox;
   final VendorRepository vendors;
   final ReviewRepository reviews;
 

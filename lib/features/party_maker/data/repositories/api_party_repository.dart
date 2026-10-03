@@ -1,5 +1,6 @@
 import 'package:yvenist/core/error/app_failure.dart';
 import 'package:yvenist/core/network/api_client.dart';
+import 'package:yvenist/core/utils/clock.dart';
 import 'package:yvenist/features/party_maker/data/party_mapper.dart';
 import 'package:yvenist/features/party_maker/domain/entities/party.dart';
 import 'package:yvenist/features/party_maker/domain/repositories/party_repository.dart';
@@ -11,9 +12,10 @@ import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart'
 /// valida de novo, grava e devolve a festa como ficou. O que volta substitui a
 /// cópia local.
 class ApiPartyRepository implements PartyRepository {
-  ApiPartyRepository(this._api);
+  ApiPartyRepository(this._api, {Clock clock = systemClock}) : _clock = clock;
 
   final ApiClient _api;
+  final Clock _clock;
 
   /// Último estado de cada festa confirmado pelo servidor.
   ///
@@ -31,13 +33,13 @@ class ApiPartyRepository implements PartyRepository {
     _confirmed
       ..clear()
       ..addEntries(items.map((item) => MapEntry(item['id'] as String, item)));
-    return items.map(partyFromJson).toList();
+    return items.map(_toParty).toList();
   }
 
   @override
   Future<Party?> getById(PartyId id) async {
     final cached = _confirmed[id.value];
-    if (cached != null) return partyFromJson(cached);
+    if (cached != null) return _toParty(cached);
 
     try {
       final json =
@@ -61,8 +63,9 @@ class ApiPartyRepository implements PartyRepository {
               as Json;
       return _remember(json);
     } on ConflictFailure {
-      // A cópia local ficou para trás: esquece, para a próxima leitura buscar
-      // a festa de novo no servidor.
+      // A cópia local ficou para trás (outro aparelho, ou a resposta de um
+      // fornecedor): esquece, para a próxima leitura buscar a festa de novo
+      // no servidor.
       _confirmed.remove(party.id.value);
       rethrow;
     } on NotFoundFailure {
@@ -83,6 +86,8 @@ class ApiPartyRepository implements PartyRepository {
 
   Party _remember(Json json) {
     _confirmed[json['id'] as String] = json;
-    return partyFromJson(json);
+    return _toParty(json);
   }
+
+  Party _toParty(Json json) => partyFromJson(json, clock: _clock);
 }

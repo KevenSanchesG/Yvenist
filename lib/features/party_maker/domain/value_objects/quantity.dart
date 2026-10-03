@@ -1,18 +1,14 @@
 import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
 
 class Quantity {
+  /// O mesmo teto da API (`MAX_ITEM_QUANTITY`).
+  static const int max = 999;
+
   final int value;
 
   Quantity(this.value) {
-    if (value < 1) {
-      throw const PartyDomainException(
-        'invalid_quantity',
-        'A quantidade precisa ser pelo menos 1.',
-      );
-    }
+    if (value < 1 || value > max) throw const InvalidQuantity();
   }
-
-  Quantity add(Quantity other) => Quantity(value + other.value);
 
   @override
   bool operator ==(Object other) => other is Quantity && other.value == value;

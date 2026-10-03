@@ -8,8 +8,8 @@ import 'package:yvenist/features/party_maker/presentation/pages/party_builder_pa
 /// Raiz da aba Party Maker. Decide o que mostrar:
 ///
 /// 1. há uma festa aberta -> a montagem dessa festa;
-/// 2. não há nenhuma festa -> a montagem vazia, que convida a começar;
-/// 3. há festas mas nenhuma aberta -> o hub "Minhas Festas".
+/// 2. senão -> "Minhas Festas", que lista as festas ou, sem nenhuma, convida
+///    a criar a primeira.
 class PartyMakerEntryPage extends StatelessWidget {
   const PartyMakerEntryPage({super.key});
 
@@ -26,9 +26,7 @@ class PartyMakerEntryPage extends StatelessWidget {
         body: ErrorStateView(message: loadError, onRetry: controller.load),
       );
     }
-    if (controller.activePartyId != null || controller.parties.isEmpty) {
-      return const PartyBuilderPage();
-    }
+    if (controller.activeParty != null) return const PartyBuilderPage();
     return const MyPartiesPage();
   }
 }

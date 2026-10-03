@@ -118,6 +118,14 @@ void main() {
         test('cor do modo fornecedor', () {
           expectReadable(colors.vendor, colors.surface);
         });
+
+        test('sugestão de parceiros na festa: o botão de adicionar', () {
+          // O ícone laranja é o que se toca, sobre a faixa neutra.
+          expect(
+            contrast(colors.primary, colors.surfaceMuted),
+            greaterThanOrEqualTo(nonText),
+          );
+        });
       });
 
       group('texto sobre fundos tingidos', () {
@@ -138,6 +146,21 @@ void main() {
           ('aviso de cadastro recusado', colors.danger, colors.backgroundMuted),
           ('ícone de um item de configuração', colors.primary, colors.surface),
           ('ícone de uma ação destrutiva', colors.danger, colors.surface),
+          // A faixa que diz em que pé a festa está: uma cor por situação.
+          ('festa em planejamento', colors.textSecondary, colors.background),
+          (
+            'festa com o orçamento solicitado',
+            colors.primary,
+            colors.background,
+          ),
+          ('festa com a edição solicitada', colors.warning, colors.background),
+          ('festa com o orçamento recebido', colors.success, colors.background),
+          ('festa cancelada', colors.danger, colors.background),
+          (
+            'o que falta para pedir o orçamento',
+            colors.warning,
+            colors.background,
+          ),
         ];
 
         for (final (where, color, base) in usages) {

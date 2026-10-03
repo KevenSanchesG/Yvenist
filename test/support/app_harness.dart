@@ -14,7 +14,10 @@ import 'package:yvenist/features/catalog/data/in_memory_catalog_repository.dart'
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:yvenist/features/client/favorites/data/in_memory_favorites_repository.dart';
 import 'package:yvenist/features/party_maker/data/repositories/in_memory_party_repository.dart';
+import 'package:yvenist/features/party_maker/data/repositories/in_memory_quote_inbox_repository.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/quote_inbox_repository.dart';
 import 'package:yvenist/features/vendor/data/in_memory_vendor_repository.dart';
+import 'package:yvenist/features/vendor/domain/vendor_repository.dart';
 
 import 'visual_harness.dart';
 
@@ -57,6 +60,11 @@ void appTest(
 }) {
   testWidgets(description, (tester) async {
     usePhoneScreen(tester);
+    // Um toque que não acerta o alvo (um botão fora da tela, ou por baixo de
+    // outro) falha o teste. Sem isto ele só avisa, e o teste pode passar
+    // olhando para a tela errada.
+    WidgetController.hitTestWarningShouldBeFatal = true;
+    addTearDown(() => WidgetController.hitTestWarningShouldBeFatal = false);
     if (textScale != null) {
       // O tamanho de fonte escolhido nas configurações do aparelho.
       tester.platformDispatcher.textScaleFactorTestValue = textScale;
@@ -72,16 +80,23 @@ void appTest(
 }
 
 /// As dependências do modo demonstração, com a possibilidade de trocar o
-/// catálogo, a autenticação, a fila de análise ou a escolha de tema guardada
-/// por outra versão (uma que falha, ou uma já com conteúdo).
+/// catálogo, a autenticação, a fila de análise, os pedidos de orçamento, o
+/// cadastro de fornecedor ou a escolha de tema guardada por outra versão (uma
+/// que falha, ou uma já com conteúdo).
 AppDependencies demoDependencies({
   InMemoryAuthRepository? auth,
   AuthRepository? authOverride,
   CatalogRepository? catalog,
   ReviewRepository? reviews,
+  QuoteInboxRepository? quoteInbox,
+  VendorRepository Function(VendorRepository demo)? vendors,
   ThemePreferenceStorage? themePreferences,
 }) {
   final accounts = auth ?? InMemoryAuthRepository();
+  final parties = InMemoryPartyRepository();
+  final demoVendors = InMemoryVendorRepository(
+    currentUserId: () => accounts.currentUserId,
+  );
   return AppDependencies(
     config: const AppConfig(),
     auth: authOverride ?? accounts,
@@ -89,10 +104,11 @@ AppDependencies demoDependencies({
     favorites: InMemoryFavoritesRepository(
       currentUserId: () => accounts.currentUserId,
     ),
-    parties: InMemoryPartyRepository(),
-    vendors: InMemoryVendorRepository(
-      currentUserId: () => accounts.currentUserId,
-    ),
+    parties: parties,
+    quoteInbox: quoteInbox ?? InMemoryQuoteInboxRepository(parties),
+    // Um teste pode embrulhar o cadastro de demonstração (para ver o que foi
+    // enviado, por exemplo) sem ter de refazê-lo.
+    vendors: vendors?.call(demoVendors) ?? demoVendors,
     reviews: reviews ?? InMemoryReviewRepository(),
     themePreferences: themePreferences,
   );

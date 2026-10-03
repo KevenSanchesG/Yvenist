@@ -9,6 +9,9 @@ import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/theme/theme_mode_controller.dart';
 import 'package:yvenist/features/admin/domain/review_repository.dart';
 import 'package:yvenist/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:yvenist/features/client/shared/listing_party_item_catalog.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/party_item_catalog.dart';
+import 'package:yvenist/features/party_maker/domain/repositories/quote_inbox_repository.dart';
 
 /// Raiz do app: disponibiliza as dependências para as telas e define tema,
 /// idioma e a tela inicial.
@@ -29,6 +32,12 @@ class YvenistApp extends StatelessWidget {
         Provider<AppConfig>.value(value: dependencies.config),
         Provider<CatalogRepository>.value(value: dependencies.catalog),
         Provider<ReviewRepository>.value(value: dependencies.reviews),
+        Provider<QuoteInboxRepository>.value(value: dependencies.quoteInbox),
+        // O Party Maker não conhece o catálogo: recebe por aqui o que precisa
+        // saber de um anúncio.
+        Provider<PartyItemCatalog>(
+          create: (_) => ListingPartyItemCatalog(dependencies.catalog),
+        ),
         // .value: os controllers pertencem ao AppState, que os descarta.
         ChangeNotifierProvider.value(value: state.theme),
         ChangeNotifierProvider.value(value: state.session),

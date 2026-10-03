@@ -4,8 +4,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/app/app_dependencies.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/vendor_response.dart';
 
 import '../support/app_harness.dart';
+import '../support/party_harness.dart';
 import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
@@ -17,6 +20,7 @@ const Set<String> _darkInDocs = {
   'home',
   'explorar',
   'party-maker',
+  'party-orcamento',
   'perfil',
   'entrar',
   'fornecedor-validacao',
@@ -25,6 +29,12 @@ const Set<String> _darkInDocs = {
 };
 
 const bool _allDark = bool.fromEnvironment('ALL_DARK');
+
+const String _partyTitle = '15 anos da Maria';
+
+/// A data da festa das capturas. Fixa, para a imagem não mudar a cada vez que
+/// é gerada; longe, porque a festa só aceita uma data no futuro.
+final DateTime _eventDate = DateTime(2030, 6, 15, 19);
 
 /// Gera as imagens de `docs/screenshots` a partir das telas reais do app, em
 /// modo demonstração. Veja `dart_test.yaml` para o comando.
@@ -60,7 +70,7 @@ void _screens(ThemeMode mode) {
   /// Um teste que sobe o app em um celular e tira fotos das telas.
   void screenshots(
     String description,
-    Future<void> Function(WidgetTester tester) body, {
+    Future<void> Function(WidgetTester tester, TestApp app) body, {
     bool signedIn = true,
     AppDependencies Function()? dependencies,
   }) {
@@ -77,23 +87,23 @@ void _screens(ThemeMode mode) {
             await app.state.theme.select(ThemeMode.dark);
             await tester.pumpAndSettle();
           }
-          await body(tester);
+          await body(tester, app);
         });
       });
     });
   }
 
-  screenshots('início', (tester) async {
+  screenshots('início', (tester, app) async {
     await capture(tester, 'home');
   });
 
-  screenshots('explorar', (tester) async {
+  screenshots('explorar', (tester, app) async {
     await openTab(tester, 'Explorar');
 
     await capture(tester, 'explorar');
   });
 
-  screenshots('busca', (tester) async {
+  screenshots('busca', (tester, app) async {
     await tester.tap(
       find.bySemanticsLabel('Buscar salões, atrações e serviços'),
     );
@@ -104,37 +114,83 @@ void _screens(ThemeMode mode) {
     await capture(tester, 'busca');
   });
 
-  screenshots('adicionar à festa e montar a festa', (tester) async {
+  screenshots('adicionar à festa e configurar o item', (tester, app) async {
     await tester.tap(find.byTooltip('Adicionar Salão Glamour 8 a uma festa'));
     await tester.pumpAndSettle();
     await capture(tester, 'adicionar-a-festa');
 
     await tester.tap(find.text('Criar nova festa'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '15 anos da Maria');
+    await tester.enterText(find.byType(TextField), _partyTitle);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Criar festa'));
     await tester.pumpAndSettle();
+    await enterField(tester, 'Número de convidados', '80');
+    await tester.pumpAndSettle();
+    await capture(tester, 'configurar-item');
+  });
 
-    await openTab(tester, 'Explorar');
-    await tester.tap(find.text('Atrações'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Adicionar Atração Festiva 8 a uma festa'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('15 anos da Maria'));
-    await tester.pumpAndSettle();
+  screenshots('a festa: montagem, orçamento recebido e lista', (
+    tester,
+    app,
+  ) async {
+    final party = await seedParty(
+      tester,
+      app,
+      title: _partyTitle,
+      eventDate: _eventDate,
+    );
     await openTab(tester, 'Minhas festas');
-    // Espera o aviso "adicionado a..." sair de cima do rodapé.
-    await tester.pump(const Duration(seconds: 5));
     await capture(tester, 'party-maker');
 
-    await tester.tap(find.text('Solicitar orçamento'));
+    // Os fornecedores respondem, e a festa mostra o orçamento ao lado da
+    // estimativa.
+    await app.state.parties.requestQuote(party.id);
+    final inbox = app.dependencies.quoteInbox;
+    final answers = [
+      VendorResponse.quote(
+        Money.fromCents(180000),
+        message: 'Inclui a montagem das mesas.',
+      ),
+      VendorResponse.quote(Money.fromCents(15000)),
+      VendorResponse.quote(Money.fromCents(100000)),
+    ];
+    for (final (index, item) in party.budget.items.indexed) {
+      await inbox.respond(item.id.value, answers[index]);
+    }
+    await app.state.parties.load();
     await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 5));
+    await capture(tester, 'party-orcamento');
+
+    await seedParty(
+      tester,
+      app,
+      title: 'Casamento da Ana',
+      venueId: 'demo-venue-7',
+      withAttraction: false,
+      eventDate: _eventDate.add(const Duration(days: 90)),
+      guests: 150,
+    );
+    app.state.parties.clearActiveParty();
+    await tester.pumpAndSettle();
     await capture(tester, 'minhas-festas');
   });
 
-  screenshots('favoritos', (tester) async {
+  screenshots('pedidos de orçamento (fornecedor)', (tester, app) async {
+    final party = await seedParty(
+      tester,
+      app,
+      title: _partyTitle,
+      eventDate: _eventDate,
+    );
+    await app.state.parties.requestQuote(party.id);
+    await openTab(tester, 'Minhas festas');
+    await tapAndSettle(tester, find.text('Responder como fornecedor (demo)'));
+
+    await capture(tester, 'pedidos-de-orcamento');
+  });
+
+  screenshots('favoritos', (tester, app) async {
     await tester.tap(find.byTooltip('Favoritar Salão Glamour 8'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Favoritos'));
@@ -143,7 +199,7 @@ void _screens(ThemeMode mode) {
     await capture(tester, 'favoritos');
   });
 
-  screenshots('perfil', (tester) async {
+  screenshots('perfil', (tester, app) async {
     await openTab(tester, 'Perfil');
     await capture(tester, 'perfil');
 
@@ -152,14 +208,14 @@ void _screens(ThemeMode mode) {
     await capture(tester, 'dados-pessoais');
   });
 
-  screenshots('aparência', (tester) async {
+  screenshots('aparência', (tester, app) async {
     await openTab(tester, 'Perfil');
     await scrollToAndTap(tester, find.text('Aparência'));
 
     await capture(tester, 'aparencia');
   });
 
-  screenshots('termos de uso', (tester) async {
+  screenshots('termos de uso', (tester, app) async {
     await openTab(tester, 'Perfil');
     await scrollToAndTap(tester, find.text('Termos e Política'));
     await tapAndSettle(tester, find.text('Termos de Uso'));
@@ -169,7 +225,7 @@ void _screens(ThemeMode mode) {
 
   screenshots(
     'fila de análise (administração)',
-    (tester) async {
+    (tester, app) async {
       await openTab(tester, 'Perfil');
       await scrollToAndTap(tester, find.text('Fila de análise'));
       await capture(tester, 'admin-fornecedores');
@@ -180,7 +236,7 @@ void _screens(ThemeMode mode) {
     dependencies: () => adminDependencies(sampleReviewQueue()),
   );
 
-  screenshots('entrar', signedIn: false, (tester) async {
+  screenshots('entrar', signedIn: false, (tester, app) async {
     await openTab(tester, 'Perfil');
     await capture(tester, 'perfil-visitante');
 
@@ -193,7 +249,7 @@ void _screens(ThemeMode mode) {
     await capture(tester, 'criar-conta');
   });
 
-  screenshots('anunciar um salão', (tester) async {
+  screenshots('anunciar um salão', (tester, app) async {
     await openTab(tester, 'Perfil');
     await tester.tap(find.text('Tem um salão ou serviço?'));
     await tester.pumpAndSettle();

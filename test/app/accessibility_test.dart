@@ -3,8 +3,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yvenist/features/auth/data/in_memory_auth_repository.dart';
 import 'package:yvenist/features/client/shared/listing_card.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/vendor_response.dart';
 
 import '../support/app_harness.dart';
+import '../support/party_harness.dart';
 import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
@@ -23,16 +25,125 @@ void main() {
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
   }
 
-  Future<void> addSalaoToNewParty(WidgetTester tester) async {
+  const salao = 'Salão Glamour 8';
+  const festa = 'Casamento';
+
+  /// Passa por cada estado da festa, do planejamento ao orçamento aceito,
+  /// chamando [check] em cada tela. É o mesmo caminho para as diretrizes, as
+  /// letras grandes e o tema escuro.
+  Future<void> walkThroughParty(
+    WidgetTester tester,
+    TestApp app,
+    Future<void> Function() check,
+  ) async {
+    final party = await seedParty(tester, app, title: festa);
+    await openTab(tester, 'Minhas festas');
+    await check();
+
+    // A lista inteira: os itens, os parceiros recomendados e o serviço
+    // obrigatório, que não pode sair sozinho.
+    await reveal(tester, find.text('Recomendados por $salao'));
+    await check();
+    await reveal(tester, find.text('Obrigatório com $salao'));
+    await check();
+
+    await tapAndSettle(tester, find.byTooltip('Mais opções da festa'));
+    await check();
+    await tapAndSettle(tester, find.text('Histórico da festa'));
+    await check();
+    await tapAndSettle(tester, find.byType(BackButton));
+
+    await choosePartyOption(tester, 'Editar dados do evento');
+    await check();
+    await tapAndSettle(tester, find.byType(BackButton));
+
+    await tapAndSettle(tester, filledButton('Solicitar orçamento'));
+    await check();
+    await tapAndSettle(tester, find.text('Solicitar'));
+    await waitSnackBarLeave(tester);
+    await check();
+
+    // Um fornecedor devolve o item dele; os outros informam o valor.
+    final inbox = app.dependencies.quoteInbox;
+    await inbox.respond(
+      party.budget.items.last.id.value,
+      const VendorResponse.requestChanges('Atendo no máximo 3 horas.'),
+    );
+    await tapAndSettle(tester, find.byTooltip('Atualizar a festa'));
+    await check();
+    await reveal(tester, find.text('O fornecedor pediu uma alteração'));
+    await check();
+
+    await answerAll(app, cents: 100000);
+    await tapAndSettle(tester, find.byTooltip('Atualizar a festa'));
+    await check();
+
+    await choosePartyOption(tester, 'Histórico da festa');
+    await check();
+    await tapAndSettle(tester, find.byType(BackButton));
+
+    await tapAndSettle(tester, filledButton('Aceitar orçamento'));
+    await check();
+    await tapAndSettle(tester, find.text('Aceitar'));
+    await waitSnackBarLeave(tester);
+    await check();
+
+    await tapAndSettle(tester, find.byTooltip('Voltar para as festas'));
+    await check();
+  }
+
+  /// A configuração de um salão, do formulário vazio ao formulário com os
+  /// erros na tela e com um serviço da casa escolhido.
+  Future<void> walkThroughVenueConfiguration(
+    WidgetTester tester,
+    Future<void> Function() check,
+  ) async {
     await scrollToAndTap(
       tester,
-      find.byTooltip('Adicionar Salão Glamour 8 a uma festa'),
+      find.byTooltip('Adicionar $salao a uma festa'),
     );
+    await check();
     await tapAndSettle(tester, find.text('Criar nova festa'));
-    await tester.enterText(find.byType(TextField), 'Casamento');
+    await check();
+    await tester.enterText(find.byType(TextField), festa);
     await tester.pump();
     await tapAndSettle(tester, filledButton('Criar festa'));
+    await check();
+
+    await scrollToAndTap(tester, find.text('Animação da casa'));
+    await check();
+    await tapAndSettle(tester, filledButton('Adicionar à festa'));
+    await check();
+  }
+
+  /// A caixa de pedidos do fornecedor, com os diálogos de resposta.
+  Future<void> walkThroughQuoteInbox(
+    WidgetTester tester,
+    TestApp app,
+    Future<void> Function() check,
+  ) async {
+    final party = await seedParty(tester, app, title: festa);
+    await app.state.parties.requestQuote(party.id);
+    await openTab(tester, 'Minhas festas');
+    await tapAndSettle(tester, find.text('Responder como fornecedor (demo)'));
+    await check();
+
+    await scrollToAndTap(tester, find.text('Informar valor').first);
+    await check();
+    await scrollToAndTap(tester, filledButton('Enviar valor'));
+    await check();
+    await scrollToAndTap(tester, find.text('Cancelar'));
+
+    await scrollToAndTap(tester, find.text('Pedir alteração').first);
+    await check();
+    await enterField(
+      tester,
+      'O que o cliente precisa mudar',
+      'Atendo no máximo 3 horas.',
+    );
+    await scrollToAndTap(tester, filledButton('Pedir alteração'));
     await waitSnackBarLeave(tester);
+    await check();
   }
 
   Future<void> openHallForm(WidgetTester tester) async {
@@ -65,8 +176,8 @@ void main() {
       await expectAccessible(tester);
     });
 
-    appTest('escolha da festa', (tester, app) async {
-      await addSalaoToNewParty(tester);
+    appTest('escolha da festa, com festas para escolher', (tester, app) async {
+      await seedParty(tester, app, title: festa);
       await tapAndSettle(
         tester,
         find.byTooltip('Adicionar Salão Glamour 7 a uma festa'),
@@ -75,15 +186,42 @@ void main() {
       await expectAccessible(tester);
     });
 
-    appTest('montagem da festa e lista de festas', (tester, app) async {
-      await addSalaoToNewParty(tester);
+    appTest('configuração de um item, com os erros na tela', (
+      tester,
+      app,
+    ) async {
+      await walkThroughVenueConfiguration(
+        tester,
+        () => expectAccessible(tester),
+      );
+    });
+
+    appTest('festas: sem nenhuma e criando a primeira', (tester, app) async {
       await openTab(tester, 'Minhas festas');
       await expectAccessible(tester);
 
-      await tapAndSettle(tester, filledButton('Solicitar orçamento'));
-      await waitSnackBarLeave(tester);
-
+      await tapAndSettle(tester, filledButton('Criar festa'));
       await expectAccessible(tester);
+      await tapAndSettle(tester, filledButton('Criar festa'));
+      await expectAccessible(tester);
+
+      await enterField(tester, 'Nome da festa', festa);
+      await tapAndSettle(tester, filledButton('Criar festa'));
+      await expectAccessible(tester);
+    });
+
+    appTest('a festa, do planejamento ao orçamento aceito', (
+      tester,
+      app,
+    ) async {
+      await walkThroughParty(tester, app, () => expectAccessible(tester));
+    });
+
+    appTest('pedidos de orçamento do fornecedor, com os diálogos', (
+      tester,
+      app,
+    ) async {
+      await walkThroughQuoteInbox(tester, app, () => expectAccessible(tester));
     });
 
     appTest('favoritos', (tester, app) async {
@@ -247,7 +385,55 @@ void main() {
     ) async {
       await openHallForm(tester);
 
-      expect(find.bySemanticsLabel('Etapa 1 de 6'), findsOneWidget);
+      expect(find.bySemanticsLabel('Etapa 1 de 7'), findsOneWidget);
+    });
+
+    appTest('os títulos das partes da festa são anunciados como títulos', (
+      tester,
+      app,
+    ) async {
+      await seedParty(tester, app, title: festa);
+      await openTab(tester, 'Minhas festas');
+
+      // Em que pé a festa está e cada grupo de itens: é por eles que quem usa
+      // um leitor de tela percorre a festa.
+      expect(
+        tester.getSemantics(find.text('Em planejamento')),
+        isSemantics(isHeader: true),
+      );
+      await reveal(tester, find.text('Espaço'));
+      expect(
+        tester.getSemantics(find.text('Espaço')),
+        isSemantics(isHeader: true),
+      );
+    });
+
+    appTest('cada botão de um item diz qual item ele afeta', (
+      tester,
+      app,
+    ) async {
+      await seedParty(tester, app, title: festa);
+      await openTab(tester, 'Minhas festas');
+      await reveal(tester, find.byTooltip('Alterar $salao'));
+
+      expect(find.byTooltip('Alterar $salao'), findsOneWidget);
+      expect(find.byTooltip('Remover $salao'), findsOneWidget);
+      expect(
+        find.byTooltip('Adicionar Decoração Encanto 8 à festa'),
+        findsOneWidget,
+      );
+    });
+
+    appTest('a estimativa de um item é anunciada quando muda', (
+      tester,
+      app,
+    ) async {
+      await startAddingToNewParty(tester, salao, title: festa);
+
+      expect(
+        tester.getSemantics(find.text('Estimativa deste item')),
+        isSemantics(isLiveRegion: true),
+      );
     });
   });
 
@@ -262,7 +448,21 @@ void main() {
       await tester.tapAt(button.topCenter + const Offset(0, 8));
       await tester.pumpAndSettle();
 
-      expect(find.text('Nenhuma festa aberta'), findsOneWidget);
+      expect(find.text('Você ainda não tem festas'), findsOneWidget);
+    });
+
+    appTest('o rodapé da festa não fica por baixo do botão central', (
+      tester,
+      app,
+    ) async {
+      await seedParty(tester, app, title: festa);
+      await openTab(tester, 'Minhas festas');
+
+      final action = tester.getRect(filledButton('Solicitar orçamento'));
+      final button = tester.getRect(tabButton('Minhas festas'));
+
+      // O botão central sobe acima da barra: o rodapé guarda essa folga.
+      expect(action.bottom, lessThanOrEqualTo(button.top));
     });
 
     appTest('o botão central continua encaixado no topo da barra', (
@@ -306,15 +506,55 @@ void main() {
     // continua alcançável rolando.
     const scale = 2.0;
 
-    appTest('início, explorar e festas', (tester, app) async {
+    /// Nada a conferir além do que o próprio teste já confere: um estouro de
+    /// layout, ou um controle que não dá para alcançar, falha sozinho.
+    Future<void> noCheck() async {}
+
+    appTest('início e explorar', (tester, app) async {
       await openTab(tester, 'Explorar');
       await openTab(tester, 'Início');
-      await addSalaoToNewParty(tester);
-      await openTab(tester, 'Minhas festas');
-      expect(find.text('1 item selecionado'), findsOneWidget);
 
-      await tapAndSettle(tester, filledButton('Solicitar orçamento'));
-      expect(find.text('Orçamento solicitado'), findsOneWidget);
+      expect(find.text('O que vamos comemorar?'), findsOneWidget);
+    }, textScale: scale);
+
+    appTest('configuração de um item, com os erros na tela', (
+      tester,
+      app,
+    ) async {
+      await walkThroughVenueConfiguration(tester, noCheck);
+
+      expect(find.text('Informe a data da festa.'), findsOneWidget);
+    }, textScale: scale);
+
+    appTest('festas: sem nenhuma, criando a primeira e a festa vazia', (
+      tester,
+      app,
+    ) async {
+      await openTab(tester, 'Minhas festas');
+      await scrollToAndTap(tester, filledButton('Criar festa'));
+      await enterField(tester, 'Nome da festa', festa);
+      await scrollToAndTap(tester, filledButton('Criar festa'));
+
+      expect(find.widgetWithText(AppBar, festa), findsOneWidget);
+      await reveal(tester, filledButton('Explorar anúncios'));
+    }, textScale: scale);
+
+    appTest('a festa, do planejamento ao orçamento aceito', (
+      tester,
+      app,
+    ) async {
+      await walkThroughParty(tester, app, noCheck);
+
+      expect(find.text('Orçamento aceito'), findsOneWidget);
+    }, textScale: scale);
+
+    appTest('pedidos de orçamento do fornecedor, com os diálogos', (
+      tester,
+      app,
+    ) async {
+      await walkThroughQuoteInbox(tester, app, noCheck);
+
+      expect(find.text('Você pediu uma alteração'), findsOneWidget);
     }, textScale: scale);
 
     appTest('com letras 50% maiores o card mostra nome e preço inteiros', (
@@ -417,11 +657,11 @@ void main() {
       await openHallForm(tester);
       Future<void> next() => tapAndSettle(tester, filledButton('Avançar'));
 
-      // Com letras grandes uma etapa pode não caber na tela, e os campos de
-      // baixo só existem depois de rolar a lista dela.
-      Future<void> fill(String label, String text) async {
+      // Com letras grandes uma etapa pode não caber na tela, e o que está
+      // mais abaixo só existe depois de rolar a lista dela.
+      Future<void> revealInStep(Finder finder) async {
         await tester.scrollUntilVisible(
-          find.widgetWithText(TextFormField, label),
+          finder,
           120,
           scrollable: find
               .descendant(
@@ -430,6 +670,11 @@ void main() {
               )
               .first,
         );
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> fill(String label, String text) async {
+        await revealInStep(find.widgetWithText(TextFormField, label));
         await enterField(tester, label, text);
       }
 
@@ -454,6 +699,21 @@ void main() {
       await fill('Preço a partir de', '2500');
       await next();
 
+      // Os serviços do próprio espaço, com o diálogo que cadastra um.
+      await revealInStep(find.text('Adicionar serviço'));
+      await tapAndSettle(tester, find.text('Adicionar serviço'));
+      await enterField(tester, 'Nome do serviço', 'Taxa de limpeza');
+      await scrollToAndTap(
+        tester,
+        find.byType(DropdownButtonFormField<String>),
+      );
+      await tapAndSettle(tester, find.text('Outros').last);
+      await enterField(tester, 'Preço do serviço', '150');
+      await scrollToAndTap(tester, find.text('Obrigatório'));
+      await scrollToAndTap(tester, filledButton('Adicionar'));
+      expect(find.byTooltip('Remover Taxa de limpeza'), findsOneWidget);
+      await next();
+
       expect(find.text('Confira antes de enviar'), findsOneWidget);
       expect(filledButton('Enviar anúncio'), findsOneWidget);
     }, textScale: scale);
@@ -463,7 +723,7 @@ void main() {
     // O tema escuro troca sombra por borda e muda as cores de cada peça. As
     // mesmas telas passam pelas mesmas conferências: um estouro de layout faz
     // o teste falhar sozinho.
-    appTest('início, explorar e festas', (tester, app) async {
+    appTest('início e explorar', (tester, app) async {
       // Regressão: no escuro o card de anúncio ganhou uma borda que tirava um
       // pixel do conteúdo, e a coluna do card estourava a altura fixa da
       // lista horizontal.
@@ -473,15 +733,36 @@ void main() {
       await openTab(tester, 'Explorar');
       await tapAndSettle(tester, find.widgetWithText(FilterChip, 'Atrações'));
       await expectAccessible(tester);
+    });
 
-      await openTab(tester, 'Início');
-      await addSalaoToNewParty(tester);
-      await openTab(tester, 'Minhas festas');
-      await expectAccessible(tester);
+    appTest('configuração de um item, com os erros na tela', (
+      tester,
+      app,
+    ) async {
+      await useDarkTheme(tester, app);
 
-      await tapAndSettle(tester, filledButton('Solicitar orçamento'));
-      await waitSnackBarLeave(tester);
-      await expectAccessible(tester);
+      await walkThroughVenueConfiguration(
+        tester,
+        () => expectAccessible(tester),
+      );
+    });
+
+    appTest('a festa, do planejamento ao orçamento aceito', (
+      tester,
+      app,
+    ) async {
+      await useDarkTheme(tester, app);
+
+      await walkThroughParty(tester, app, () => expectAccessible(tester));
+    });
+
+    appTest('pedidos de orçamento do fornecedor, com os diálogos', (
+      tester,
+      app,
+    ) async {
+      await useDarkTheme(tester, app);
+
+      await walkThroughQuoteInbox(tester, app, () => expectAccessible(tester));
     });
 
     appTest('perfil, aparência, segurança e termos', (tester, app) async {
@@ -539,17 +820,17 @@ void main() {
       await expectAccessible(tester);
     }, dependencies: () => adminDependencies(sampleReviewQueue()));
 
-    appTest('início, explorar e festas com letras grandes', (
+    appTest('início, explorar e a festa com letras grandes', (
       tester,
       app,
     ) async {
       await useDarkTheme(tester, app);
       await openTab(tester, 'Explorar');
       await openTab(tester, 'Início');
-      await addSalaoToNewParty(tester);
-      await openTab(tester, 'Minhas festas');
 
-      expect(find.text('1 item selecionado'), findsOneWidget);
+      await walkThroughParty(tester, app, () async {});
+
+      expect(find.text('Orçamento aceito'), findsOneWidget);
     }, textScale: 2);
   });
 }

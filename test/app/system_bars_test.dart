@@ -6,6 +6,7 @@ import 'package:yvenist/core/theme/app_palette.dart';
 import 'package:yvenist/features/client/shared/listing_tile.dart';
 
 import '../support/app_harness.dart';
+import '../support/party_harness.dart';
 import '../support/review_fixtures.dart';
 import '../support/visual_harness.dart';
 
@@ -276,6 +277,83 @@ void main() {
       expect(
         tester.getRect(footer).bottom,
         tester.view.physicalSize.height / tester.view.devicePixelRatio,
+      );
+    });
+
+    appTest('na configuração de um item, o rodapé vai até a borda e o botão '
+        'fica acima dela', (tester, app) async {
+      await useSystemBars(tester);
+      await startAddingToNewParty(tester, 'Salão Glamour 8', title: 'Festa');
+
+      final add = tester.getRect(filledButton('Adicionar à festa'));
+      expect(add.bottom, lessThanOrEqualTo(navigationBarTop(tester)));
+
+      // O fundo do rodapé é o que aparece por baixo da barra do sistema.
+      final footer = find
+          .ancestor(
+            of: filledButton('Adicionar à festa'),
+            matching: find.byType(Container),
+          )
+          .first;
+      expect(
+        tester.getRect(footer).bottom,
+        tester.view.physicalSize.height / tester.view.devicePixelRatio,
+      );
+    });
+
+    appTest(
+      'nos dados do evento, o botão de salvar para acima dela',
+      (tester, app) async {
+        await useSystemBars(tester);
+        await openTab(tester, 'Minhas festas');
+        await scrollToAndTap(tester, filledButton('Criar festa'));
+        expect(find.widgetWithText(AppBar, 'Nova festa'), findsOneWidget);
+
+        await scrollToEnd(tester);
+
+        expect(
+          tester.getRect(filledButton('Criar festa')).bottom,
+          lessThanOrEqualTo(navigationBarTop(tester)),
+        );
+      },
+      // Com letras grandes o formulário passa do tamanho da tela.
+      textScale: 2,
+    );
+
+    appTest('no histórico da festa, o último registro para acima dela', (
+      tester,
+      app,
+    ) async {
+      await useSystemBars(tester);
+      final party = await seedParty(tester, app, title: 'Festa');
+      await app.state.parties.requestQuote(party.id);
+      await answerAll(app, cents: 100000);
+      await app.state.parties.load();
+      await openTab(tester, 'Minhas festas');
+      await choosePartyOption(tester, 'Histórico da festa');
+
+      await scrollToEnd(tester);
+
+      // O mais antigo fica por último: o pedido de orçamento.
+      expect(
+        tester.getRect(find.textContaining('1ª rodada').last).bottom,
+        lessThanOrEqualTo(navigationBarTop(tester)),
+      );
+    }, textScale: 2);
+
+    appTest('nos pedidos de orçamento, as respostas do último pedido ficam '
+        'acima dela', (tester, app) async {
+      await useSystemBars(tester);
+      final party = await seedParty(tester, app, title: 'Festa');
+      await app.state.parties.requestQuote(party.id);
+      await openTab(tester, 'Minhas festas');
+      await tapAndSettle(tester, find.text('Responder como fornecedor (demo)'));
+
+      await scrollToEnd(tester);
+
+      expect(
+        tester.getRect(find.text('Informar valor').last).bottom,
+        lessThanOrEqualTo(navigationBarTop(tester)),
       );
     });
 

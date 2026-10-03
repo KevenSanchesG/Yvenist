@@ -4,11 +4,7 @@ import 'package:yvenist/core/widgets/status_views.dart';
 import 'package:yvenist/features/auth/presentation/auth_gate.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
 import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
-import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
-import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
-import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
-import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
-import 'package:yvenist/features/party_maker/presentation/widgets/select_party_bottom_sheet.dart';
+import 'package:yvenist/features/party_maker/presentation/add_to_party_flow.dart';
 
 /// O que se pode fazer com um anúncio a partir de um card. Ficam aqui para a
 /// vitrine, a busca e os favoritos se comportarem da mesma forma.
@@ -28,7 +24,11 @@ Future<void> toggleFavorite(BuildContext context, Listing listing) async {
   }
 }
 
-/// Abre a escolha da festa que vai receber o anúncio.
+/// Começa o caminho do anúncio até dentro de uma festa.
+///
+/// Daqui em diante é o Party Maker que conduz: a escolha da festa, a
+/// configuração do item pela categoria dele e a gravação. A vitrine só diz
+/// qual anúncio a pessoa escolheu.
 Future<void> addListingToParty(BuildContext context, Listing listing) async {
   final signedIn = await ensureSignedIn(
     context,
@@ -36,31 +36,9 @@ Future<void> addListingToParty(BuildContext context, Listing listing) async {
   );
   if (!signedIn || !context.mounted) return;
 
-  // A festa ainda soma preço vezes quantidade: um anúncio sem preço entraria
-  // nela como "R$ 0,00". Até a festa saber o que é "sob consulta", ele não
-  // entra.
-  final price = listing.priceFromCents;
-  if (price == null) {
-    showAppSnackBar(
-      context,
-      '${listing.title} é sob consulta e ainda não pode entrar em uma festa.',
-    );
-    return;
-  }
-
-  await showAddToPartySheet(context, listing.toPartyItemDraft(price));
-}
-
-extension ListingToPartyItem on Listing {
-  /// Traduz o anúncio, com o preço [priceCents], para o formato que o Party
-  /// Maker entende.
-  PartyItemDraft toPartyItemDraft(int priceCents) {
-    return PartyItemDraft(
-      externalRef: ExternalRef.listing(id),
-      category: PartyItemCategory.fromSlug(categorySlug),
-      name: title,
-      unitPrice: Money.fromCents(priceCents, currency: currency),
-      imageUrl: coverImageUrl,
-    );
-  }
+  await startAddToPartyFlow(
+    context,
+    listingId: listing.id,
+    itemName: listing.title,
+  );
 }

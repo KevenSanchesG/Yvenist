@@ -5,6 +5,8 @@ import pytest
 from app.modules.catalog.pricing import PricingModel
 from app.modules.catalog.reference_data import CATEGORIES
 from app.modules.parties.configuration import (
+    Field,
+    FieldKind,
     InvalidItemConfigurationError,
     InvalidQuantityError,
     spec_for,
@@ -24,7 +26,82 @@ def required(category: str, model: PricingModel = FIXED) -> list[str]:
     return [field.key for field in spec.fields if field.required]
 
 
+def describe(field: Field) -> str:
+    """Um campo em uma linha: chave, tipo, obrigatoriedade e limite.
+
+    O teste do app (``item_configuration_spec_test.dart``) descreve os campos
+    dele do mesmo jeito e compara com a mesma tabela.
+    """
+    need = "required" if field.required else "optional"
+    match field.kind:
+        case FieldKind.INTEGER:
+            limit = f"{field.minimum}-{field.maximum}"
+        case FieldKind.CHOICE:
+            limit = "|".join(field.options)
+        case FieldKind.TEXT:
+            limit = str(field.max_length)
+    return f"{field.key}:{field.kind.value}:{need}:{limit}"
+
+
+_DURATION_REQUIRED = "duration_hours:integer:required:1-24"
+_NOTES = "notes:text:optional:500"
+
+# (campos, aceita quantidade, pede os dados do evento) de cada categoria. A
+# mesma tabela, literal, está no teste do app: mudou um campo de um lado, o
+# teste daquele lado falha até a tabela mudar; e a tabela só muda nos dois
+# testes juntos.
+EXPECTED_TABLE: dict[str, tuple[list[str], bool, bool]] = {
+    "venue": ([_DURATION_REQUIRED, "requirements:text:optional:300", _NOTES], False, True),
+    "buffet": (
+        [
+            "service_style:choice:required:plated|self_service|cocktail|barbecue",
+            "menu:text:optional:200",
+            "duration_hours:integer:optional:1-24",
+            _NOTES,
+        ],
+        False,
+        False,
+    ),
+    "kids": (
+        [
+            _DURATION_REQUIRED,
+            "age_range:choice:optional:up_to_3|from_4_to_7|from_8_to_12|all_ages",
+            _NOTES,
+        ],
+        True,
+        False,
+    ),
+    "attraction": ([_DURATION_REQUIRED, _NOTES], False, False),
+    "decoration": (
+        [
+            "theme:text:required:80",
+            "environment:choice:optional:indoor|outdoor|both",
+            "items:text:optional:300",
+            "customization:text:optional:300",
+            _NOTES,
+        ],
+        True,
+        False,
+    ),
+    "dj": ([_DURATION_REQUIRED, _NOTES], False, False),
+    "staff": ([_DURATION_REQUIRED, _NOTES], True, False),
+    "security": ([_DURATION_REQUIRED, _NOTES], True, False),
+    "beauty": ([_NOTES], True, False),
+    "other": (["variation:text:optional:80", _NOTES], True, False),
+}
+
+
 class TestSpecs:
+    def test_the_whole_table_is_the_same_as_the_app(self) -> None:
+        assert {category["slug"] for category in CATEGORIES} == set(EXPECTED_TABLE)
+
+        for category, (fields, allows_quantity, requires_event) in EXPECTED_TABLE.items():
+            spec = spec_for(category, FIXED, is_own_service=False)
+
+            assert [describe(field) for field in spec.fields] == fields, category
+            assert spec.allows_quantity is allows_quantity, category
+            assert spec.requires_event_details is requires_event, category
+
     def test_every_catalog_category_has_its_own_short_form(self) -> None:
         for category in CATEGORIES:
             spec = spec_for(category["slug"], FIXED, is_own_service=False)

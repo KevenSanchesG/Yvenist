@@ -9,6 +9,7 @@ import 'package:yvenist/app/app_state.dart';
 import 'package:yvenist/core/config/app_config.dart';
 import 'package:yvenist/core/error/app_failure.dart';
 import 'package:yvenist/core/network/api_client.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
 import 'package:yvenist/core/storage/token_storage.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/id_generator.dart';
@@ -16,12 +17,21 @@ import 'package:yvenist/features/admin/domain/review_models.dart';
 import 'package:yvenist/features/auth/presentation/controllers/session_controller.dart';
 import 'package:yvenist/features/catalog/domain/entities/catalog_filters.dart';
 import 'package:yvenist/features/catalog/domain/entities/listing.dart';
-import 'package:yvenist/features/client/shared/listing_actions.dart';
+import 'package:yvenist/features/client/shared/listing_party_item_catalog.dart';
+import 'package:yvenist/features/party_maker/domain/entities/party_history_entry.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_item_category.dart';
 import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
-import 'package:yvenist/features/party_maker/domain/value_objects/external_ref.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/configured_item.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/event_date.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/event_details.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/guest_count.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/item_quote.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/item_relation.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/money.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/party_item_draft.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/party_title.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/pricing.dart';
+import 'package:yvenist/features/party_maker/domain/value_objects/vendor_response.dart';
 import 'package:yvenist/features/vendor/domain/vendor_models.dart';
 
 import '../support/test_environment.dart';
@@ -495,58 +505,132 @@ void main() {
       });
 
       group('festas', () {
-        test('nome e preço do item vêm do catálogo, não do app', () async {
+        test(
+          'o que é copiado do catálogo vem do servidor, não do app',
+          () async {
+            final (phone, _) = await signedUpDevice();
+            final salao = await phone.firstListing('venue');
+            final real = await phone.draftOf(salao);
+            // Um app adulterado tentando gravar outro nome e outro preço.
+            final tampered = PartyItemDraft(
+              externalRef: real.externalRef,
+              category: real.category,
+              name: 'Nome inventado',
+              pricing: Pricing.fixed(Money.fromCents(1)),
+              ownServices: real.ownServices,
+            );
+
+            final party = await phone.state.parties.addItemToNewParty(
+              event('Casamento'),
+              venueSelection(tampered),
+            );
+
+            expect(party, isNotNull, reason: phone.state.parties.error);
+            final item = party!.budget.venue!;
+            expect(party.status, PartyStatus.planning);
+            expect(party.ownerId, phone.state.session.user!.id);
+            expect(item.nameSnapshot, salao.title);
+            expect(item.pricing.model, PricingModel.fixed);
+            expect(item.pricing.amount!.cents, salao.priceFromCents);
+            expect(item.category, PartyItemCategory.venue);
+            expect(item.imageUrlSnapshot, salao.coverImageUrl);
+            expect(item.capacity, real.capacity);
+            expect(item.vendorId, isNotNull);
+            expect(item.estimate(guests: 80)!.cents, salao.priceFromCents);
+          },
+        );
+
+        test('a configuração é conferida pela categoria de verdade', () async {
           final (phone, _) = await signedUpDevice();
-          final salao = await phone.firstListing('venue');
-          // Um app adulterado tentando gravar outro nome e outro preço.
+          final real = await phone.draftOf(await phone.firstListing('venue'));
+          // Um app adulterado dizendo que o salão é um "produto", para não
+          // informar a duração nem os serviços obrigatórios.
           final tampered = PartyItemDraft(
-            externalRef: ExternalRef.listing(salao.id),
+            externalRef: real.externalRef,
             category: PartyItemCategory.other,
-            name: 'Nome inventado',
-            unitPrice: Money.fromCents(1),
+            name: real.name,
+            pricing: real.pricing,
           );
 
-          final added = await phone.state.parties.addItemToNewParty(
-            'Casamento',
-            tampered,
+          final party = await phone.state.parties.addItemToNewParty(
+            event('Casamento'),
+            ConfiguredItem(draft: tampered),
           );
 
-          expect(added, isTrue, reason: phone.state.parties.error);
-          final party = phone.state.parties.activeParty!;
-          final item = party.budget.items.single;
-          expect(party.status, PartyStatus.planning);
-          expect(party.ownerId, phone.state.session.user!.id);
-          expect(item.nameSnapshot, salao.title);
-          expect(item.unitPriceSnapshot.cents, salao.priceFromCents);
-          expect(item.category, PartyItemCategory.venue);
-          expect(item.imageUrlSnapshot, salao.coverImageUrl);
-          expect(
-            phone.state.parties.activePartyTotalCents,
-            salao.priceFromCents,
-          );
+          expect(party, isNull);
+          expect(phone.state.parties.error, isNotNull);
+          await phone.state.parties.load();
+          expect(phone.state.parties.parties, isEmpty);
         });
 
-        test('montar, pedir orçamento, liberar e desmontar a festa', () async {
+        test('montar com serviços do salão, pedir o orçamento, voltar a '
+            'editar e desmontar', () async {
           final (phone, account) = await signedUpDevice();
           final parties = phone.state.parties;
           final salao = await phone.firstListing('venue');
           final atracao = await phone.firstListing('attraction');
-          final total = salao.priceFromCents! + atracao.priceFromCents!;
+          final venue = await phone.draftOf(salao);
 
-          await parties.addItemToNewParty('15 anos', salao.draft);
-          final partyId = parties.activePartyId!;
-          expect(
-            await parties.addItemToParty(partyId, atracao.draft),
-            isTrue,
-            reason: parties.error,
+          // O salão entra com o buffet da casa (por pessoa) e a taxa
+          // obrigatória.
+          final created = await parties.addItemToNewParty(
+            event('15 anos'),
+            venueSelection(venue, services: ['Buffet do salão']),
           );
+          expect(created, isNotNull, reason: parties.error);
+          final partyId = created!.id;
+          expect(created.budget.items.map((item) => item.nameSnapshot), [
+            salao.title,
+            'Buffet do salão',
+            'Taxa de limpeza',
+          ]);
+          expect(created.budget.items.map((item) => item.relation.kind), [
+            ItemRelationKind.independent,
+            ItemRelationKind.linked,
+            ItemRelationKind.required,
+          ]);
+
+          final withAttraction = await parties.addItem(
+            partyId,
+            ConfiguredItem(
+              draft: await phone.draftOf(atracao),
+              configuration: const {'duration_hours': 4},
+            ),
+          );
+          expect(withAttraction, isNotNull, reason: parties.error);
           expect(parties.isInAnyParty(atracao.id), isTrue);
 
-          expect(await parties.lockActivePartyForPayment(), isTrue);
-          expect(parties.isActivePartyLocked, isTrue);
+          // A conta do app e a do servidor dão o mesmo resultado: o salão, o
+          // buffet por 80 pessoas, a taxa e a atração por 4 horas.
+          final total =
+              salao.priceFromCents! +
+              4500 * 80 +
+              15000 +
+              atracao.priceFromCents! * 4;
+          expect(withAttraction!.estimate.total.cents, total);
+          expect(withAttraction.estimate.isComplete, isTrue);
+          final onServer =
+              await phone.api.get(
+                    '/parties/${partyId.value}',
+                    authenticated: true,
+                  )
+                  as Json;
+          expect(onServer['estimate_cents'], total);
+          expect(onServer['unpriced_items'], 0);
+          expect(onServer['quoted_cents'], isNull);
+
+          expect(await parties.requestQuote(partyId), isTrue);
+          final requested = parties.activeParty!;
+          expect(requested.status, PartyStatus.locked);
+          expect(requested.quoteRound, 1);
+          expect(requested.quoteSnapshot!.estimatedTotal.cents, total);
           expect(
-            parties.activeParty!.paymentSnapshot!.totalAmount.cents,
-            total,
+            requested.budget.items.map((item) => item.quote.status),
+            everyElement(QuoteStatus.pending),
+          );
+          expect(
+            requested.history.single.kind,
+            PartyHistoryKind.quoteRequested,
           );
 
           // Outro aparelho da mesma conta vê a festa como ficou no servidor.
@@ -555,72 +639,176 @@ void main() {
           final seen = tablet.state.parties.parties.single;
           expect(seen.title.value, '15 anos');
           expect(seen.status, PartyStatus.locked);
-          expect(seen.budget.total.cents, total);
-          expect(seen.paymentSnapshot!.breakdown, hasLength(2));
+          expect(seen.guestCount!.value, 80);
+          expect(seen.estimate.total.cents, total);
+          expect(seen.budget.items, hasLength(4));
 
-          expect(await parties.unlockActiveParty(), isTrue);
-          expect(parties.activeParty!.paymentSnapshot, isNull);
+          // Com o pedido nas mãos dos fornecedores, nada muda...
+          expect(
+            await parties.removeItem(partyId, requested.budget.venue!.id),
+            isNull,
+          );
+          // ...até a pessoa voltar a editar: o pedido é retirado.
+          expect(await parties.reopen(partyId), isTrue);
+          final reopened = parties.activeParty!;
+          expect(reopened.status, PartyStatus.planning);
+          expect(reopened.quoteSnapshot, isNull);
+          expect(
+            reopened.budget.items.map((item) => item.quote.status),
+            everyElement(QuoteStatus.none),
+          );
 
-          for (final item in parties.budgetItemViews) {
-            expect(await parties.removeItemFromActiveParty(item.id), isTrue);
-          }
-          // Sem itens, a festa deixa de existir.
-          expect(parties.parties, isEmpty);
+          // Tirar o salão leva os serviços dele; a atração continua.
+          final removal = await parties.removeItem(
+            partyId,
+            reopened.budget.venue!.id,
+          );
+          expect(removal!.removedWith, hasLength(2));
+          expect(
+            parties.activeParty!.budget.items.single.nameSnapshot,
+            atracao.title,
+          );
+
+          // Sem itens, a festa continua existindo, até ser apagada.
+          await parties.removeItem(
+            partyId,
+            parties.activeParty!.budget.items.single.id,
+          );
+          expect(parties.activeParty!.budget.isEmpty, isTrue);
+          await tablet.state.parties.load();
+          expect(tablet.state.parties.parties.single.budget.isEmpty, isTrue);
+
+          expect(await parties.deleteParty(partyId), isTrue);
           await tablet.state.parties.load();
           expect(tablet.state.parties.parties, isEmpty);
         });
 
-        test('o servidor recusa o segundo salão e o preço adulterado', () async {
+        test('um item sob consulta entra sem valor, e a estimativa diz o '
+            'que ficou de fora', () async {
+          final (phone, _) = await signedUpDevice();
+          final found = await phone.deps.catalog.search(
+            const ListingQuery(text: 'decoração encanto 8'),
+          );
+          final decoration = found.items.single;
+          expect(decoration.pricingModel, PricingModel.onRequest);
+          expect(decoration.priceFromCents, isNull);
+
+          final party = await phone.state.parties.addItemToNewParty(
+            event('Aniversário'),
+            ConfiguredItem(
+              draft: await phone.draftOf(decoration),
+              configuration: const {'theme': 'Safari'},
+            ),
+          );
+
+          expect(party, isNotNull, reason: phone.state.parties.error);
+          final item = party!.budget.items.single;
+          expect(item.pricing.isOnRequest, isTrue);
+          expect(item.pricing.amount, isNull);
+          expect(item.configuration['theme'], 'Safari');
+          expect(party.estimate.total.cents, 0);
+          expect(party.estimate.unpricedItems, 1);
+        });
+
+        test('o servidor confere de novo o que o app confere', () async {
           final (phone, _) = await signedUpDevice();
           final venues = await phone.deps.catalog.search(
             const ListingQuery(categorySlug: 'venue'),
             limit: 2,
           );
+          final first = await phone.draftOf(venues.items.first);
+          final second = await phone.draftOf(venues.items.last);
           final ids = UuidGenerator();
           final partyId = ids.newId();
+          final eventAt = DateTime.now()
+              .add(const Duration(days: 60))
+              .toUtc()
+              .toIso8601String();
 
-          // Direto na API, pulando as regras que o app aplica antes de enviar.
-          await expectLater(
-            phone.api.put(
-              '/parties/$partyId',
-              authenticated: true,
-              body: {
-                'title': 'Dois salões',
-                'status': 'planning',
-                'items': [
-                  for (final venue in venues.items)
-                    {'id': ids.newId(), 'listing_id': venue.id, 'quantity': 1},
-                ],
+          /// Um salão com a duração e a taxa obrigatória dele.
+          List<Json> venueItems(PartyItemDraft venue) {
+            final id = ids.newId();
+            return [
+              {
+                'id': id,
+                'listing_id': venue.externalRef.id,
+                'configuration': {'duration_hours': 4},
               },
-            ),
-            throwsA(
-              isA<ConflictFailure>().having(
-                (f) => f.code,
-                'code',
-                'venue_already_selected',
-              ),
-            ),
-          );
-
-          // Marcar como paga também não é algo que o cliente possa pedir.
-          await expectLater(
-            phone.api.put(
-              '/parties/$partyId',
-              authenticated: true,
-              body: {
-                'title': 'Festa "paga"',
-                'status': 'paid',
-                'items': [
+              for (final service in venue.ownServices)
+                if (service.isRequired)
                   {
                     'id': ids.newId(),
-                    'listing_id': venues.items.first.id,
-                    'quantity': 1,
+                    'offer_id': service.externalRef.id,
+                    'parent_item_id': id,
                   },
-                ],
+            ];
+          }
+
+          // Direto na API, pulando as regras que o app aplica antes de enviar.
+          Future<Object?> put(
+            List<Json> items, {
+            String status = 'planning',
+            int? guests = 80,
+          }) {
+            return phone.api.put(
+              '/parties/$partyId',
+              authenticated: true,
+              body: {
+                'title': 'Festa adulterada',
+                'event_at': eventAt,
+                'guest_count': guests,
+                'status': status,
+                'items': items,
               },
-            ),
-            throwsA(isA<AppFailure>()),
+            );
+          }
+
+          Matcher refusedWith(String code) =>
+              throwsA(isA<AppFailure>().having((f) => f.code, 'code', code));
+
+          await expectLater(
+            put([...venueItems(first), ...venueItems(second)]),
+            refusedWith('venue_already_selected'),
           );
+          // O salão sem a taxa obrigatória dele.
+          await expectLater(
+            put([venueItems(first).first]),
+            refusedWith('required_item_missing'),
+          );
+          // O salão sem a duração.
+          await expectLater(
+            put([
+              {...venueItems(first).first, 'configuration': <String, Object>{}},
+              ...venueItems(first).skip(1),
+            ]),
+            refusedWith('invalid_item_configuration'),
+          );
+          // Mais convidados do que o salão comporta.
+          await expectLater(
+            put(venueItems(first), guests: 100000),
+            refusedWith('guest_count_exceeds_capacity'),
+          );
+          // Um serviço do salão sem o salão na festa.
+          await expectLater(
+            put([
+              {
+                'id': ids.newId(),
+                'offer_id': first.ownServices.first.externalRef.id,
+                'parent_item_id': ids.newId(),
+              },
+            ]),
+            refusedWith('parent_item_missing'),
+          );
+          // Marcar como paga, ou como "orçamento recebido", não é algo que o
+          // cliente possa pedir.
+          for (final status in ['paid', 'quoted', 'confirmed']) {
+            await expectLater(
+              put(venueItems(first), status: status),
+              throwsA(isA<AppFailure>()),
+              reason: status,
+            );
+          }
+
           await phone.state.parties.load();
           expect(phone.state.parties.parties, isEmpty);
         });
@@ -630,27 +818,38 @@ void main() {
           final salao = await phone.firstListing('venue');
           final atracao = await phone.firstListing('attraction');
           final buffet = await phone.firstListing('buffet');
-          await phone.state.parties.addItemToNewParty('Formatura', salao.draft);
-          final partyId = phone.state.parties.activePartyId!;
+          final created = await phone.state.parties.addItemToNewParty(
+            event('Formatura'),
+            venueSelection(await phone.draftOf(salao)),
+          );
+          final partyId = created!.id;
 
           final tablet = await device();
           await tablet.signIn(account);
           expect(
             tablet.state.parties.parties.single.budget.items,
-            hasLength(1),
+            hasLength(2),
           );
 
           // O celular altera primeiro; o tablet ainda tem a versão anterior.
-          expect(
-            await phone.state.parties.addItemToParty(partyId, atracao.draft),
-            isTrue,
+          final attraction = ConfiguredItem(
+            draft: await phone.draftOf(atracao),
+            configuration: const {'duration_hours': 4},
           );
-          final stale = await tablet.state.parties.addItemToParty(
+          expect(
+            await phone.state.parties.addItem(partyId, attraction),
+            isNotNull,
+          );
+          final buffetSelection = ConfiguredItem(
+            draft: await tablet.draftOf(buffet),
+            configuration: const {'service_style': 'plated'},
+          );
+          final stale = await tablet.state.parties.addItem(
             partyId,
-            buffet.draft,
+            buffetSelection,
           );
 
-          expect(stale, isFalse);
+          expect(stale, isNull);
           expect(
             tablet.state.parties.error,
             'A festa foi alterada em outro dispositivo. '
@@ -659,16 +858,54 @@ void main() {
           // O tablet já recarregou: vê o que o celular gravou, sem ter perdido
           // nem sobrescrito nada.
           final refreshed = tablet.state.parties.parties.single;
-          expect(refreshed.budget.items, hasLength(2));
+          expect(refreshed.budget.items, hasLength(3));
 
           // Tentar de novo, agora sobre a versão atual, funciona.
           expect(
-            await tablet.state.parties.addItemToParty(partyId, buffet.draft),
-            isTrue,
+            await tablet.state.parties.addItem(partyId, buffetSelection),
+            isNotNull,
             reason: tablet.state.parties.error,
           );
           await phone.state.parties.load();
-          expect(phone.state.parties.parties.single.budget.items, hasLength(3));
+          expect(phone.state.parties.parties.single.budget.items, hasLength(4));
+        });
+
+        test('uma festa com o orçamento solicitado só é apagada depois de '
+            'cancelada', () async {
+          final (phone, _) = await signedUpDevice();
+          final parties = phone.state.parties;
+          final created = await parties.addItemToNewParty(
+            event('Formatura'),
+            venueSelection(
+              await phone.draftOf(await phone.firstListing('venue')),
+            ),
+          );
+          final partyId = created!.id;
+          expect(await parties.requestQuote(partyId), isTrue);
+
+          // O app barra antes; pedindo direto, o servidor também barra.
+          expect(await parties.deleteParty(partyId), isFalse);
+          await expectLater(
+            phone.api.delete('/parties/${partyId.value}', authenticated: true),
+            throwsA(
+              isA<ConflictFailure>().having(
+                (f) => f.code,
+                'code',
+                'party_has_open_quote',
+              ),
+            ),
+          );
+
+          expect(await parties.cancelParty(partyId), isTrue);
+          expect(parties.activeParty!.status, PartyStatus.cancelled);
+          expect(
+            parties.activeParty!.history.last.kind,
+            PartyHistoryKind.cancelled,
+          );
+
+          expect(await parties.deleteParty(partyId), isTrue);
+          await parties.load();
+          expect(parties.parties, isEmpty);
         });
 
         test('uma conta não lê nem altera a festa de outra', () async {
@@ -676,8 +913,8 @@ void main() {
           final (bruno, _) = await signedUpDevice();
           final salao = await ana.firstListing('venue');
           await ana.state.parties.addItemToNewParty(
-            'Festa da Ana',
-            salao.draft,
+            event('Festa da Ana'),
+            venueSelection(await ana.draftOf(salao)),
           );
           final partyId = ana.state.parties.activePartyId!.value;
 
@@ -705,14 +942,49 @@ void main() {
           await ana.state.parties.load();
           final party = ana.state.parties.parties.single;
           expect(party.title.value, 'Festa da Ana');
-          expect(party.budget.items, hasLength(1));
+          expect(party.budget.items, hasLength(2));
           await bruno.state.parties.load();
           expect(bruno.state.parties.parties, isEmpty);
+        });
+
+        test('quem não é fornecedor não vê nem responde pedidos de '
+            'orçamento', () async {
+          final (ana, _) = await signedUpDevice();
+          final (bruno, _) = await signedUpDevice();
+          final created = await ana.state.parties.addItemToNewParty(
+            event('Festa da Ana'),
+            venueSelection(await ana.draftOf(await ana.firstListing('venue'))),
+          );
+          expect(await ana.state.parties.requestQuote(created!.id), isTrue);
+          final itemId = created.budget.venue!.id.value;
+
+          // Nem a própria dona da festa responde ao pedido que fez...
+          for (final phone in [ana, bruno]) {
+            await expectLater(
+              phone.deps.quoteInbox.list(),
+              throwsA(isA<NotFoundFailure>()),
+            );
+            await expectLater(
+              phone.deps.quoteInbox.respond(
+                itemId,
+                VendorResponse.quote(Money.fromCents(1)),
+              ),
+              throwsA(isA<NotFoundFailure>()),
+            );
+          }
+          // ...e a festa continua esperando o fornecedor de verdade.
+          await ana.state.parties.load();
+          expect(ana.state.parties.parties.single.status, PartyStatus.locked);
+          expect(ana.state.parties.parties.single.quotedTotal, isNull);
         });
       });
 
       group('fornecedor', () {
-        HallListingDraft hall({required String document, String? title}) {
+        HallListingDraft hall({
+          required String document,
+          String? title,
+          List<OfferDraft> offers = const [],
+        }) {
           return HallListingDraft(
             personType: PersonType.individual,
             document: document,
@@ -723,12 +995,55 @@ void main() {
             city: 'Salvador',
             state: 'BA',
             priceFromCents: 250000,
+            offers: offers,
             areaM2: 300,
             capacity: 150,
             eventTypes: const {'wedding', 'debutante'},
             amenities: const {'wifi', 'kitchen'},
             cancellationPolicy: CancellationPolicy.moderate,
           );
+        }
+
+        /// Um fornecedor aprovado, com um salão publicado que cobra uma taxa
+        /// obrigatória e oferece um buffet por pessoa. Devolve o aparelho
+        /// dele e o anúncio como o catálogo o mostra.
+        Future<(Device, Listing)> publishedHall(Device admin) async {
+          final (vendorPhone, _) = await signedUpDevice();
+          final draft = hall(
+            document: randomCpf(random),
+            offers: const [
+              OfferDraft(
+                categorySlug: 'other',
+                name: 'Taxa de limpeza',
+                priceCents: 15000,
+                isRequired: true,
+              ),
+              OfferDraft(
+                categorySlug: 'buffet',
+                name: 'Buffet da casa',
+                pricingModel: PricingModel.perPerson,
+                priceCents: 5000,
+              ),
+            ],
+          );
+          expect(
+            await vendorPhone.state.vendor.submitHall(draft),
+            isTrue,
+            reason: '${vendorPhone.state.vendor.failure}',
+          );
+          final queue = await admin.deps.reviews.pending();
+          final pending = queue.listings.singleWhere(
+            (listing) => listing.title == draft.title,
+          );
+          await admin.deps.reviews.approveVendor(
+            pending.vendorId,
+            publishListings: true,
+          );
+
+          final found = await vendorPhone.deps.catalog.search(
+            ListingQuery(text: draft.title),
+          );
+          return (vendorPhone, found.items.single);
         }
 
         test('enviar o salão: fica em análise e fora do catálogo', () async {
@@ -909,15 +1224,252 @@ void main() {
             expect(listing.priceFromCents, 250000);
             expect(listing.hasRatings, isFalse);
 
+            final party = await client.state.parties.addItemToNewParty(
+              event('Casamento'),
+              venueSelection(await client.draftOf(listing)),
+            );
+            expect(party, isNotNull, reason: client.state.parties.error);
+            expect(party!.estimate.total.cents, 250000);
+            expect(party.budget.venue!.capacity, 150);
+          },
+        );
+
+        test(
+          'o pedido de orçamento chega ao fornecedor, que responde; o '
+          'cliente vê o valor e aceita',
+          skip: adminSkip,
+          () async {
+            final admin = await adminDevice();
+            final (vendorPhone, listing) = await publishedHall(admin);
+            final (client, _) = await signedUpDevice();
+            final parties = client.state.parties;
+
+            // A cliente monta a festa com o salão, o buffet da casa e a taxa
+            // obrigatória, e pede o orçamento.
+            final details = event('Casamento da Bia', guests: 100);
+            final created = await parties.addItemToNewParty(
+              details,
+              venueSelection(
+                await client.draftOf(listing),
+                services: ['Buffet da casa'],
+              ),
+            );
+            expect(created, isNotNull, reason: parties.error);
+            final partyId = created!.id;
+            // 2.500 + 150 + 50 x 100 convidados
+            expect(created.estimate.total.cents, 250000 + 15000 + 500000);
+            expect(await parties.requestQuote(partyId), isTrue);
+
+            // O fornecedor vê um pedido por item, com o evento e a
+            // configuração, e nada sobre quem pediu.
+            final inbox = vendorPhone.deps.quoteInbox;
+            final requests = await inbox.list();
+            expect(requests.map((request) => request.name), [
+              listing.title,
+              'Taxa de limpeza',
+              'Buffet da casa',
+            ]);
+            final hallRequest = requests.first;
+            expect(hallRequest.partyStatus, PartyStatus.locked);
+            expect(hallRequest.round, 1);
+            expect(hallRequest.guestCount, 100);
             expect(
-              await client.state.parties.addItemToNewParty(
-                'Casamento',
-                listing.draft,
+              hallRequest.eventDate!.isAtSameMomentAs(details.eventDate!.value),
+              isTrue,
+            );
+            expect(hallRequest.configuration.durationHours, 4);
+            expect(hallRequest.estimate!.cents, 250000);
+            expect(hallRequest.quote.status, QuoteStatus.pending);
+            expect(requests[1].relation, ItemRelationKind.required);
+            expect(requests[1].parentName, listing.title);
+            expect(requests[2].estimate!.cents, 500000);
+            final raw =
+                await vendorPhone.api.get(
+                      '/vendors/me/quote-requests',
+                      authenticated: true,
+                    )
+                    as Json;
+            final rawRequest = (raw['items'] as List).first as Json;
+            expect(rawRequest.containsKey('title'), isFalse);
+            expect(rawRequest.containsKey('owner_id'), isFalse);
+
+            // Uma resposta sem o motivo, ou com um valor fora do limite, é
+            // recusada.
+            await expectLater(
+              inbox.respond(
+                hallRequest.itemId,
+                const VendorResponse.decline('não'),
+              ),
+              throwsA(isA<ValidationFailure>()),
+            );
+
+            final answered = await inbox.respond(
+              hallRequest.itemId,
+              VendorResponse.quote(
+                Money.fromCents(260000),
+                message: '  Inclui a montagem.  ',
+              ),
+            );
+            expect(answered.quote.amount!.cents, 260000);
+            expect(answered.quote.message, 'Inclui a montagem.');
+            // Ainda faltam dois itens.
+            expect(answered.partyStatus, PartyStatus.locked);
+
+            // A cliente tinha a festa de antes da resposta: uma gravação
+            // sobre ela é recusada, e a tela passa a mostrar o que chegou.
+            expect(await parties.cancelParty(partyId), isFalse);
+            final updated = parties.activeParty!;
+            expect(updated.status, PartyStatus.locked);
+            expect(updated.quotedTotal!.cents, 260000);
+            expect(updated.budget.venue!.quote.message, 'Inclui a montagem.');
+            // A estimativa continua sendo a conta do app, ao lado.
+            expect(updated.estimate.total.cents, 250000 + 15000 + 500000);
+            expect(updated.history.last.kind, PartyHistoryKind.vendorQuoted);
+            expect(updated.history.last.itemName, listing.title);
+
+            await inbox.respond(
+              requests[1].itemId,
+              VendorResponse.quote(Money.fromCents(15000)),
+            );
+            final last = await inbox.respond(
+              requests[2].itemId,
+              VendorResponse.quote(Money.fromCents(480000)),
+            );
+            expect(last.partyStatus, PartyStatus.quoted);
+
+            // O fornecedor corrige um valor enquanto a cliente não aceita.
+            await inbox.respond(
+              requests[2].itemId,
+              VendorResponse.quote(Money.fromCents(470000)),
+            );
+
+            await parties.load();
+            final quoted = parties.activeParty!;
+            expect(quoted.status, PartyStatus.quoted);
+            expect(quoted.quotedTotal!.cents, 260000 + 15000 + 470000);
+
+            expect(await parties.confirmQuote(partyId), isTrue);
+            expect(parties.activeParty!.status, PartyStatus.confirmed);
+            expect(
+              parties.activeParty!.history.last.kind,
+              PartyHistoryKind.confirmed,
+            );
+
+            // Aceito, o pedido se fecha para o fornecedor.
+            final closed = await inbox.list();
+            expect(
+              closed.map((request) => request.partyStatus),
+              everyElement(PartyStatus.confirmed),
+            );
+            expect(closed.first.canRespond, isFalse);
+            await expectLater(
+              inbox.respond(
+                hallRequest.itemId,
+                VendorResponse.quote(Money.fromCents(1)),
+              ),
+              throwsA(
+                isA<ConflictFailure>().having(
+                  (f) => f.code,
+                  'code',
+                  'quote_request_closed',
+                ),
+              ),
+            );
+          },
+        );
+
+        test(
+          'edição solicitada: o fornecedor pede uma alteração, a cliente '
+          'ajusta e reenvia',
+          skip: adminSkip,
+          () async {
+            final admin = await adminDevice();
+            final (vendorPhone, listing) = await publishedHall(admin);
+            final (otherVendorPhone, _) = await publishedHall(admin);
+            final (client, _) = await signedUpDevice();
+            final parties = client.state.parties;
+            final inbox = vendorPhone.deps.quoteInbox;
+
+            final created = await parties.addItemToNewParty(
+              event('Formatura', guests: 120),
+              venueSelection(await client.draftOf(listing)),
+            );
+            final partyId = created!.id;
+            expect(await parties.requestQuote(partyId), isTrue);
+
+            // Outro fornecedor não vê o pedido nem consegue respondê-lo.
+            final requests = await inbox.list();
+            expect(await otherVendorPhone.deps.quoteInbox.list(), isEmpty);
+            await expectLater(
+              otherVendorPhone.deps.quoteInbox.respond(
+                requests.first.itemId,
+                VendorResponse.quote(Money.fromCents(1)),
+              ),
+              throwsA(isA<NotFoundFailure>()),
+            );
+
+            await inbox.respond(
+              requests.last.itemId,
+              VendorResponse.quote(Money.fromCents(15000)),
+            );
+            final changes = await inbox.respond(
+              requests.first.itemId,
+              const VendorResponse.requestChanges(
+                'Neste dia só atendo até 6 horas de festa.',
+              ),
+            );
+            expect(changes.partyStatus, PartyStatus.editRequested);
+
+            await parties.load();
+            final returned = parties.activeParty!;
+            expect(returned.status, PartyStatus.editRequested);
+            expect(
+              returned.itemsNeedingAttention.single.nameSnapshot,
+              listing.title,
+            );
+            expect(
+              returned.budget.venue!.quote.message,
+              'Neste dia só atendo até 6 horas de festa.',
+            );
+
+            // A cliente volta a editar: a festa some da caixa do fornecedor.
+            expect(await parties.reopen(partyId), isTrue);
+            expect(await inbox.list(), isEmpty);
+
+            // Ajusta o salão e reenvia. Quem já tinha dado o valor, e nada
+            // mudou para ele, não responde de novo.
+            expect(
+              await parties.updateItem(
+                partyId,
+                returned.budget.venue!.id,
+                quantity: 1,
+                configuration: const {'duration_hours': 6},
               ),
               isTrue,
-              reason: client.state.parties.error,
+              reason: parties.error,
             );
-            expect(client.state.parties.activePartyTotalCents, 250000);
+            expect(await parties.requestQuote(partyId), isTrue);
+            final again = parties.activeParty!;
+            expect(again.quoteRound, 2);
+            expect(again.status, PartyStatus.locked);
+            expect(again.budget.venue!.quote.status, QuoteStatus.pending);
+            expect(again.budget.items.last.quote.isQuoted, isTrue);
+
+            final second = await inbox.list();
+            expect(second.first.round, 2);
+            expect(second.first.configuration.durationHours, 6);
+            final done = await inbox.respond(
+              second.first.itemId,
+              VendorResponse.quote(Money.fromCents(300000)),
+            );
+            expect(done.partyStatus, PartyStatus.quoted);
+
+            // A cliente cancela: o fornecedor vê o pedido fechado.
+            await parties.load();
+            expect(await parties.cancelParty(partyId), isTrue);
+            final cancelled = await inbox.list();
+            expect(cancelled.first.partyStatus, PartyStatus.cancelled);
+            expect(cancelled.first.canRespond, isFalse);
           },
         );
 
@@ -1052,9 +1604,30 @@ void main() {
   );
 }
 
-extension on Listing {
-  /// O anúncio pronto para entrar em uma festa. Só para os que têm preço.
-  PartyItemDraft get draft => toPartyItemDraft(priceFromCents!);
+/// Os dados de um evento daqui a dois meses, para [guests] convidados.
+EventDetails event(String title, {int guests = 80}) {
+  return EventDetails(
+    title: PartyTitle(title),
+    eventDate: EventDate(DateTime.now().add(const Duration(days: 60))),
+    guestCount: GuestCount(guests),
+  );
+}
+
+/// O salão [draft] configurado para 4 horas, com os serviços obrigatórios dele
+/// e os opcionais de nome em [services].
+ConfiguredItem venueSelection(
+  PartyItemDraft draft, {
+  List<String> services = const [],
+}) {
+  return ConfiguredItem(
+    draft: draft,
+    configuration: const {'duration_hours': 4},
+    ownServices: [
+      for (final service in draft.ownServices)
+        if (service.isRequired || services.contains(service.name))
+          ConfiguredItem(draft: service),
+    ],
+  );
 }
 
 /// Faixa dos sufixos aleatórios que tornam únicos os e-mails e os títulos.
@@ -1168,6 +1741,12 @@ class Device {
       limit: 1,
     );
     return page.items.single;
+  }
+
+  /// O que o catálogo diz de [listing], com os serviços próprios dele, pronto
+  /// para ser configurado: o mesmo caminho da tela.
+  Future<PartyItemDraft> draftOf(Listing listing) {
+    return ListingPartyItemCatalog(deps.catalog).draftFor(listing.id);
   }
 
   void dispose() {

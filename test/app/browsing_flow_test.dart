@@ -75,7 +75,7 @@ void main() {
       expect(find.text('Conta Demonstração'), findsOneWidget);
 
       await openTab(tester, 'Minhas festas');
-      expect(find.text('Nenhuma festa aberta'), findsOneWidget);
+      expect(find.text('Você ainda não tem festas'), findsOneWidget);
 
       await openTab(tester, 'Início');
       expect(find.text('O que vamos comemorar?'), findsOneWidget);
@@ -211,10 +211,8 @@ void main() {
       );
     });
 
-    appTest('um anúncio sob consulta ainda não entra em uma festa', (
-      tester,
-      app,
-    ) async {
+    appTest('um anúncio sob consulta entra em uma festa sem inventar um '
+        'valor', (tester, app) async {
       await openTab(tester, 'Explorar');
       await filterBy(tester, 'Decorações');
 
@@ -222,15 +220,23 @@ void main() {
         tester,
         find.byTooltip('Adicionar Decoração Encanto 8 a uma festa'),
       );
+      await tapAndSettle(tester, find.text('Criar nova festa'));
+      await tester.enterText(find.byType(TextField), 'Festa da Ana');
+      await tester.pump();
+      await tapAndSettle(tester, filledButton('Criar festa'));
 
-      expect(
-        find.text(
-          'Decoração Encanto 8 é sob consulta e ainda não pode entrar em uma '
-          'festa.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Criar nova festa'), findsNothing);
+      // A configuração mostra "Sob consulta" no lugar do preço e da
+      // estimativa: nunca um R$ 0,00.
+      expect(find.text('Sob consulta'), findsNWidgets(2));
+      expect(find.textContaining(r'R$'), findsNothing);
+
+      await enterField(tester, 'Tema', 'Safari');
+      await tapAndSettle(tester, filledButton('Adicionar à festa'));
+
+      final party = app.state.parties.parties.single;
+      expect(party.budget.items.single.pricing.isOnRequest, isTrue);
+      expect(party.estimate.unpricedItems, 1);
+      expect(party.estimate.total.cents, 0);
     });
 
     appTest('rolar até o fim busca a próxima página', (tester, app) async {

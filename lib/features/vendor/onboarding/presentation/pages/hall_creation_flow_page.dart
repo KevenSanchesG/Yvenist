@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yvenist/core/navigation/app_tab_controller.dart';
+import 'package:yvenist/core/pricing/pricing_model.dart';
 import 'package:yvenist/core/theme/app_theme.dart';
 import 'package:yvenist/core/utils/brazilian_documents.dart';
 import 'package:yvenist/core/utils/money_formatter.dart';
@@ -15,6 +16,34 @@ import 'package:yvenist/features/vendor/presentation/controllers/vendor_controll
 
 const int _maxPriceCents = 100000000; // R$ 1 milhão, o teto aceito pela API.
 const int _descriptionMinLength = 20;
+const int _maxOffers = 20; // O mesmo teto da API.
+
+/// Como um espaço pode cobrar. "Por unidade" não se aplica a um salão.
+const List<({PricingModel model, String label})> _hallPricingOptions = [
+  (model: PricingModel.fixed, label: 'Valor fixo pelo evento'),
+  (model: PricingModel.perPerson, label: 'Por convidado'),
+  (model: PricingModel.perHour, label: 'Por hora'),
+  (model: PricingModel.onRequest, label: 'Sob consulta'),
+];
+
+/// Como um serviço do próprio espaço pode cobrar.
+const List<({PricingModel model, String label})> _offerPricingOptions = [
+  (model: PricingModel.fixed, label: 'Valor fixo'),
+  (model: PricingModel.perPerson, label: 'Por convidado'),
+  (model: PricingModel.perHour, label: 'Por hora'),
+  (model: PricingModel.perUnit, label: 'Por unidade'),
+  (model: PricingModel.onRequest, label: 'Sob consulta'),
+];
+
+String? _validatePrice(String? value) {
+  final cents = parseBrlToCents(value ?? '');
+  if (cents == null) return 'Informe o preço, por exemplo 1500 ou 1.500,00.';
+  if (cents <= 0) return 'O preço precisa ser maior que zero.';
+  if (cents > _maxPriceCents) {
+    return 'O preço máximo é ${formatBrl(_maxPriceCents)}.';
+  }
+  return null;
+}
 
 /// Cadastro de um salão em etapas. Cada etapa só avança depois de validada, e
 /// nada é enviado antes da revisão final.
@@ -26,7 +55,7 @@ class HallCreationFlowPage extends StatefulWidget {
 }
 
 class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
-  static const int _stepCount = 6;
+  static const int _stepCount = 7;
   static const Duration _stepAnimation = Duration(milliseconds: 300);
 
   final _pageController = PageController();
@@ -55,16 +84,31 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
   List<EventType> _loadedEventTypes = const [];
 
   // Etapa 5: preço
+  PricingModel _pricingModel = PricingModel.fixed;
   final _price = TextEditingController();
+  final _minimum = TextEditingController();
   CancellationPolicy _policy = CancellationPolicy.flexible;
 
+  // Etapa 6: serviços do próprio espaço
+  final List<OfferDraft> _offers = [];
+  List<CatalogCategory> _offerCategories = const [];
+
   bool _submitted = false;
+
+  bool get _isOnRequest => _pricingModel == PricingModel.onRequest;
+
+  /// O valor mínimo só faz sentido quando o total depende de uma medida.
+  bool get _hasMinimum =>
+      _pricingModel == PricingModel.perPerson ||
+      _pricingModel == PricingModel.perHour;
 
   @override
   void initState() {
     super.initState();
-    _availableEventTypes = context.read<CatalogRepository>().eventTypes()
+    final catalog = context.read<CatalogRepository>();
+    _availableEventTypes = catalog.eventTypes()
       ..then((types) => _loadedEventTypes = types).ignore();
+    _loadOfferCategories(catalog);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<VendorController>().clearError();
     });
@@ -83,10 +127,29 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
       _neighborhood,
       _city,
       _price,
+      _minimum,
     ]) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  /// As categorias em que um serviço do espaço pode se encaixar. O serviço de
+  /// um salão não pode ser outro salão.
+  Future<void> _loadOfferCategories(CatalogRepository catalog) async {
+    try {
+      final categories = await catalog.categories();
+      if (!mounted) return;
+      setState(() {
+        _offerCategories = [
+          for (final category in categories)
+            if (category.slug != 'venue') category,
+        ];
+      });
+    } catch (_) {
+      // Sem as categorias, a etapa dos serviços avisa e o anúncio segue sem
+      // eles: são opcionais.
+    }
   }
 
   bool get _isLastStep => _step == _stepCount - 1;
@@ -94,6 +157,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
   bool get _hasInput =>
       _eventTypes.isNotEmpty ||
       _amenities.isNotEmpty ||
+      _offers.isNotEmpty ||
       [
         _document,
         _legalName,
@@ -183,7 +247,10 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
       neighborhood: neighborhood.isEmpty ? null : neighborhood,
       city: _city.text.trim(),
       state: _state!,
-      priceFromCents: parseBrlToCents(_price.text)!,
+      pricingModel: _pricingModel,
+      priceFromCents: _isOnRequest ? null : parseBrlToCents(_price.text)!,
+      minimumPriceCents: _hasMinimum ? parseBrlToCents(_minimum.text) : null,
+      offers: List.of(_offers),
       areaM2: int.tryParse(_area.text.trim()),
       capacity: int.tryParse(_capacity.text.trim()),
       eventTypes: Set.of(_eventTypes),
@@ -250,14 +317,24 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
         : null;
   }
 
-  static String? _validatePrice(String? value) {
-    final cents = parseBrlToCents(value ?? '');
-    if (cents == null) return 'Informe o preço, por exemplo 1500 ou 1.500,00.';
-    if (cents <= 0) return 'O preço precisa ser maior que zero.';
-    if (cents > _maxPriceCents) {
-      return 'O preço máximo é ${formatBrl(_maxPriceCents)}.';
+  static String? _validateMinimum(String? value) {
+    if ((value ?? '').trim().isEmpty) return null;
+    return _validatePrice(value);
+  }
+
+  Future<void> _addOffer() async {
+    final offer = await showDialog<OfferDraft>(
+      context: context,
+      builder: (_) => _OfferDialog(categories: _offerCategories),
+    );
+    if (offer != null && mounted) setState(() => _offers.add(offer));
+  }
+
+  String _categoryName(String slug) {
+    for (final category in _offerCategories) {
+      if (category.slug == slug) return category.name;
     }
-    return null;
+    return slug;
   }
 
   // ------------------------------------------------------------------
@@ -310,6 +387,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
                     _stepEventTypes(),
                     _stepAmenities(),
                     _stepPrice(),
+                    _stepOffers(),
                     _stepReview(vendor),
                   ],
                 ),
@@ -562,19 +640,65 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
       formKey: _formKeys[4],
       title: 'Quanto custa?',
       children: [
-        TextFormField(
-          controller: _price,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+        DropdownButtonFormField<PricingModel>(
+          initialValue: _pricingModel,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Como você cobra'),
+          items: [
+            for (final option in _hallPricingOptions)
+              DropdownMenuItem(value: option.model, child: Text(option.label)),
           ],
-          validator: _validatePrice,
-          decoration: const InputDecoration(
-            labelText: 'Preço a partir de',
-            prefixText: r'R$ ',
-            helperText: 'Valor inicial por evento. Aparece no anúncio.',
-          ),
+          onChanged: (model) =>
+              setState(() => _pricingModel = model ?? _pricingModel),
         ),
+        const SizedBox(height: 16),
+        if (_isOnRequest)
+          Text(
+            'O anúncio aparece como "Sob consulta". Você informa o valor quando '
+            'receber um pedido de orçamento.',
+            style: context.text.body.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          )
+        else
+          TextFormField(
+            controller: _price,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+            ],
+            validator: _validatePrice,
+            decoration: InputDecoration(
+              labelText: switch (_pricingModel) {
+                PricingModel.perPerson => 'Preço por convidado',
+                PricingModel.perHour => 'Preço por hora',
+                _ => 'Preço a partir de',
+              },
+              prefixText: r'R$ ',
+              helperText: _pricingModel == PricingModel.fixed
+                  ? 'Valor inicial por evento. Aparece no anúncio.'
+                  : 'Aparece no anúncio.',
+            ),
+          ),
+        if (_hasMinimum) ...[
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _minimum,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+            ],
+            validator: _validateMinimum,
+            decoration: const InputDecoration(
+              labelText: 'Valor mínimo (opcional)',
+              prefixText: r'R$ ',
+              helperText:
+                  'O menor valor cobrado, mesmo com poucos convidados ou '
+                  'poucas horas.',
+              helperMaxLines: 2,
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         Text(
           'Política de cancelamento',
@@ -599,8 +723,44 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
     );
   }
 
+  Widget _stepOffers() {
+    return _Step(
+      formKey: _formKeys[5],
+      title: 'O espaço oferece algum serviço?',
+      subtitle:
+          'Opcional. Cadastre o que o próprio espaço oferece junto com a '
+          'locação, como o buffet da casa ou uma taxa de limpeza. O cliente '
+          'escolhe ao pôr o salão na festa.',
+      children: [
+        for (final (index, offer) in _offers.indexed) ...[
+          _OfferRow(
+            offer: offer,
+            categoryName: _categoryName(offer.categorySlug),
+            onRemove: () => setState(() => _offers.removeAt(index)),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (_offerCategories.isEmpty)
+          Text(
+            'Não foi possível carregar as categorias de serviço. Você pode '
+            'enviar o anúncio sem serviços.',
+            style: context.text.body.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          )
+        else if (_offers.length < _maxOffers)
+          OutlinedButton.icon(
+            onPressed: _addOffer,
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar serviço'),
+          ),
+      ],
+    );
+  }
+
   Widget _stepReview(VendorController vendor) {
-    final priceCents = parseBrlToCents(_price.text);
+    final priceCents = _isOnRequest ? null : parseBrlToCents(_price.text);
+    final minimumCents = _hasMinimum ? parseBrlToCents(_minimum.text) : null;
     final neighborhood = _neighborhood.text.trim();
     final location = [
       if (neighborhood.isNotEmpty) neighborhood,
@@ -617,7 +777,7 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
     ];
 
     return _Step(
-      formKey: _formKeys[5],
+      formKey: _formKeys[6],
       title: 'Confira antes de enviar',
       subtitle: 'Depois do envio, nossa equipe analisa os dados do salão.',
       children: [
@@ -650,9 +810,26 @@ class _HallCreationFlowPageState extends State<HallCreationFlowPage> {
                     ? 'Não informada'
                     : amenityNames.join(', '),
               ),
+              if (_pricingModel == PricingModel.fixed)
+                _ReviewRow(
+                  label: 'Preço a partir de',
+                  value: priceCents == null ? '' : formatBrl(priceCents),
+                )
+              else
+                _ReviewRow(
+                  label: 'Preço',
+                  value: describePricing(_pricingModel, priceCents),
+                ),
+              if (minimumCents != null)
+                _ReviewRow(
+                  label: 'Valor mínimo',
+                  value: formatBrl(minimumCents),
+                ),
               _ReviewRow(
-                label: 'Preço a partir de',
-                value: priceCents == null ? '' : formatBrl(priceCents),
+                label: 'Serviços',
+                value: _offers.isEmpty
+                    ? 'Nenhum'
+                    : _offers.map((offer) => offer.name).join(', '),
               ),
               _ReviewRow(label: 'Cancelamento', value: _policy.label),
             ],
@@ -772,6 +949,201 @@ class _BottomBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Um serviço já cadastrado nesta etapa, com o botão de tirar.
+class _OfferRow extends StatelessWidget {
+  const _OfferRow({
+    required this.offer,
+    required this.categoryName,
+    required this.onRemove,
+  });
+
+  final OfferDraft offer;
+  final String categoryName;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.text;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.divider),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  offer.name,
+                  style: text.body.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  [
+                    categoryName,
+                    describePricing(offer.pricingModel, offer.priceCents),
+                    if (offer.isRequired) 'Obrigatório',
+                  ].join(' · '),
+                  style: text.caption,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            color: colors.danger,
+            tooltip: 'Remover ${offer.name}',
+            onPressed: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pede os dados de um serviço do próprio espaço. Fecha devolvendo o serviço
+/// pronto para entrar na lista.
+class _OfferDialog extends StatefulWidget {
+  const _OfferDialog({required this.categories});
+
+  final List<CatalogCategory> categories;
+
+  @override
+  State<_OfferDialog> createState() => _OfferDialogState();
+}
+
+class _OfferDialogState extends State<_OfferDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _price = TextEditingController();
+  String? _category;
+  PricingModel _pricingModel = PricingModel.fixed;
+  bool _isRequired = false;
+
+  bool get _isOnRequest => _pricingModel == PricingModel.onRequest;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _price.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(
+      context,
+      OfferDraft(
+        categorySlug: _category!,
+        name: _name.text.trim(),
+        pricingModel: _pricingModel,
+        priceCents: _isOnRequest ? null : parseBrlToCents(_price.text)!,
+        isRequired: _isRequired,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Novo serviço do espaço'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _name,
+                autofocus: true,
+                maxLength: 120,
+                textCapitalization: TextCapitalization.sentences,
+                validator: (value) => (value?.trim().length ?? 0) < 3
+                    ? 'Informe o nome do serviço.'
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do serviço',
+                  hintText: 'Ex.: Buffet da casa',
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: _category,
+                isExpanded: true,
+                validator: (value) =>
+                    value == null ? 'Escolha a categoria.' : null,
+                decoration: const InputDecoration(labelText: 'Categoria'),
+                items: [
+                  for (final category in widget.categories)
+                    DropdownMenuItem(
+                      value: category.slug,
+                      child: Text(category.name),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _category = value),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<PricingModel>(
+                initialValue: _pricingModel,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Como é cobrado'),
+                items: [
+                  for (final option in _offerPricingOptions)
+                    DropdownMenuItem(
+                      value: option.model,
+                      child: Text(option.label),
+                    ),
+                ],
+                onChanged: (model) =>
+                    setState(() => _pricingModel = model ?? _pricingModel),
+              ),
+              if (!_isOnRequest) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _price,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+                  ],
+                  validator: _validatePrice,
+                  decoration: const InputDecoration(
+                    labelText: 'Preço do serviço',
+                    prefixText: r'R$ ',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              SwitchListTile(
+                value: _isRequired,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Obrigatório'),
+                subtitle: const Text(
+                  'Quem aluga o espaço contrata este serviço junto.',
+                ),
+                onChanged: (value) => setState(() => _isRequired = value),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _confirm, child: const Text('Adicionar')),
+      ],
     );
   }
 }

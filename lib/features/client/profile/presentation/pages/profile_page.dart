@@ -13,8 +13,8 @@ import 'package:yvenist/features/auth/presentation/controllers/session_controlle
 import 'package:yvenist/features/client/favorites/presentation/controllers/favorites_controller.dart';
 import 'package:yvenist/features/client/favorites/presentation/pages/favorites_page.dart';
 import 'package:yvenist/features/client/profile/presentation/pages/personal_data_page.dart';
-import 'package:yvenist/features/party_maker/domain/enums/party_status.dart';
 import 'package:yvenist/features/party_maker/presentation/controllers/party_maker_controller.dart';
+import 'package:yvenist/features/party_maker/presentation/pages/quote_inbox_page.dart';
 import 'package:yvenist/features/shared_features/appearance/presentation/pages/appearance_page.dart';
 import 'package:yvenist/features/shared_features/legal/presentation/pages/legal_page.dart';
 import 'package:yvenist/features/shared_features/payments/presentation/pages/payment_methods_page.dart';
@@ -187,13 +187,10 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Widget> _clientContent(VendorController vendor) {
     final parties = context.watch<PartyMakerController>().parties;
     final favorites = context.watch<FavoritesController>().count;
-    final planning = parties
-        .where(
-          (p) =>
-              p.status == PartyStatus.draft || p.status == PartyStatus.planning,
-        )
-        .length;
-    final quoted = parties.where((p) => p.status == PartyStatus.locked).length;
+    final planning = parties.where((p) => p.status.isEditable).length;
+    // Tudo o que saiu do planejamento e está com os fornecedores, do pedido
+    // até o aceite.
+    final quoted = parties.where((p) => p.status.isSubmitted).length;
 
     return [
       _DashboardCard(
@@ -285,6 +282,11 @@ class _ProfilePageState extends State<ProfilePage> {
       const _SectionTitle('Meu negócio'),
       _MenuCard(
         children: [
+          _MenuItem(
+            icon: Icons.request_quote_outlined,
+            title: 'Pedidos de orçamento',
+            onTap: () => _push(const QuoteInboxPage()),
+          ),
           _MenuItem(
             icon: Icons.add_business_outlined,
             title: 'Anunciar outro espaço',

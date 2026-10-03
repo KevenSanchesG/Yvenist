@@ -3,17 +3,17 @@ import 'package:yvenist/features/party_maker/domain/repositories/party_repositor
 import 'package:yvenist/features/party_maker/domain/rules/party_domain_exceptions.dart';
 import 'package:yvenist/features/party_maker/domain/value_objects/party_id.dart';
 
-class UnlockPartyUseCase {
-  final PartyRepository _repo;
+/// A pessoa aceita o orçamento que recebeu dos fornecedores.
+class ConfirmQuoteUseCase {
+  ConfirmQuoteUseCase(this.repository);
 
-  UnlockPartyUseCase(this._repo);
+  final PartyRepository repository;
 
   Future<Party> call(PartyId partyId) async {
-    final party = await _repo.getById(partyId);
+    final party = await repository.getById(partyId);
     if (party == null) throw const PartyNotFound();
 
-    party.unlock();
-
-    return _repo.save(party);
+    party.confirmQuote();
+    return repository.save(party);
   }
 }
