@@ -18,6 +18,7 @@ O que o CI roda: [ci](../09-guides/ci.md).
 | `test/app/*_flow_test.dart` | o app inteiro em modo demonstração, na tela de um celular (360×780): navegar, buscar, entrar, montar festa, pedir e responder orçamento, anunciar, analisar |
 | `test/app/system_bars_test.dart` | com as barras de um aparelho (os outros testes rodam sem elas): o conteúdo não passa por baixo do relógio no perfil, o último item das listas e os botões dos rodapés ficam acima da barra de navegação, e a barra é transparente nos dois temas |
 | `test/app/accessibility_test.dart` | área de toque de 48×48, rótulos, leitores de tela, cada fluxo de novo com a fonte do sistema em 200% e os fluxos principais de novo **no tema escuro** |
+| `test/app/field_text_fit_test.dart` | com a **fonte de verdade** do app, na largura de um celular comum: nenhum rótulo, ajuda ou erro de campo cortado nos formulários do Party Maker. Os outros testes desenham um quadrado no lugar de cada letra e não veem um texto cortado com reticências |
 | `test/integration/` | o código real do app contra uma API no ar. Pulado sem `YVENIST_API_URL`. Roda na máquina e **dentro do Chrome** |
 | `test/visual/screenshots_test.dart` | gera `docs/screenshots/` a partir das telas reais, nos dois temas (etiqueta `screenshots`, fora da suíte normal) |
 
@@ -73,8 +74,12 @@ nada.
 | API em modo de produção | o processo de verdade, com a configuração de produção ([deployment](../09-guides/deployment.md)) | 2026-10-02 |
 | Tema escuro em um Android | emulador Pixel 6 (Android 13), modo demonstração: escolher "Escuro" em Aparência muda na hora; depois de encerrar o app à força e abrir de novo, ele abre no tema escuro | 2026-10-02 |
 | Barras do sistema em um Android | mesmo emulador, com a barra de gestos e com os três botões, nos dois temas: início, perfil rolado, Termos de Uso até o fim, convite ao fornecedor, cadastro do salão com e sem teclado | 2026-10-02 |
+| O Party Maker em um Android | emulador Pixel 8 (**Android 17**, 1080×2400, barra de gestos), build de depuração em modo demonstração, dirigido pelo `adb`: do "+" de um anúncio até a festa (folha, nome, configuração do salão com calendário, relógio e serviços, validação), um parceiro sob consulta, dados do evento, pedido de orçamento, resposta como fornecedor (valor e pedido de alteração), edição solicitada, segunda rodada, aceite, histórico, lista de festas; a festa e a lista no tema escuro; as etapas de preço e de serviços do cadastro do salão. A cada tela, a imagem e a **árvore de acessibilidade que o Android recebe** (`uiautomator dump`). Achou seis defeitos que a suíte não via ([changelog](../08-changelog/2026-10.md)) | 2026-10-03 |
 
-Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios-build.md)).
+Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios-build.md));
+um aparelho de verdade; o teclado de tela por cima dos formulários do Party
+Maker (no emulador o teclado aparece como uma barra flutuante, porque há um
+teclado físico ligado); TalkBack falando de verdade.
 
 ## Convenções
 
@@ -96,6 +101,17 @@ Não conferido: iOS (exige um Mac; a lista está em [ios-build](../09-guides/ios
   até ele (`reveal`).
 - Regra que depende do "agora" recebe um relógio (`Clock`), e o teste usa um
   parado (`fixedClock`, `TestClock` em `test/features/party_maker/party_fixtures.dart`).
+- Nos testes de tela cada letra é um quadrado, mais largo que a letra. Para
+  saber se um texto **cabe** (e não só se a tela estoura), o teste carrega a
+  fonte de verdade (`loadRealFonts`, em `visual_harness.dart`) em um arquivo
+  próprio: a fonte vale para o arquivo inteiro e muda as medidas dos outros
+  testes dele.
+- O erro de um campo sai da tela com uma animação curta: depois de corrigir o
+  campo, `pumpAndSettle` antes de conferir que o erro sumiu.
+- O que os testes de diretrizes conferem é o que **tem ação** (área de toque,
+  rótulo). Um controle que deveria ter ação e não tem passa por eles: quem
+  mostra é a árvore de acessibilidade de um aparelho, ou um teste que exija a
+  ação (`isSemantics(hasTapAction: true)`).
 - Texto longo lido de um asset em teste de tela: carregar com `cache: false`.
   O cache do `rootBundle` guarda um `Future` do teste anterior, que nunca
   completa no seguinte (aconteceu em `legal_document_page.dart`).

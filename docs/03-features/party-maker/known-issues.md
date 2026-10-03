@@ -52,6 +52,7 @@ são de produto, e ficam **aguardando a confirmação dos donos**
 | PM-15 | Festas e pedidos limitados a 100, sem paginação | conta com mais de 100 festas (é também o teto de criação) ou fornecedor com mais de 100 pedidos |
 | PM-16 | A ordenação "menor preço" compara o número anunciado, seja ele por pessoa, por hora ou fixo | [catalog](../../02-domain/catalog.md) |
 | PM-17 | Um item antigo, gravado antes das regras de configuração, só é validado quando a pessoa o altera | de propósito: uma festa antiga continua abrindo. Mas ela pode pedir o orçamento com um salão sem duração |
+| PM-18 | O rótulo de um campo não quebra de linha (limite do componente do Material). `test/app/field_text_fit_test.dart` confere que nenhum é cortado em um celular de 360 pontos com a fonte no tamanho normal; com a fonte do sistema grande, um rótulo comprido pode ser cortado | quem usa letras grandes. O erro e a ajuda quebram em até três linhas, e é neles que fica o que importa |
 
 ## Resolvidos (para não reaparecerem)
 
@@ -65,6 +66,12 @@ são de produto, e ficam **aguardando a confirmação dos donos**
 | A tela não avisava que o anúncio de um item saiu do catálogo | o item diz, e é uma pendência para pedir o orçamento | `b137669` |
 | `Party` usava `DateTime.now()` direto | recebe um relógio (`Clock`) | `b137669` |
 | App e API tinham limites diferentes (título, quantidade, convidados) | os objetos de valor do app têm os mesmos limites | `b137669` |
+| A data e o horário do evento não podiam ser acionados por um leitor de tela: eram campos de texto só de leitura, e o Flutter não publica ação nenhuma deles | `PickerFormField`: um botão com cara de campo | `8802ba8` |
+| O erro de um campo continuava na tela depois de o campo ser corrigido, até a tentativa seguinte | depois da primeira tentativa com erro, o formulário confere de novo a cada mudança | `8802ba8` |
+| O erro e a ajuda de um campo eram cortados com reticências quando não cabiam em uma linha | o tema deixa quebrar em até três linhas (`errorMaxLines`, `helperMaxLines`), no app inteiro | `8802ba8` |
+| No diálogo de valor do fornecedor, o rótulo "Mensagem para o cliente (opcional)" aparecia cortado | rótulo curto, e o resto na ajuda | `8802ba8` |
+| Adicionar um parceiro de dentro da festa oferecia "Ver festa" com a pessoa já na festa | o aviso só confirma | `8802ba8` |
+| Os diálogos de aceitar e de cancelar diziam que os fornecedores "ficam sabendo" | dizem que aparece na lista de pedidos deles: o app não avisa ninguém | `8802ba8` |
 | Ids de item vinham do relógio e colidiam: remover um item removia dois | ids são UUID v4 aleatórios (`IdGenerator`) | `42630a4` |
 | O controller só funcionava com o repositório em memória | depende só do contrato `PartyRepository` | `42630a4` |
 | O botão central não recebia toque na metade de cima | passou a ocupar o lugar do botão flutuante do `Scaffold` | `790377a` |

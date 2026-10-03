@@ -29,7 +29,8 @@ configurada o app roda sozinho, em modo demonstração. Detalhes:
   máquina**, com o Party Maker novo: nada disso foi enviado ao GitHub. Envio e
   mesclagem só quando os donos pedirem.
 - O CI estava verde nos cinco jobs no último envio; **não rodou** os commits do
-  Party Maker novo. O que foi conferido na máquina está no
+  Party Maker novo. O que foi conferido na máquina (as suítes, o PostgreSQL, a
+  integração com a API local e um emulador Android) está no
   [changelog](../08-changelog/2026-10.md). Detalhes do CI: [CI](../09-guides/ci.md).
 - Funciona: catálogo e busca (com vários jeitos de cobrar), contas, favoritos,
   Party Maker (compor o evento, estimativa, pedir orçamento, responder como

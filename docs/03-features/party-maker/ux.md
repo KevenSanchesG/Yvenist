@@ -33,6 +33,9 @@ Peças: `widgets/party_item_tile.dart` (um item da festa),
 evento e dentro da configuração de um item) e `widgets/event_type_name.dart`.
 Textos, ícones e cores de cada conceito ficam em `party_presentation.dart`.
 
+As telas foram percorridas em um emulador Android em 3 de outubro de 2026; o
+que foi visto, e o que não foi, está em [testing](../../01-architecture/testing.md).
+
 ## O que a pessoa sempre sabe
 
 É o critério de desenho da tela da festa:
@@ -58,6 +61,18 @@ categoria não mexe na tela.
 - O formulário é uma coluna com rolagem, e não uma lista que monta os campos
   sob demanda: a validação só enxerga o que está montado. Ao confirmar, a tela
   rola até o primeiro campo com problema.
+- Antes da primeira tentativa nenhum erro aparece. Depois de uma tentativa
+  com erro, o formulário confere de novo a cada mudança (`_showErrors` liga o
+  `autovalidateMode`): o erro de um campo some assim que ele é corrigido, e o
+  que continua faltando continua marcado. Vale também para a tela do evento e
+  para os dois diálogos do fornecedor.
+- A data e o horário são **botões com cara de campo** (`PickerFormField`, em
+  `core/widgets/form_widgets.dart`), e não campos de texto só de leitura: o
+  Flutter não publica ação nenhuma de um campo só de leitura, e o leitor de
+  tela não teria o que acionar.
+- O erro e a ajuda de um campo quebram em até três linhas (tema). O rótulo
+  não quebra: tem de ser curto, e o que mais houver a dizer vai na ajuda
+  ("Mensagem (opcional)" + "O cliente lê junto com o valor.").
 - Os dados do evento aparecem dentro do formulário só quando o item precisa
   deles, já preenchidos com o que a festa tem.
 
@@ -134,7 +149,7 @@ tem essa folga a mais embaixo. Rótulo para leitor de tela: "Minhas festas".
 
 | Quando | Texto |
 |---|---|
-| item entrou | "… adicionado a …." com o atalho "Ver festa" |
+| item entrou | "… adicionado a …." com o atalho "Ver festa". Sem o atalho quando a pessoa já está na festa (um parceiro recomendado): ele não levaria a lugar nenhum |
 | item alterado | "… atualizado." |
 | item saiu | "… removido." ou "… removido, com …." |
 | orçamento solicitado | "Orçamento solicitado. As respostas dos fornecedores aparecem aqui." |
@@ -145,6 +160,11 @@ tem essa folga a mais embaixo. Rótulo para leitor de tela: "Minhas festas".
 O aviso fica 4 segundos por cima do rodapé; os testes esperam ele sair antes de
 tocar no botão que está embaixo.
 
+Nenhum texto promete um aviso que o app não envia. Os diálogos de aceitar e de
+cancelar dizem que o aceite e o cancelamento **aparecem na lista de pedidos**
+dos fornecedores, e não que eles "ficam sabendo"
+([known-issues](known-issues.md), PM-1).
+
 ## Acessibilidade específica
 
 - Todo botão de ícone diz o que ele afeta: "Alterar Salão Glamour 8", "Remover
@@ -154,10 +174,14 @@ tocar no botão que está embaixo.
   leitor de tela (`Semantics(header: true)`).
 - A estimativa do formulário é uma região viva: o leitor de tela anuncia quando
   ela muda.
+- A data e o horário são anunciados como botões e podem ser acionados pelo
+  leitor de tela (grupo "leitores de tela" de `test/app/accessibility_test.dart`).
 - As telas passam nas verificações de área de toque e de rótulo, no tema claro
   e no escuro, e não estouram com a fonte em 200%
   (`test/app/accessibility_test.dart`). O rodapé e o último item ficam acima
   das barras do sistema (`test/app/system_bars_test.dart`).
+- Nenhum rótulo, ajuda ou erro de campo é cortado na largura de um celular
+  comum, com a fonte de verdade (`test/app/field_text_fit_test.dart`).
 - A lista da festa monta os itens conforme eles entram na tela: nos testes, o
   que está mais abaixo só existe depois de rolar (`reveal` em
   `test/support/party_harness.dart`).

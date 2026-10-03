@@ -18,7 +18,8 @@ Motivos: [ADR-017](../05-decisions/ADR-017-um-laranja-e-tema-escuro.md).
 | Área de toque | 48×48 | `androidTapTargetGuideline` em `test/app/accessibility_test.dart` |
 | Rótulo em todo controle tocável | sempre | `labeledTapTargetGuideline`, mesmo arquivo |
 | Fonte do sistema em 200% | nenhuma tela estoura | grupo "letras grandes", mesmo arquivo |
-| Semântica de botões e títulos | contadores do perfil são botões acionáveis; títulos de seção são cabeçalhos | grupo "leitores de tela" |
+| Semântica de botões e títulos | contadores do perfil são botões acionáveis; títulos de seção são cabeçalhos; a data e o horário do evento são botões que o leitor de tela consegue acionar | grupo "leitores de tela" |
+| Texto de campo inteiro | nenhum rótulo, ajuda ou erro cortado com reticências em um celular de 360 pontos, **com a fonte de verdade** | `test/app/field_text_fit_test.dart` (os formulários do Party Maker) |
 | Tema escuro | os fluxos principais de novo, com as mesmas conferências; nenhuma tela estoura | grupo "tema escuro", mesmo arquivo |
 | Cor só pelo tema | nenhuma cor escrita à mão fora de `lib/core/theme/` | `test/core/theme_usage_test.dart` |
 | Nada escondido pelas barras do sistema | o último item de uma lista e os botões de um rodapé ficam acima da barra de navegação; no perfil, o conteúdo não passa por baixo do relógio | `test/app/system_bars_test.dart` |
@@ -68,13 +69,39 @@ teste.
 11. No tema escuro uma borda substitui a sombra. Em um cartão de altura fixa,
     desenhe a borda por cima (`foregroundDecoration`): como borda do fundo ela
     tira espaço do conteúdo, e o card de anúncio estourava por um pixel.
+12. Campo que abre um seletor (calendário, relógio): `PickerFormField`, ou o
+    par `InkWell` + `InputDecorator`. **Nunca** um `TextFormField` só de
+    leitura com `onTap`: o dedo abre o seletor, mas o Flutter não publica
+    ação nenhuma de um campo só de leitura, e o leitor de tela não tem o que
+    acionar. Os testes de diretrizes não acusam, porque só olham para o que
+    tem ação.
+13. O rótulo de um campo **não quebra de linha**: o que não cabe é cortado.
+    Rótulo curto, e o resto na ajuda (`helperText`), que quebra em até três
+    linhas, como o erro. Formulário novo entra em
+    `test/app/field_text_fit_test.dart`.
+14. Formulário: nenhum erro antes da primeira tentativa; depois de uma
+    tentativa com erro, conferir de novo a cada mudança (`autovalidateMode`),
+    para o erro de um campo sumir quando ele é corrigido.
+
+## Por que há um teste com a fonte de verdade
+
+Os testes de tela desenham um quadrado no lugar de cada letra, mais largo que
+a letra. Isso basta para achar o que **estoura**, mas um texto que é cortado
+com reticências não estoura: o grupo de letras grandes passa com um erro
+ilegível na tela. `field_text_fit_test.dart` carrega a fonte do app
+(`loadRealFonts`) e confere, na largura de um celular comum, se o rótulo, a
+ajuda e o erro de cada campo aparecem inteiros.
 
 ## Limites conhecidos
 
 - A borda de um campo **sem foco** é `divider` (1,2:1 no tema claro, 1,4:1 no
   escuro): o campo é reconhecido pelo rótulo, não pelo contorno.
-- Não foi testado com TalkBack ou VoiceOver em um aparelho de verdade: o que há
-  são as verificações de semântica dos testes.
+- Não foi testado com TalkBack ou VoiceOver em um aparelho de verdade. Além
+  das verificações de semântica dos testes, a árvore de acessibilidade que o
+  Android recebe foi lida em um emulador (`uiautomator`) nas telas do Party
+  Maker: foi assim que apareceram a data e o horário sem ação.
 - O tema escuro foi conferido pelos testes e por imagem (as capturas), e em um
   emulador Android; não em um aparelho de verdade.
+- Com a fonte do sistema grande, o rótulo de um campo pode ser cortado
+  ([PM-18](../03-features/party-maker/known-issues.md)).
 - Idioma único: português do Brasil.

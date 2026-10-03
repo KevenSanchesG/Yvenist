@@ -51,6 +51,7 @@ gatilho, não é para agora.
 | KI-26 | Aceite dos termos sem reaceite quando o texto muda; os textos prometem um aviso "pelo aplicativo" que não existe | textos finais e uma mudança relevante | fluxo de reaceite, ou tirar a promessa dos textos |
 | KI-27 | Regras das festas duplicadas no app e na API: o ciclo, a tabela de cada categoria e a conta da estimativa | toda mudança de regra | [PM-10](../03-features/party-maker/known-issues.md) |
 | KI-28 | Mensagens de erro espalhadas, sem catálogo; um idioma só | internacionalização | [ADR-009](../05-decisions/ADR-009-erros-uniformes.md) |
+| KI-29 | O rótulo de um campo não quebra de linha: com a fonte do sistema grande, um rótulo comprido é cortado. Só os formulários do Party Maker são conferidos com a fonte de verdade, e no tamanho normal | quem usa letras grandes | rótulos curtos, com o resto na ajuda; estender `test/app/field_text_fit_test.dart` aos outros formulários ([PM-18](../03-features/party-maker/known-issues.md)) |
 
 ## Web
 
@@ -69,12 +70,12 @@ tratada como produto.
 | # | O quê |
 |---|---|
 | KI-40 | iOS: nem compilação, nem o comportamento do Keychain em cópias de segurança |
-| KI-41 | Leitores de tela reais (TalkBack, VoiceOver): só as verificações de semântica dos testes |
+| KI-41 | Leitores de tela reais (TalkBack, VoiceOver) falando: há as verificações de semântica dos testes e, nas telas do Party Maker, a leitura da árvore de acessibilidade que o Android recebe em um emulador |
 | KI-42 | Build de release contra uma API em `https` de verdade; a receita de `deploy/` em um servidor, com certificado emitido de verdade |
 | KI-43 | Carga: nenhum teste de desempenho |
 | KI-44 | O tema escuro em um aparelho de verdade: foi visto nas capturas geradas pelos testes e em um emulador Android 13 |
-| KI-45 | As barras do sistema fora do Android 13: o leiaute de borda a borda foi visto só no emulador dessa versão, que é a única imagem instalada. Do Android 15 em diante o sistema impõe o mesmo leiaute; no 9 ou mais antigo vale o clássico ([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)) |
-| KI-46 | As telas do Party Maker de 3 de outubro de 2026 (dados do evento, configuração do item, a festa com o orçamento, histórico, pedidos de orçamento) em um aparelho ou em um emulador: foram vistas só nas capturas geradas pelos testes, nos dois temas |
+| KI-45 | As barras do sistema fora do Android 13 e do 17: o leiaute de borda a borda foi visto em emuladores dessas duas versões (o 17 só com a barra de gestos, nas telas do Party Maker). Do Android 15 em diante o sistema impõe o mesmo leiaute; no 9 ou mais antigo vale o clássico ([ADR-018](../05-decisions/ADR-018-tela-inteira-em-qualquer-android.md)) |
+| KI-46 | O Party Maker de 3 de outubro de 2026 em um aparelho de verdade: foi percorrido inteiro em um emulador Android 17, nos dois temas ([testing](../01-architecture/testing.md)). Ficou sem ver o teclado de tela por cima dos formulários: no emulador ele aparece como uma barra flutuante |
 
 ## Ambiente de desenvolvimento
 

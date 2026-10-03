@@ -18,6 +18,16 @@ Contexto completo: `docs/01-architecture/testing.md`.
 - Repositório da API: teste contra `FakeApi` (`test/support/fake_api.dart`),
   conferindo caminho, corpo e a tradução do erro.
 - Tela nova: também em `test/app/accessibility_test.dart`.
+- Nos testes de tela cada letra é um quadrado, mais largo que a letra: eles
+  acham o que estoura, não o que é cortado com reticências. Para saber se um
+  texto cabe, use a fonte de verdade em um arquivo próprio, como
+  `test/app/field_text_fit_test.dart` (a fonte vale para o arquivo inteiro).
+- Um toque que não acerta o alvo falha o teste (`appTest`). Botão fora da
+  tela: `scrollToAndTap`. Item de lista ainda não montado: `reveal`.
+- O erro de um campo sai com uma animação: `pumpAndSettle` antes de conferir
+  que ele sumiu.
+- Um controle que deveria ter ação e não tem passa pelas diretrizes de
+  acessibilidade: exija a ação (`isSemantics(hasTapAction: true)`).
 - Não use `find.byType` com tipo abstrato: ele só casa com o tipo exato (use
   `find.bySubtype`).
 - Texto lido de um asset em teste de tela: `loadString(..., cache: false)`.

@@ -141,7 +141,7 @@ ruff check . && mypy app tests
 |---|---|
 | App unit tests | Domain rules, controllers, repositories (API ones against a fake HTTP layer) |
 | App flow tests | The whole app in demo mode on a phone-sized screen: browse, search, sign in, compose a party, request and answer quotes, supplier onboarding |
-| Accessibility tests | 48×48 touch targets, labels for screen readers, color contrast (WCAG AA) in both themes, no layout overflow with the system font at 200% or in the dark theme |
+| Accessibility tests | 48×48 touch targets, labels for screen readers, color contrast (WCAG AA) in both themes, no layout overflow with the system font at 200% or in the dark theme, and no field label, hint or error cut off at a phone width (checked with the app's real font) |
 | Backend tests | Every endpoint, the party and quote rules, the estimate arithmetic, migrations equal to the models |
 | Backend on PostgreSQL | Same suite plus truly simultaneous requests: `YVENIST_TEST_DATABASE_URL=postgresql+psycopg://... pytest` |
 | Integration tests | The real app code against a running API: `YVENIST_API_URL=http://127.0.0.1:8000/api/v1 flutter test --tags integration test/integration` |

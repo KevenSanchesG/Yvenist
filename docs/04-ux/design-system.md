@@ -1,7 +1,7 @@
 ---
 title: Design system
 type: ux
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Design system
@@ -117,7 +117,9 @@ em análise.
 - Botão preenchido: `primary` com texto `onPrimary`, 52 de altura, cantos
   totalmente arredondados.
 - Campos: fundo `surface`, borda `divider`, raio 12; em foco, borda de 2 em
-  `primary`; erro em `danger`.
+  `primary`; erro em `danger`. O erro e a ajuda quebram em até três linhas
+  (`errorMaxLines`, `helperMaxLines`): sem isso o que não cabe em uma linha é
+  cortado com reticências. O rótulo não quebra, e por isso é curto.
 - Diálogos, folhas, menus e calendário: `surface`.
 - Barras do sistema: seção própria, abaixo.
 
@@ -206,6 +208,7 @@ Nenhum estilo fica abaixo de 11.
 | `showAppSnackBar` | aviso curto, substituindo o anterior |
 | `PrimaryButton` | botão principal de formulário; desabilita e mostra progresso enquanto envia |
 | `FormErrorBanner` | erro de formulário, anunciado assim que aparece |
+| `PickerFormField` | campo que abre um seletor (calendário, relógio): um botão com a aparência dos campos, com rótulo, valor e erro. Existe porque um campo de texto só de leitura não pode ser acionado por um leitor de tela ([accessibility](accessibility.md)) |
 | `PasswordField` | senha com mostrar/ocultar e erro do servidor |
 | `AppNetworkImage` | imagem de rede com substituto enquanto carrega ou se falhar |
 

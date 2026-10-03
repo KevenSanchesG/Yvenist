@@ -22,7 +22,8 @@ O que a pessoa consegue fazer **hoje**, pela tela. Cada fluxo tem um teste em
 5. Preencher o que a categoria pede e tocar em **Adicionar à festa**.
 6. A tela fecha e um aviso confirma: "… adicionado a …", com o atalho **Ver
    festa**. O **+** do card vira um ✓ ("… já está em uma festa. Adicionar a
-   outra").
+   outra"). Quando o item entra de dentro da própria festa (um parceiro
+   recomendado), o aviso confirma sem o atalho.
 
 Se a festa escolhida **já tem** o anúncio, a mesma tela abre para **alterar** o
 item que está lá, com um recado explicando ("… já está em …. Altere o que
@@ -48,9 +49,10 @@ preço depende, ou sob consulta, ela diz "Sob consulta" (ou "R$ … + 1 sob
 consulta"), nunca um valor inventado.
 
 Ao confirmar, cada campo é conferido pela regra da categoria; o que falta
-aparece embaixo do próprio campo, e a tela rola até o primeiro. Uma regra da
-festa que barra o item (segundo salão, convidados acima da capacidade) aparece
-em um aviso no topo, e o formulário continua aberto com o que foi preenchido.
+aparece embaixo do próprio campo, e a tela rola até o primeiro. Daí em diante
+o erro de um campo some assim que ele é corrigido. Uma regra da festa que
+barra o item (segundo salão, convidados acima da capacidade) aparece em um
+aviso no topo, e o formulário continua aberto com o que foi preenchido.
 
 ## 3. Criar uma festa sem partir de um anúncio
 
@@ -128,16 +130,17 @@ enquanto faltar alguém.
 
 Quando um item volta, a festa fica como "Edição solicitada". **Editar festa**
 a devolve ao planejamento; a pessoa altera ou tira o item e solicita de novo.
-A festa mostra "Orçamento solicitado (2ª rodada)", e só o que mudou volta a
-ser pedido.
+A festa mostra "Orçamento solicitado (2ª rodada)". O fornecedor que já tinha
+dado o valor de um item que não mudou não é perguntado de novo; os outros
+itens voltam a aguardar a resposta.
 
 ## 10. Aceitar, cancelar, apagar
 
 | Ação | Onde | Confirmação |
 |---|---|---|
-| **Aceitar orçamento** | rodapé, com o orçamento recebido | mostra o total e avisa que o pagamento é combinado direto com cada fornecedor |
+| **Aceitar orçamento** | rodapé, com o orçamento recebido | mostra o total, diz que o aceite aparece para os fornecedores na lista de pedidos deles e que o pagamento é combinado direto com cada um |
 | **Editar festa** | rodapé, depois do pedido | só pergunta se o orçamento já foi aceito (desfaz o aceite) |
-| **Cancelar festa** | menu ⋮, depois do pedido | sim |
+| **Cancelar festa** | menu ⋮, depois do pedido | sim; diz que o cancelamento aparece na lista de pedidos dos fornecedores |
 | **Apagar festa** | menu ⋮, em planejamento ou cancelada | sim; não dá para desfazer |
 
 ## 11. Histórico

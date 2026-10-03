@@ -38,6 +38,18 @@ Contexto completo: `docs/04-ux/design-system.md` e `docs/04-ux/accessibility.md`
   item escondido: inclua a tela em `test/app/system_bars_test.dart`.
 - Botão que não pode agir fica desabilitado, em vez de responder com erro.
 - Ação destrutiva pede confirmação.
+- Campo que abre um seletor (data, hora): `PickerFormField`
+  (`lib/core/widgets/form_widgets.dart`). Nunca `TextFormField(readOnly: true,
+  onTap: …)`: o Flutter não publica a ação de um campo só de leitura, e o
+  leitor de tela não tem o que acionar. Os testes de diretrizes não veem isso.
+- Rótulo de campo curto: ele não quebra de linha, e o que não cabe é cortado.
+  O resto vai na ajuda, que quebra, como o erro. Formulário novo entra em
+  `test/app/field_text_fit_test.dart` (fonte de verdade, largura de celular).
+- Formulário: sem erro antes da primeira tentativa; depois de uma tentativa
+  com erro, confere a cada mudança (`autovalidateMode`), para o erro sumir
+  quando o campo é corrigido.
+- Não escreva na tela que alguém "é avisado" ou "fica sabendo": o app não
+  envia aviso nenhum. Diga onde a informação aparece.
 - Tela nova ou alterada → inclua em `test/app/accessibility_test.dart` (grupo
   das diretrizes, grupo das letras grandes e, se tiver cartões ou bordas
   próprias, grupo do tema escuro) e, se tiver captura em `docs/screenshots/`,
