@@ -15,7 +15,7 @@ from app.modules.catalog.models import (
     listing_partners,
 )
 from app.modules.favorites.models import Favorite
-from app.modules.parties.models import Party, PartyItem, PartySnapshot
+from app.modules.parties.models import Party, PartyEvent, PartyItem, PartySnapshot
 from app.modules.vendors.models import VendorProfile
 
 __all__ = [
@@ -26,6 +26,7 @@ __all__ = [
     "Listing",
     "ListingOffer",
     "Party",
+    "PartyEvent",
     "PartyItem",
     "PartySnapshot",
     "RefreshToken",

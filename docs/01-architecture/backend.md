@@ -22,7 +22,9 @@ backend/app/
     accounts/    cadastro, login, sessões, dados pessoais, senhas comuns
     catalog/     categorias, tipos de evento, busca de anúncios
     favorites/   favoritos
-    parties/     festas (regras em domain.py, sem banco nem HTTP)
+    parties/     festas, do lado do cliente (regras em domain.py e configuration.py,
+                 sem banco nem HTTP; mapping.py traduz tabelas em estado)
+    quotes/      pedidos de orçamento, do lado do fornecedor que os recebe
     vendors/     cadastro de fornecedor, anúncios próprios, fila de análise
 backend/migrations/   Alembic
 backend/tests/
@@ -34,7 +36,7 @@ não falam com o banco; serviços não conhecem HTTP.
 
 ## Rotas
 
-Todas sob `/api/v1`, menos as de saúde. São 30 operações mais 2 de saúde. A
+Todas sob `/api/v1`, menos as de saúde. São 34 operações mais 2 de saúde. A
 referência completa é a documentação gerada em `/docs` (desligada em produção).
 
 | Método e rota | Acesso | O que faz |
@@ -52,6 +54,8 @@ referência completa é a documentação gerada em `/docs` (desligada em produç
 | `GET /favorites`, `PUT` `DELETE /favorites/{listing_id}` | conta | favoritos |
 | `GET /parties`, `GET` `PUT` `DELETE /parties/{id}` | conta (dono) | festas |
 | `GET /vendors/me`, `/vendors/me/listings`, `POST /vendors/onboarding` | conta | cadastro de fornecedor |
+| `GET /vendors/me/quote-requests` | fornecedor | os pedidos de orçamento dos próprios anúncios (até 100) |
+| `POST /vendors/me/quote-requests/{item_id}/quote` `/request-changes` `/decline` | fornecedor (dono do item) | responde a um pedido: o valor, um pedido de alteração ou uma recusa |
 | `GET /admin/vendors`, `POST /admin/vendors/{id}/approve` `/reject` | administrador | análise de cadastros |
 | `GET /admin/listings`, `POST /admin/listings/{id}/approve` `/reject` | administrador | análise de anúncios |
 | `GET /health/live`, `/health/ready` | público | o processo está no ar; o banco responde |
@@ -96,13 +100,21 @@ Resumo; o motivo de cada escolha está no [ADR-004](../05-decisions/ADR-004-aute
 | mesmo token de renovação usado em paralelo | `SELECT ... FOR UPDATE` → só uma troca |
 | dois aparelhos gravando a mesma festa | trava na linha + `version` → o segundo recebe 409 |
 | dois salões na mesma festa | índice único parcial |
+| vários fornecedores respondendo itens da mesma festa | cada resposta trava a linha da festa: entram uma depois da outra, e todas ficam gravadas |
+| um fornecedor respondendo enquanto o cliente volta a editar | a mesma trava: quem chega depois recebe 409 (`quote_request_closed` para o fornecedor, `party_version_conflict` para o cliente) |
 | dois administradores decidindo o mesmo item | trava na linha → o segundo recebe 409 `already_reviewed` |
 
 `tests/test_concurrency.py` dispara requisições simultâneas de verdade contra o
-PostgreSQL para oito delas: e-mail, token de renovação, favorito, festa criada
-duas vezes, edição da mesma versão, documento em duas contas, envio duplo do
-cadastro e análise dupla. A regra do salão único é testada sem simultaneidade
+PostgreSQL para dez delas: e-mail, token de renovação, favorito, festa criada
+duas vezes, edição da mesma versão, respostas simultâneas de fornecedores,
+resposta contra reabertura, documento em duas contas, envio duplo do cadastro
+e análise dupla. A regra do salão único é testada sem simultaneidade
 (`test_parties.py`).
+
+A resposta de um fornecedor avança a `version` da festa. O app do cliente, que
+ainda tem a versão anterior, recebe `party_version_conflict` na próxima
+gravação, mesmo quando a regra que falharia fosse outra: uma falha de regra em
+cima de uma cópia velha é consequência da cópia velha (`PartyService.save_party`).
 
 ## Limites embutidos
 
@@ -110,7 +122,10 @@ cadastro e análise dupla. A regra do salão único é testada sem simultaneidad
 |---|---|---|
 | festas por conta | 100 | `parties/service.py` |
 | itens por festa | 50 | `parties/domain.py` |
-| quantidade de um item | 999 | `parties/domain.py` |
+| quantidade de um item | 999 | `parties/configuration.py` |
+| valor que um fornecedor informa para um item | R$ 10 milhões | `parties/domain.py` |
+| mensagem de uma resposta de fornecedor | 500 caracteres (mínimo de 5 em um pedido de alteração ou recusa) | `parties/domain.py` |
+| pedidos de orçamento por consulta | 100, sem paginação | `quotes/service.py` |
 | favoritos por conta | 500 | `favorites/service.py` |
 | anúncios por fornecedor | 50 | `vendors/service.py` |
 | preço de um anúncio ou de um serviço próprio | R$ 1 milhão | `catalog/pricing.py` |

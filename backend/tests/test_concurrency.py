@@ -33,6 +33,7 @@ from tests.conftest import (
     AuthenticatedUser,
     CreateListing,
     RegisterUser,
+    approved_vendor,
 )
 
 pytestmark = pytest.mark.skipif(
@@ -46,6 +47,7 @@ REGISTER = "/api/v1/auth/register"
 REFRESH = "/api/v1/auth/refresh"
 FAVORITES = "/api/v1/favorites"
 PARTIES = "/api/v1/parties"
+QUOTE_REQUESTS = "/api/v1/vendors/me/quote-requests"
 ONBOARDING = "/api/v1/vendors/onboarding"
 ADMIN_VENDORS = "/api/v1/admin/vendors"
 
@@ -163,12 +165,11 @@ class TestParties:
         db: Session,
     ) -> None:
         url = f"{PARTIES}/{uuid.uuid4()}"
+        chairs = create_listing(category="other", title="Cadeiras")
         body = {
             "title": "Casamento",
             "status": "planning",
-            "items": [
-                {"id": str(uuid.uuid4()), "listing_id": str(create_listing().id), "quantity": 1}
-            ],
+            "items": [{"id": str(uuid.uuid4()), "listing_id": str(chairs.id), "quantity": 1}],
         }
 
         responses = in_parallel(
@@ -191,19 +192,19 @@ class TestParties:
         create_listing: CreateListing,
     ) -> None:
         url = f"{PARTIES}/{uuid.uuid4()}"
-        venue_item = {
+        first_item = {
             "id": str(uuid.uuid4()),
-            "listing_id": str(create_listing().id),
+            "listing_id": str(create_listing(category="other", title="Cadeiras").id),
             "quantity": 1,
         }
         extras = [
-            str(create_listing(category="attraction", title=f"Atração {index}").id)
+            str(create_listing(category="other", title=f"Lembrancinha {index}").id)
             for index in range(PARALLEL)
         ]
         created = client.put(
             url,
             headers=user.headers,
-            json={"title": "Casamento", "status": "planning", "items": [venue_item]},
+            json={"title": "Casamento", "status": "planning", "items": [first_item]},
         )
         assert created.status_code == 201
         version = created.json()["version"]
@@ -215,7 +216,7 @@ class TestParties:
                 "status": "planning",
                 "version": version,
                 "items": [
-                    venue_item,
+                    first_item,
                     {"id": str(uuid.uuid4()), "listing_id": listing_id, "quantity": 1},
                 ],
             }
@@ -228,6 +229,116 @@ class TestParties:
         stored = client.get(url, headers=user.headers).json()
         assert len(stored["items"]) == 2
         assert stored["version"] == version + 1
+
+
+class TestQuotes:
+    """A festa é uma só: o cliente e cada fornecedor gravam nela, um de cada vez."""
+
+    VENDORS = 6
+
+    @pytest.fixture
+    def requested(
+        self,
+        client: TestClient,
+        user: AuthenticatedUser,
+        register_user: RegisterUser,
+        create_listing: CreateListing,
+        db: Session,
+    ) -> tuple[dict[str, Any], list[AuthenticatedUser]]:
+        """Festa com o orçamento solicitado, com um item de cada fornecedor."""
+        vendors = []
+        items = []
+        for index in range(self.VENDORS):
+            account = register_user(email=f"fornecedor{index}@example.com")
+            # Direto no banco: o documento só precisa ser único.
+            profile = approved_vendor(db, account, document=f"{index:011d}")
+            listing = create_listing(category="other", title=f"Serviço {index}", vendor=profile)
+            vendors.append(account)
+            items.append({"id": str(uuid.uuid4()), "listing_id": str(listing.id), "quantity": 1})
+
+        url = f"{PARTIES}/{uuid.uuid4()}"
+        body = {
+            "title": "Casamento",
+            "status": "planning",
+            "event_at": "2099-01-01T19:00:00Z",
+            "guest_count": 80,
+            "items": items,
+        }
+        assert client.put(url, headers=user.headers, json=body).status_code == 201
+        locked = client.put(url, headers=user.headers, json={**body, "status": "locked"})
+        assert locked.status_code == 200, locked.text
+        return locked.json(), vendors
+
+    def test_every_vendor_answering_at_once_is_recorded(
+        self,
+        client: TestClient,
+        user: AuthenticatedUser,
+        requested: tuple[dict[str, Any], list[AuthenticatedUser]],
+    ) -> None:
+        party, vendors = requested
+
+        def quote(vendor: AuthenticatedUser, item: dict[str, Any]) -> Call:
+            url = f"{QUOTE_REQUESTS}/{item['id']}/quote"
+            return lambda: client.post(url, headers=vendor.headers, json={"amount_cents": 10_000})
+
+        responses = in_parallel(
+            [quote(vendor, item) for vendor, item in zip(vendors, party["items"], strict=True)]
+        )
+
+        # Cada resposta trava a festa: sem isso, duas gravariam sobre a mesma
+        # versão, e uma delas se perderia ou viraria um erro 500.
+        assert statuses(responses) == {200: self.VENDORS}
+        stored = client.get(f"{PARTIES}/{party['id']}", headers=user.headers).json()
+        assert stored["status"] == "quoted"
+        assert {item["quote"]["status"] for item in stored["items"]} == {"quoted"}
+        assert stored["quoted_cents"] == self.VENDORS * 10_000
+        assert stored["version"] == party["version"] + self.VENDORS
+        answers = [entry for entry in stored["history"] if entry["kind"] == "vendor_quoted"]
+        assert len(answers) == self.VENDORS
+
+    def test_an_answer_and_a_reopening_at_once_never_mix(
+        self,
+        client: TestClient,
+        user: AuthenticatedUser,
+        requested: tuple[dict[str, Any], list[AuthenticatedUser]],
+    ) -> None:
+        party, vendors = requested
+        url = f"{PARTIES}/{party['id']}"
+        item = party["items"][0]
+        reopen = {
+            "title": party["title"],
+            "status": "planning",
+            "event_at": party["event_at"],
+            "guest_count": party["guest_count"],
+            "version": party["version"],
+            "items": [
+                {"id": i["id"], "listing_id": i["listing_id"], "quantity": i["quantity"]}
+                for i in party["items"]
+            ],
+        }
+
+        answer, reopening = in_parallel(
+            [
+                lambda: client.post(
+                    f"{QUOTE_REQUESTS}/{item['id']}/quote",
+                    headers=vendors[0].headers,
+                    json={"amount_cents": 10_000},
+                ),
+                lambda: client.put(url, headers=user.headers, json=reopen),
+            ]
+        )
+
+        # Quem chega depois encontra a festa já mudada: o fornecedor, um pedido
+        # que foi retirado; o cliente, uma versão que não é mais a dele.
+        assert statuses([answer, reopening]) == {200: 1, 409: 1}
+        stored = client.get(url, headers=user.headers).json()
+        quote = stored["items"][0]["quote"]["status"]
+        if answer.status_code == 200:
+            assert error_codes([reopening], 409) == {"party_version_conflict"}
+            assert (stored["status"], quote) == ("locked", "quoted")
+        else:
+            assert error_codes([answer], 409) == {"quote_request_closed"}
+            assert (stored["status"], quote) == ("planning", "none")
 
 
 class TestVendors:

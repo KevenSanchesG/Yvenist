@@ -198,20 +198,40 @@ VALID_CNPJ = "11222333000181"
 VALID_ALPHANUMERIC_CNPJ = "12ABC34501DE35"
 
 
-@pytest.fixture
-def vendor_profile(db: Session, register_user: RegisterUser) -> VendorProfile:
-    """Um fornecedor aprovado, dono dos anúncios criados por ``create_listing``."""
-    owner = register_user(email="fornecedor@example.com", full_name="Fornecedor Teste")
+def approved_vendor(db: Session, owner: AuthenticatedUser, *, document: str) -> VendorProfile:
     profile = VendorProfile(
         user_id=owner.id,
         person_type=PersonType.INDIVIDUAL,
-        document=VALID_CPFS[0],
+        document=document,
         legal_name="Fornecedor Teste",
         status=VendorStatus.APPROVED,
     )
     db.add(profile)
     db.commit()
     return profile
+
+
+@pytest.fixture
+def vendor_account(register_user: RegisterUser) -> AuthenticatedUser:
+    """A conta do fornecedor dono dos anúncios criados por ``create_listing``."""
+    return register_user(email="fornecedor@example.com", full_name="Fornecedor Teste")
+
+
+@pytest.fixture
+def vendor_profile(db: Session, vendor_account: AuthenticatedUser) -> VendorProfile:
+    """Um fornecedor aprovado, dono dos anúncios criados por ``create_listing``."""
+    return approved_vendor(db, vendor_account, document=VALID_CPFS[0])
+
+
+@pytest.fixture
+def other_vendor_account(register_user: RegisterUser) -> AuthenticatedUser:
+    return register_user(email="outro.fornecedor@example.com", full_name="Outro Fornecedor")
+
+
+@pytest.fixture
+def other_vendor_profile(db: Session, other_vendor_account: AuthenticatedUser) -> VendorProfile:
+    """Um segundo fornecedor aprovado: ``create_listing(vendor=...)`` anuncia por ele."""
+    return approved_vendor(db, other_vendor_account, document=VALID_CPFS[3])
 
 
 @pytest.fixture
